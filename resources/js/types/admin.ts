@@ -59,3 +59,38 @@ export type NewsSourceSummary = {
     total_sources: number;
     categories_active: number;
 };
+
+export type NewsClusterSourceItem = {
+    id: number;
+    title: string;
+    url: string;
+    source_label: string;
+};
+
+export type NewsCluster = {
+    id: number;
+    title: string;
+    category: string;
+    summary: string | null;
+    image_url: string | null;
+    sources_count: number;
+    relevance_score: number;
+    first_seen_at: string | null;
+    sources: NewsClusterSourceItem[];
+};
+
+export type NewsArticle = {
+    id: number;
+    title: string;
+    slug: string;
+    category: string;
+    excerpt: string | null;
+    body: string | null;
+    featured_image: string | null;
+    status: 'draft' | 'published';
+    published_at: string | null;
+    created_at: string | null;
+    tags: string[];
+};
+
+export type NewsCategoryCatalog = Record<string, { label: string }>;

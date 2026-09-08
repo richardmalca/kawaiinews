@@ -90,3 +90,4 @@ Para agregar un grupo nuevo: crear el array de items correspondiente en `AppSide
 - [02-admin-users.md](02-admin-users.md) — gestión de usuarios + redirect post-login por rol.
 - [03-admin-ai-providers.md](03-admin-ai-providers.md) — configuración de proveedores de IA.
 - [04-admin-news-sources.md](04-admin-news-sources.md) — catálogo de fuentes de noticias para scraping.
+- [05-news-review-and-articles.md](05-news-review-and-articles.md) — bandeja de revisión con relevancia + CMS de artículos.

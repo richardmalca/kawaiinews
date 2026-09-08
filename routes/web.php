@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\NewsArticleController;
+use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
@@ -39,6 +41,14 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('news-sources.category.activate');
             Route::post('news-sources/category/{category}/deactivate', [NewsSourceController::class, 'deactivateCategory'])
                 ->name('news-sources.category.deactivate');
+
+            Route::get('news-review', [NewsReviewController::class, 'index'])->name('news-review.index');
+            Route::post('news-review/scrape', [NewsReviewController::class, 'scrape'])->name('news-review.scrape');
+            Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])->name('news-review.accept');
+            Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
+
+            Route::resource('news-articles', NewsArticleController::class)
+                ->only(['index', 'edit', 'update', 'destroy']);
         });
     });
 
