@@ -60,6 +60,25 @@ Sobrescribe `components/ui/*`, fuentes y variables CSS (tema oscuro/rojo, esquin
 - Quitar bloques `PlaceholderPattern` de ejemplo del dashboard original (y `placeholder-pattern.tsx`).
 - Traducir nav-user/user-menu-content y todo `pages/settings/*` + sus componentes.
 
+## Patrón de sidebar por grupos
+
+El sidebar (`resources/js/components/app-sidebar.tsx`) no arma un único listado plano de enlaces: los separa en grupos temáticos usando varias instancias de `NavMain` (`resources/js/components/nav-main.tsx`), cada una con su propio `label` (título de sección) y su propia lista de `items`.
+
+Cómo funciona:
+
+- `NavMain` recibe `{ label: string; items: NavItem[] }` y renderiza un `SidebarGroup` con `SidebarGroupLabel` = `label`.
+- Si `items` está vacío, `NavMain` devuelve `null` — el grupo directamente no se pinta. Esto permite declarar un grupo "reservado" en el código (con su array de items vacío) sin que se vea una sección vacía en la UI hasta que tenga contenido real.
+- En `AppSidebar`, cada grupo se arma como su propio array (`platformNavItems`, `externalServicesNavItems`, etc.), filtrando por rol con el mismo patrón spread condicional que ya se usaba (`...(condición ? [...] : [])`).
+- Los grupos se renderizan en orden, uno debajo del otro, dentro de `SidebarContent`.
+
+Grupos usados hasta ahora:
+
+- **Plataforma** — navegación core de la app (Panel, Usuarios).
+- **Servicios externos** — configuración de integraciones que la app consume desde afuera (Modelo de IA, Fuentes de noticias). Cualquier feature nueva que sea "conectar la app a un servicio de terceros" va acá.
+- **Mantenimiento** — reservado para herramientas operativas (logs, colas, backups, cache, etc.) cuando existan; por ahora su array de items está vacío a propósito y no aparece en el sidebar.
+
+Para agregar un grupo nuevo: crear el array de items correspondiente en `AppSidebar`, agregar un `<NavMain label="..." items={...} />` en `SidebarContent`, y listo — no hace falta tocar `NavMain` salvo que el grupo necesite un comportamiento distinto al de mostrar/ocultar según si tiene items.
+
 ## Notas de entorno (monorepo `D:\Proyectos\animelhd`)
 
 - Varios proyectos comparten `.claude/launch.json` en la raíz del monorepo.
