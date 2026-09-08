@@ -41,6 +41,16 @@ class NewsSourceService
         NewsSource::query()->update(['is_active' => false]);
     }
 
+    public function activateCategory(string $category): void
+    {
+        NewsSource::where('category', $category)->update(['is_active' => true]);
+    }
+
+    public function deactivateCategory(string $category): void
+    {
+        NewsSource::where('category', $category)->update(['is_active' => false]);
+    }
+
     public function groupedByCategory(): array
     {
         $categories = config('news_sources_catalog');

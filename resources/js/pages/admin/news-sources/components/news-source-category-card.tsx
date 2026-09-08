@@ -1,4 +1,6 @@
+import { PowerOff, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -6,6 +8,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import NewsSourceRow from '@/pages/admin/news-sources/components/news-source-row';
+import { useToggleCategoryNewsSources } from '@/pages/admin/news-sources/hooks/use-toggle-category-news-sources';
 import type { NewsSourceGroup } from '@/types/admin';
 
 type Props = {
@@ -14,6 +17,8 @@ type Props = {
 
 export default function NewsSourceCategoryCard({ group }: Props) {
     const activeCount = group.sources.filter((s) => s.is_active).length;
+    const { activateCategory, deactivateCategory, processing } =
+        useToggleCategoryNewsSources();
 
     return (
         <Card>
@@ -24,6 +29,32 @@ export default function NewsSourceCategoryCard({ group }: Props) {
                         {activeCount} / {group.sources.length} activas
                     </Badge>
                 </CardTitle>
+                <div className="flex gap-2 pt-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={processing}
+                        onClick={() =>
+                            activateCategory(group.category, group.label)
+                        }
+                    >
+                        <Zap />
+                        Activar todas
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={processing}
+                        onClick={() =>
+                            deactivateCategory(group.category, group.label)
+                        }
+                    >
+                        <PowerOff />
+                        Desactivar todas
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="p-0">
                 {group.sources.map((source) => (

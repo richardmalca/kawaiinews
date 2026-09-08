@@ -35,6 +35,10 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('news-sources.activate-all');
             Route::post('news-sources/deactivate-all', [NewsSourceController::class, 'deactivateAll'])
                 ->name('news-sources.deactivate-all');
+            Route::post('news-sources/category/{category}/activate', [NewsSourceController::class, 'activateCategory'])
+                ->name('news-sources.category.activate');
+            Route::post('news-sources/category/{category}/deactivate', [NewsSourceController::class, 'deactivateCategory'])
+                ->name('news-sources.category.deactivate');
         });
     });
 

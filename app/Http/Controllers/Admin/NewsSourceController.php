@@ -60,6 +60,24 @@ class NewsSourceController extends Controller
         return to_route('admin.news-sources.index');
     }
 
+    public function activateCategory(string $category): RedirectResponse
+    {
+        abort_unless(array_key_exists($category, config('news_sources_catalog')), 404);
+
+        $this->newsSourceService->activateCategory($category);
+
+        return to_route('admin.news-sources.index');
+    }
+
+    public function deactivateCategory(string $category): RedirectResponse
+    {
+        abort_unless(array_key_exists($category, config('news_sources_catalog')), 404);
+
+        $this->newsSourceService->deactivateCategory($category);
+
+        return to_route('admin.news-sources.index');
+    }
+
     public function destroy(NewsSource $newsSource): RedirectResponse
     {
         $this->newsSourceService->delete($newsSource);
