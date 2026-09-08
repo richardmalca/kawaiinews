@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users } from 'lucide-react';
+import { BrainCircuit, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,14 +13,14 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/admin';
+import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
 import { index as usersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
     const { auth } = usePage().props;
-    const canManageUsers =
-        auth.user?.roles.includes('superadmin') ||
-        auth.user?.roles.includes('admin');
+    const isSuperadmin = auth.user?.roles.includes('superadmin');
+    const canManageUsers = isSuperadmin || auth.user?.roles.includes('admin');
 
     const mainNavItems: NavItem[] = [
         {
@@ -34,6 +34,15 @@ export function AppSidebar() {
                       title: 'Usuarios',
                       href: usersIndex(),
                       icon: Users,
+                  },
+              ]
+            : []),
+        ...(isSuperadmin
+            ? [
+                  {
+                      title: 'Modelo de IA',
+                      href: aiProvidersIndex(),
+                      icon: BrainCircuit,
                   },
               ]
             : []),

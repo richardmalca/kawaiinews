@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,15 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
         Route::middleware('role:superadmin|admin')->group(function () {
             Route::resource('users', UserController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
+        });
+
+        Route::middleware('role:superadmin')->group(function () {
+            Route::resource('ai-providers', AiProviderController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
+            Route::post('ai-providers/{aiProvider}/activate', [AiProviderController::class, 'activate'])
+                ->name('ai-providers.activate');
+            Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])
+                ->name('ai-providers.test');
         });
     });
 
