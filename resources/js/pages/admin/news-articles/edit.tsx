@@ -69,7 +69,7 @@ export default function NewsArticleEdit({
             <div className="space-y-8 p-4">
                 <Heading
                     title="Editar noticia"
-                    description="Ajustá el contenido antes de publicarla"
+                    description="Ajusta el contenido antes de publicarla"
                 />
 
                 <Card>

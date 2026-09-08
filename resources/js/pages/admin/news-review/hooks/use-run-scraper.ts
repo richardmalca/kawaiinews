@@ -17,18 +17,27 @@ export function useRunScraper() {
     const runScraper = () => {
         setProcessing(true);
 
-        const promise = (submit(scrape()) as Promise<ScrapeResult>).finally(
-            () => {
+        const promise = (submit(scrape()) as Promise<ScrapeResult>)
+            .then((result) => {
+                if (result.sources_scraped === 0) {
+                    throw new Error(
+                        result.errors[0] ??
+                            'No hay fuentes activas para buscar noticias',
+                    );
+                }
+
+                return result;
+            })
+            .finally(() => {
                 setProcessing(false);
                 router.reload({ only: ['clusters'] });
-            },
-        );
+            });
 
         toast.promise(promise, {
             loading: 'Buscando noticias en las fuentes activas...',
             success: (result: ScrapeResult) =>
                 `${result.items_new} noticias nuevas encontradas de ${result.sources_scraped} fuentes`,
-            error: 'No se pudo completar la búsqueda',
+            error: (error: Error) => error.message,
         });
     };
 

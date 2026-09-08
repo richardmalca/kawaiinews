@@ -39,7 +39,7 @@ export default function NewsArticleTagsInput({
                 id="tags-input"
                 list="available-tags"
                 value={draft}
-                placeholder="Escribí un tag y presiona Enter"
+                placeholder="Escribe un tag y presiona Enter"
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ',') {

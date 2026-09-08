@@ -3,11 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useRunScraper } from '@/pages/admin/news-review/hooks/use-run-scraper';
 
-export default function RunScraperButton() {
+type Props = {
+    disabled?: boolean;
+};
+
+export default function RunScraperButton({ disabled = false }: Props) {
     const { runScraper, processing } = useRunScraper();
 
     return (
-        <Button type="button" disabled={processing} onClick={runScraper}>
+        <Button
+            type="button"
+            disabled={processing || disabled}
+            onClick={runScraper}
+        >
             {processing ? <Spinner /> : <Search />}
             Buscar noticias ahora
         </Button>

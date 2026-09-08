@@ -22,7 +22,7 @@ export default function NewsArticlesTable({ articles }: Props) {
     if (articles.length === 0) {
         return (
             <p className="text-muted-foreground text-sm">
-                Todavía no hay noticias. Aceptá algún tema desde la bandeja
+                Todavía no hay noticias. Acepta algún tema desde la bandeja
                 de revisión para crear tu primer borrador.
             </p>
         );
