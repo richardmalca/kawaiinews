@@ -46,6 +46,31 @@ return [
                 'url' => 'https://somoskudasai.com',
                 'rss_url' => 'https://somoskudasai.com/feed',
             ],
+            'anime-corner' => [
+                'label' => 'Anime Corner',
+                'url' => 'https://animecorner.me',
+                'rss_url' => 'https://animecorner.me/feed/',
+            ],
+            'anitrendz' => [
+                'label' => 'AniTrendz',
+                'url' => 'https://anitrendz.net',
+                'rss_url' => 'https://anitrendz.net/feed',
+            ],
+            'otakupt' => [
+                'label' => 'OtakuPT',
+                'url' => 'https://www.otakupt.com',
+                'rss_url' => 'https://www.otakupt.com/feed/',
+            ],
+            'screenrant' => [
+                'label' => 'ScreenRant',
+                'url' => 'https://screenrant.com',
+                'rss_url' => null,
+            ],
+            'otaku-study' => [
+                'label' => "The Otaku's Study",
+                'url' => 'https://www.otakustudy.com',
+                'rss_url' => null,
+            ],
         ],
     ],
 
