@@ -75,6 +75,8 @@ export type NewsCluster = {
     image_url: string | null;
     sources_count: number;
     relevance_score: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    article_id: number | null;
     first_seen_at: string | null;
     sources: NewsClusterSourceItem[];
 };

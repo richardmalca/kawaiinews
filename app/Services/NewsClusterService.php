@@ -9,8 +9,8 @@ class NewsClusterService
 {
     public function reviewQueue(): Collection
     {
-        return NewsCluster::where('status', 'pending')
-            ->with(['scrapedItems.newsSource'])
+        return NewsCluster::whereIn('status', ['pending', 'accepted'])
+            ->with(['scrapedItems.newsSource', 'article'])
             ->orderByDesc('relevance_score')
             ->get();
     }

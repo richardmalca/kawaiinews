@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import ArticleBodyEditor from '@/pages/admin/news-articles/components/article-body-editor';
 import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-article-tags-input';
 import { useArticleSlug } from '@/pages/admin/news-articles/hooks/use-article-slug';
 import { useSaveNewsArticle } from '@/pages/admin/news-articles/hooks/use-save-news-article';
@@ -40,6 +41,7 @@ export default function NewsArticleEdit({
         article.status,
     );
     const [tags, setTags] = useState<string[]>(article.tags);
+    const [body, setBody] = useState(article.body ?? '');
     const { slug, handleTitleChange, handleSlugChange } = useArticleSlug(
         article.title,
         article.slug,
@@ -55,7 +57,7 @@ export default function NewsArticleEdit({
             slug,
             category,
             excerpt: formData.get('excerpt') as string,
-            body: formData.get('body') as string,
+            body,
             featured_image: formData.get('featured_image') as string,
             status,
             tags,
@@ -204,11 +206,9 @@ export default function NewsArticleEdit({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="body">Contenido</Label>
-                                <Textarea
-                                    id="body"
-                                    name="body"
-                                    rows={12}
-                                    defaultValue={article.body ?? ''}
+                                <ArticleBodyEditor
+                                    value={body}
+                                    onChange={setBody}
                                 />
                                 <InputError message={errors.body} />
                             </div>

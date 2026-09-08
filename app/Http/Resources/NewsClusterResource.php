@@ -20,7 +20,9 @@ class NewsClusterResource extends JsonResource
             'image_url' => $this->image_url,
             'sources_count' => $this->sources_count,
             'relevance_score' => $this->relevance_score,
+            'status' => $this->status,
             'first_seen_at' => $this->first_seen_at?->diffForHumans(),
+            'article_id' => $this->whenLoaded('article', fn () => $this->article?->id),
             'sources' => $this->whenLoaded('scrapedItems', fn () => $this->scrapedItems
                 ->map(fn ($item) => [
                     'id' => $item->id,

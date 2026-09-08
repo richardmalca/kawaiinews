@@ -128,9 +128,9 @@ class NewsArticleService
                 {$sourcesSummary}
 
                 Devuelve la respuesta EXACTAMENTE en este formato, sin texto adicional:
-                TITULO: (un titular claro y atractivo)
-                RESUMEN: (1 o 2 oraciones que resuman la noticia)
-                CUERPO: (3 a 4 párrafos en tono periodístico neutral, separados por saltos de línea)
+                TITULO: (un titular llamativo tipo prensa, distinto y más atractivo que el resumen, no lo repitas)
+                RESUMEN: (1 o 2 oraciones que resuman la noticia, sin repetir literalmente el título)
+                CUERPO: (3 a 4 párrafos en tono periodístico neutral, separados por saltos de línea. Usa formato: **negrita** para nombres propios y datos clave, *cursiva* para citas textuales o énfasis, y <u>subrayado</u> para el dato más importante de la noticia)
                 PROMPT;
 
             $response = Prism::text()
