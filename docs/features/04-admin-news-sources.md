@@ -11,7 +11,7 @@ Catálogo de sitios web usados como fuente para el scraping de noticias de anime
 
 A diferencia de Modelo de IA (donde el catálogo es solo referencia y hay que "agregar" cada proveedor), acá el seeder precarga **todas** las fuentes del catálogo directamente en la tabla `news_sources`, todas con `is_active = false`. La UI entonces no tiene flujo de "agregar desde catálogo": es directamente la lista completa agrupada por categoría, con un switch para activar/desactivar cada fuente.
 
-- `config/news_sources_catalog.php` — catálogo estático agrupado por categoría (`anime`, `manga`, `geek`, `gaming`, `japon`, `peliculas`), cada fuente con `label`, `url` y `rss_url` opcional.
+- `config/news_sources_catalog.php` — catálogo estático agrupado por categoría (`anime`, `manga`, `geek`, `gaming`, `japon`, `peliculas`), cada fuente con `label`, `url` y `rss_url` opcional. Incluye varias fuentes en español (SomosKudasai, ANMTV, Ramen Para Dos, Vandal, 3DJuegos, HobbyConsolas, MeriStation, Xataka, Hipertextual, IGN en Español, Sensacine, Espinof, Cinemascomics) pensadas para poder cruzar la misma noticia contada por distintos medios y redactar una nota propia combinando fuentes.
 - Tabla `news_sources` — una fila por fuente del catálogo: `source_key` (única), `category`, `label`, `url`, `rss_url`, `is_active`, `last_scraped_at` (para cuando se implemente el scraping real).
 - `database/seeders/NewsSourceSeeder.php` — recorre el catálogo y hace `firstOrCreate` por `source_key`, así que agregar una fuente nueva al config y volver a correr el seeder no duplica ni pisa las que ya están activadas.
 

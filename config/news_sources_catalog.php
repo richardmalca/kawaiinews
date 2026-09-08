@@ -41,6 +41,11 @@ return [
                 'url' => 'https://www.ramenparados.com',
                 'rss_url' => 'https://www.ramenparados.com/feed',
             ],
+            'somoskudasai' => [
+                'label' => 'SomosKudasai',
+                'url' => 'https://somoskudasai.com',
+                'rss_url' => 'https://somoskudasai.com/feed',
+            ],
         ],
     ],
 
@@ -55,6 +60,11 @@ return [
             'anmtv-manga' => [
                 'label' => 'ANMTV Manga',
                 'url' => 'https://www.anmtv.es/category/manga/',
+                'rss_url' => null,
+            ],
+            'somoskudasai-manga' => [
+                'label' => 'SomosKudasai Manga',
+                'url' => 'https://somoskudasai.com/noticias/manga/',
                 'rss_url' => null,
             ],
         ],
@@ -77,6 +87,16 @@ return [
                 'label' => 'Xataka',
                 'url' => 'https://www.xataka.com',
                 'rss_url' => 'https://www.xataka.com/feedburner.xml',
+            ],
+            'ign-espanol' => [
+                'label' => 'IGN en Español',
+                'url' => 'https://latam.ign.com',
+                'rss_url' => null,
+            ],
+            'hipertextual' => [
+                'label' => 'Hipertextual',
+                'url' => 'https://hipertextual.com',
+                'rss_url' => 'https://hipertextual.com/feed',
             ],
         ],
     ],
@@ -103,6 +123,11 @@ return [
                 'label' => 'Eurogamer',
                 'url' => 'https://www.eurogamer.net',
                 'rss_url' => 'https://www.eurogamer.net/feed',
+            ],
+            'meristation' => [
+                'label' => 'MeriStation',
+                'url' => 'https://as.com/meristation',
+                'rss_url' => null,
             ],
         ],
     ],
@@ -140,6 +165,11 @@ return [
                 'label' => 'Cinemascomics',
                 'url' => 'https://www.cinemascomics.com',
                 'rss_url' => 'https://www.cinemascomics.com/feed',
+            ],
+            'espinof' => [
+                'label' => 'Espinof',
+                'url' => 'https://www.espinof.com',
+                'rss_url' => 'https://www.espinof.com/feed',
             ],
         ],
     ],
