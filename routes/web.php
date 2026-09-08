@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('ai-providers.activate');
             Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])
                 ->name('ai-providers.test');
+
+            Route::resource('news-sources', NewsSourceController::class)
+                ->only(['index', 'update', 'destroy']);
+            Route::post('news-sources/{newsSource}/toggle', [NewsSourceController::class, 'toggle'])
+                ->name('news-sources.toggle');
         });
     });
 

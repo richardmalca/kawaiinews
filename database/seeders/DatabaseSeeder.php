@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             AiProviderSeeder::class,
+            NewsSourceSeeder::class,
         ]);
 
         // User::factory(10)->create();

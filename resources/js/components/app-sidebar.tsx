@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BrainCircuit, LayoutGrid, Users } from 'lucide-react';
+import { BrainCircuit, LayoutGrid, Rss, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/admin';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
+import { index as newsSourcesIndex } from '@/routes/admin/news-sources';
 import { index as usersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
@@ -43,6 +44,11 @@ export function AppSidebar() {
                       title: 'Modelo de IA',
                       href: aiProvidersIndex(),
                       icon: BrainCircuit,
+                  },
+                  {
+                      title: 'Fuentes de noticias',
+                      href: newsSourcesIndex(),
+                      icon: Rss,
                   },
               ]
             : []),

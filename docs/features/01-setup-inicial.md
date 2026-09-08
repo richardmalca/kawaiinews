@@ -70,3 +70,4 @@ Sobrescribe `components/ui/*`, fuentes y variables CSS (tema oscuro/rojo, esquin
 
 - [02-admin-users.md](02-admin-users.md) — gestión de usuarios + redirect post-login por rol.
 - [03-admin-ai-providers.md](03-admin-ai-providers.md) — configuración de proveedores de IA.
+- [04-admin-news-sources.md](04-admin-news-sources.md) — catálogo de fuentes de noticias para scraping.
