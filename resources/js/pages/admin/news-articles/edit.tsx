@@ -1,22 +1,18 @@
 import { Head, usePage } from '@inertiajs/react';
+import { ImageOff, Images } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import ArticleCategoryPicker from '@/pages/admin/news-articles/components/article-category-picker';
+import ArticlePermalinkField from '@/pages/admin/news-articles/components/article-permalink-field';
+import ArticleStatusToggle from '@/pages/admin/news-articles/components/article-status-toggle';
+import MediaLibraryDialog from '@/pages/admin/news-articles/components/media-library-dialog';
 import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-article-tags-input';
 import RichTextEditor from '@/pages/admin/news-articles/components/rich-text-editor';
+import { Spinner } from '@/components/ui/spinner';
 import { useArticleSlug } from '@/pages/admin/news-articles/hooks/use-article-slug';
 import { useSaveNewsArticle } from '@/pages/admin/news-articles/hooks/use-save-news-article';
 import type { NewsArticle, NewsCategoryCatalog } from '@/types/admin';
@@ -70,8 +66,8 @@ export default function NewsArticleEdit({
             <Head title={`Editar: ${article.title}`} />
 
             <form onSubmit={handleSubmit} id="edit-article-form">
-                <div className="space-y-8 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-6 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
                         <Heading
                             title="Editar noticia"
                             description="Ajusta el contenido antes de publicarla"
@@ -89,14 +85,14 @@ export default function NewsArticleEdit({
                     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
                         <div className="space-y-6">
                             <Card>
-                                <CardContent className="space-y-6">
+                                <CardContent className="space-y-4">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="title">Título</Label>
-                                        <Input
+                                        <input
                                             id="title"
                                             name="title"
                                             required
-                                            className="h-11 text-base font-medium"
+                                            placeholder="Título de la noticia"
+                                            className="border-input placeholder:text-muted-foreground w-full border-0 border-b bg-transparent px-0 py-2 text-2xl font-semibold outline-none focus-visible:border-primary"
                                             value={title}
                                             onChange={(event) => {
                                                 setTitle(event.target.value);
@@ -108,28 +104,24 @@ export default function NewsArticleEdit({
                                         <InputError message={errors.title} />
                                     </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="slug">Slug</Label>
-                                        <Input
-                                            id="slug"
-                                            name="slug"
-                                            required
-                                            value={slug}
-                                            onChange={(event) =>
-                                                handleSlugChange(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        <InputError message={errors.slug} />
-                                    </div>
+                                    <ArticlePermalinkField
+                                        slug={slug}
+                                        onChange={handleSlugChange}
+                                        error={errors.slug}
+                                    />
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="excerpt">Resumen</Label>
+                                    <div className="grid gap-2 pt-2">
+                                        <label
+                                            htmlFor="excerpt"
+                                            className="text-sm font-medium"
+                                        >
+                                            Resumen
+                                        </label>
                                         <Textarea
                                             id="excerpt"
                                             name="excerpt"
                                             rows={2}
+                                            placeholder="Un par de oraciones que resuman la noticia..."
                                             defaultValue={article.excerpt ?? ''}
                                         />
                                         <InputError message={errors.excerpt} />
@@ -161,29 +153,10 @@ export default function NewsArticleEdit({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Select
+                                    <ArticleStatusToggle
                                         value={status}
-                                        onValueChange={(value) =>
-                                            setStatus(
-                                                value as NewsArticle['status'],
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger
-                                            id="status"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="draft">
-                                                Borrador
-                                            </SelectItem>
-                                            <SelectItem value="published">
-                                                Publicada
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        onChange={setStatus}
+                                    />
                                     <InputError message={errors.status} />
                                 </CardContent>
                             </Card>
@@ -195,29 +168,11 @@ export default function NewsArticleEdit({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <Select
+                                    <ArticleCategoryPicker
+                                        categories={categories}
                                         value={category}
-                                        onValueChange={setCategory}
-                                    >
-                                        <SelectTrigger
-                                            id="category"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(categories).map(
-                                                ([key, entry]) => (
-                                                    <SelectItem
-                                                        key={key}
-                                                        value={key}
-                                                    >
-                                                        {entry.label}
-                                                    </SelectItem>
-                                                ),
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                        onChange={setCategory}
+                                    />
                                     <InputError message={errors.category} />
                                 </CardContent>
                             </Card>
@@ -244,26 +199,58 @@ export default function NewsArticleEdit({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <Input
-                                        id="featured_image"
-                                        name="featured_image"
-                                        type="url"
-                                        placeholder="https://..."
-                                        value={featuredImage}
-                                        onChange={(event) =>
-                                            setFeaturedImage(event.target.value)
-                                        }
-                                    />
+                                    {featuredImage ? (
+                                        <div className="space-y-2">
+                                            <img
+                                                src={featuredImage}
+                                                alt=""
+                                                className="border-input aspect-video w-full border object-cover"
+                                            />
+                                            <div className="flex gap-2">
+                                                <MediaLibraryDialog
+                                                    onSelect={setFeaturedImage}
+                                                    trigger={
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="flex-1"
+                                                        >
+                                                            <Images />
+                                                            Cambiar
+                                                        </Button>
+                                                    }
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setFeaturedImage('')
+                                                    }
+                                                >
+                                                    <ImageOff />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <MediaLibraryDialog
+                                            onSelect={setFeaturedImage}
+                                            trigger={
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="w-full"
+                                                >
+                                                    <Images />
+                                                    Elegir imagen
+                                                </Button>
+                                            }
+                                        />
+                                    )}
                                     <InputError
                                         message={errors.featured_image}
                                     />
-                                    {featuredImage && (
-                                        <img
-                                            src={featuredImage}
-                                            alt=""
-                                            className="w-full border border-input object-cover"
-                                        />
-                                    )}
                                 </CardContent>
                             </Card>
                         </div>

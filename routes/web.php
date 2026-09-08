@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
@@ -49,6 +50,11 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
 
             Route::resource('news-articles', NewsArticleController::class)
                 ->only(['index', 'edit', 'update', 'destroy']);
+
+            Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
+            Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');
+            Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
+            Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
         });
     });
 

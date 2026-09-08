@@ -45,17 +45,51 @@ El prompt le pide explícitamente al modelo:
 
 - **Traducir y redactar en español** (sin importar el idioma original de las fuentes del cluster).
 - Un **título distinto del resumen** — no una repetición, sino un titular de prensa más atractivo (evita el problema de "la noticia sale igual que la descripción").
-- **Formato enriquecido en el cuerpo**, con una sintaxis mixta markdown/HTML fija:
-  - `**negrita**` para nombres propios y datos clave
-  - `*cursiva*` para citas textuales o énfasis
-  - `<u>subrayado</u>` para el dato más importante de la noticia
+- **HTML directo en el cuerpo** (no markdown): `<p>` por párrafo, `<strong>` para nombres propios y datos clave, `<em>` para citas o énfasis, `<u>` para el dato más importante, `<h3>` si hace falta un subtítulo — así carga sin conversión en el editor de bloques (ver más abajo).
 
 `parseDraft()` extrae `TITULO:` / `RESUMEN:` / `CUERPO:` con regex de la respuesta del modelo.
 
 ### Tablas
 
-- `news_articles` — `news_cluster_id` (nullable, referencia de origen), `title`, `slug` (único), `category`, `excerpt`, `body`, `featured_image` (URL, no upload de archivo en v1), `status` (`draft`/`published`), `published_at`.
+- `news_articles` — `news_cluster_id` (nullable, referencia de origen), `title`, `slug` (único), `category`, `excerpt`, `body` (HTML), `featured_image` (URL — apunta a un archivo subido o a una URL externa registrada en la biblioteca de medios), `status` (`draft`/`published`), `published_at`.
 - `tags` + `news_article_tag` (pivote) — tags reutilizables entre artículos.
+- `media` — biblioteca de imágenes: `url`, `original_name`, `source` (`upload` los subidos como archivo al disco `public`, `url` los agregados pegando un link externo sin volver a alojarlos).
+
+## Editor tipo CMS (`edit.tsx`)
+
+Layout de dos columnas estilo WordPress: contenido principal a la izquierda (título grande, permalink editable, resumen, editor de bloques) y un sidebar a la derecha con una card por control de publicación (Estado, Categoría, Etiquetas, Imagen destacada). El botón "Guardar" vive en el header de la página, no hay que scrollear para encontrarlo.
+
+- **Título** — `<input>` grande sin borde de caja (estilo H1), no un `Input` de formulario genérico.
+- **Slug** — `ArticlePermalinkField`: se muestra como texto `/noticias/{slug}` (como el permalink de WordPress), con un botón "Editar" que lo convierte en un campo editable al click; se autogenera del título mientras no se toque a mano (`useArticleSlug`).
+- **Estado** — `ArticleStatusToggle`: `ToggleGroup` de 2 opciones (Borrador/Publicada) en vez de un `<select>`, porque con solo 2 valores un desplegable es fricción de más.
+- **Categoría** — `ArticleCategoryPicker`: `ToggleGroup` de una sola selección con una pastilla por categoría del catálogo (`news_sources_catalog`), en vez de un `<select>`. Sigue siendo una categoría por noticia (columna `category` sin cambios); múltiples categorías por noticia se evaluó y se decidió no hacerlo por ahora — implicaría migrar a una relación muchos-a-muchos como tags.
+- **Contenido** — `RichTextEditor`, ver abajo.
+- **Imagen destacada** — abre `MediaLibraryDialog` en vez de pedir una URL a mano.
+
+### Editor de bloques: BlockNote
+
+`RichTextEditor` usa [BlockNote](https://www.blocknotejs.org/) (`@blocknote/core` + `@blocknote/react` + `@blocknote/mantine`) en vez de una toolbar armada a mano — es un editor de bloques completo ya hecho (como Notion): títulos, negrita/cursiva/subrayado/tachado, listas, checklist, citas, código, imágenes por URL o arrastrando el archivo, menú "/" para insertar cualquier bloque, toolbar flotante al seleccionar texto.
+
+El contenido se guarda como `body` (HTML) en la DB, no como el formato de bloques propio de BlockNote:
+
+- Al cargar: `editor.tryParseHTMLToBlocks(value)` convierte el HTML guardado a bloques.
+- Al cambiar: `editor.blocksToFullHTML(editor.document)` vuelve a serializar a HTML antes de llamar `onChange`.
+
+Esto mantiene compatibilidad con el HTML que ya genera `NewsArticleService` al aceptar un cluster — no hay que tocar el backend para que el contenido generado por IA se vea bien en el editor.
+
+**Se descartó @tiptap/react como toolbar manual** (versión anterior de este editor): armar botón por botón (negrita, cursiva, H2, H3...) es mucho más trabajo que usar BlockNote, que ya trae todo eso resuelto con mejor UX (menú "/", drag & drop de imágenes, toolbar flotante).
+
+## Biblioteca de medios (`/admin/media`)
+
+Modal (`MediaLibraryDialog`) reutilizable para elegir la imagen destacada de una noticia:
+
+- Grid de imágenes ya guardadas (`Media::orderByDesc('id')`), click para seleccionar y cerrar el modal.
+- **Subir archivo** — sube al disco `public` (`Storage::disk('public')`, requiere `php artisan storage:link`), crea un registro `Media` con `source = 'upload'`.
+- **Agregar por URL** — no descarga el archivo, solo registra la URL externa como `source = 'url'` para que quede en la biblioteca y sea reutilizable en otras noticias.
+
+`app/Services/MediaLibraryService.php` centraliza `list()`, `storeUpload()`, `storeFromUrl()`, `delete()` (borra también el archivo físico si `source === 'upload'`).
+
+El frontend (`use-media-library.ts`) no usa `useHttp` para estas llamadas — como el modal necesita listar (`GET`), subir un archivo (`multipart/form-data`) y agregar por URL (`JSON`) con datos que cambian en cada llamada, se usa `fetch()` directo leyendo el token CSRF de la cookie `XSRF-TOKEN` (`X-XSRF-TOKEN` header, el mismo mecanismo que usa axios/el cliente XHR interno de Inertia).
 
 ## Frontend
 
@@ -72,16 +106,20 @@ resources/js/pages/admin/news-review/
 
 resources/js/pages/admin/news-articles/
 ├── index.tsx                       listado (tabla) de artículos
-├── edit.tsx                        formulario completo tipo CMS
+├── edit.tsx                        editor tipo CMS: dos columnas, sidebar de publicación
 ├── components/
 │   ├── news-articles-table.tsx
 │   ├── news-article-status-badge.tsx
 │   ├── news-article-tags-input.tsx     tags con datalist + badges removibles
-│   ├── article-body-editor.tsx         Textarea + toolbar (negrita/cursiva/subrayado)
+│   ├── article-permalink-field.tsx     slug mostrado como permalink, editable al click
+│   ├── article-status-toggle.tsx       ToggleGroup de 2 opciones (borrador/publicada)
+│   ├── article-category-picker.tsx     ToggleGroup de pastillas, una categoría
+│   ├── rich-text-editor.tsx            wrapper de BlockNote (HTML <-> bloques)
+│   ├── media-library-dialog.tsx        modal: grid + subir archivo + agregar por URL
 │   └── delete-news-article-dialog.tsx
 └── hooks/
     ├── use-article-slug.ts             slug autogenerado del título, editable a mano
-    ├── use-text-formatting.ts          envuelve la selección del textarea con **/*/<u>
+    ├── use-media-library.ts            list/upload/addFromUrl vía fetch + XSRF-TOKEN
     ├── use-save-news-article.ts
     └── use-delete-news-article.ts
 ```

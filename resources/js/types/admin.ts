@@ -96,3 +96,10 @@ export type NewsArticle = {
 };
 
 export type NewsCategoryCatalog = Record<string, { label: string }>;
+
+export type MediaItem = {
+    id: number;
+    url: string;
+    original_name: string | null;
+    source: 'upload' | 'url';
+};
