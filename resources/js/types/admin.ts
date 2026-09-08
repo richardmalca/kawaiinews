@@ -76,10 +76,15 @@ export type NewsCluster = {
     sources_count: number;
     relevance_score: number;
     status: 'pending' | 'accepted' | 'rejected';
+    ai_verdict: 'publish' | 'discard' | null;
+    ai_reason: string | null;
     article_id: number | null;
     first_seen_at: string | null;
+    published_at: string | null;
     sources: NewsClusterSourceItem[];
 };
+
+export type NewsReviewSort = 'relevance' | 'newest' | 'oldest';
 
 export type NewsArticle = {
     id: number;

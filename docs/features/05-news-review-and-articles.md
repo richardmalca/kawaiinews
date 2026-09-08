@@ -31,13 +31,15 @@ Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review` (decisió
 
 ### `app/Services/NewsClusterService.php`
 
-- `reviewQueue()` — clusters con `status` en `['pending', 'accepted']` (los `rejected` no se muestran nunca), con `scrapedItems.newsSource` y `article` cargados, ordenados por `relevance_score` descendente. Los `accepted` se siguen mostrando para que la bandeja funcione como historial visual — ver más abajo.
+- `reviewQueue(string $sort = 'relevance')` — clusters con `status` en `['pending', 'accepted']` (los `rejected` no se muestran nunca), con `scrapedItems.newsSource` y `article` cargados. `$sort` acepta `relevance` (default, por `relevance_score`), `newest` u `oldest` — estos dos últimos ordenan por la **fecha real de la noticia** (`NewsCluster::earliestPublishedAt()`, la fecha más antigua entre los `scraped_items` del cluster, no cuándo se scrapeó), para que el orden coincida con lo que se ve en la columna "Fecha" de la tabla. El orden se hace en memoria (`Collection::sortBy`) porque la fecha es un valor calculado desde una relación, no una columna. El selector vive en `NewsReviewSortSelect`, cambia la URL vía `router.get(..., {sort})`.
 - `accept()` / `reject()` — cambian el `status`.
+- `analyzeWithAi()` — analiza en lote los clusters `pending` sin veredicto todavía (`whereNull('ai_verdict')`, así no se re-analiza dos veces lo mismo). Arma un prompt con título/categoría/fuentes/antigüedad de cada uno y le pide al modelo un veredicto `PUBLICAR`/`DESCARTAR` + motivo corto por `ID`, parseado con regex (`ID:VEREDICTO:MOTIVO`). Se guarda en `news_clusters.ai_verdict` / `ai_reason` y se muestra como badge en la bandeja — **no descarta nada solo**, el usuario sigue decidiendo con Aceptar/Descartar.
+  - **Por qué en lotes de 100 (`BATCH_SIZE`) y no todo en una sola llamada real:** con las ~220 noticias pendientes que puede acumular este proyecto, un solo prompt gigante superaba el timeout HTTP por defecto de Prism (30s) y no completaba. Se sube el timeout a 120s (`withClientOptions(['timeout' => 120])`) y se divide en tandas de 100 clusters — sigue siendo un puñado de llamadas (2-3) en vez de una por noticia, que era el objetivo real de "no quemar tokens".
 
 ### `app/Services/NewsArticleService.php`
 
-- `createFromCluster()` — se llama al aceptar un cluster. Si hay un `AiProvider` activo con API key, arma un prompt con el título + resumen de cada fuente del cluster y le pide a Prism (mismo mecanismo que `AiProviderService::testConnection()`) que devuelva `TITULO:` / `RESUMEN:` / `CUERPO:` en un formato fijo, parseado con regex. Si no hay proveedor activo o falla la llamada, cae a un borrador mínimo (título y resumen del cluster, cuerpo vacío) — nunca bloquea la aceptación por un fallo de IA.
-- `save()` — actualiza el artículo: recalcula el slug único (`Str::slug`) solo si el slug cambió, sincroniza tags (`firstOrCreate` por slug de tag), y si el estado pasa a `published` setea `published_at` la primera vez.
+- `createFromCluster()` — se llama al aceptar un cluster. Si hay un `AiProvider` activo con API key, arma un prompt con el título + resumen de cada fuente del cluster y le pide a Prism (mismo mecanismo que `AiProviderService::testConnection()`) que devuelva `TITULO:` / `RESUMEN:` / `CUERPO:` en un formato fijo, parseado con regex. Si no hay proveedor activo o falla la llamada, cae a un borrador mínimo (título y resumen del cluster, cuerpo vacío) — nunca bloquea la aceptación por un fallo de IA. El artículo se crea con `published_at` = la fecha real de la noticia (`NewsCluster::earliestPublishedAt()`), no la fecha en que se aceptó — así una noticia de hace un mes no aparece fechada como si fuera de hoy.
+- `save()` — actualiza el artículo: recalcula el slug único (`Str::slug`) solo si el slug cambió, sincroniza tags (`firstOrCreate` por slug de tag). `published_at` se conserva siempre (ya no se pisa con `null` al guardar como borrador — antes de este ajuste, guardar un borrador borraba la fecha original precargada); solo se autocompleta con `now()` si estaba vacío y el estado pasa a `published`.
 
 ### El prompt de generación (traducción + redacción + formato)
 
@@ -100,12 +102,15 @@ El frontend (`use-media-library.ts`) no usa `useHttp` para estas llamadas — co
 
 ```
 resources/js/pages/admin/news-review/
-├── index.tsx                       bandeja ordenada por relevancia + alerta si no hay fuentes activas
+├── index.tsx                       tabla compacta + selector de orden + Analizar con IA + alerta si no hay fuentes activas
 ├── components/
 │   ├── run-scraper-button.tsx      dispara el scraping (useHttp, como "Probar conexión"), soporta `disabled`
-│   └── news-cluster-card.tsx       tema + fuentes + Aceptar/Descartar, o badge "Ya en la página" + Editar si ya fue aceptado
+│   ├── analyze-with-ai-button.tsx  dispara el análisis en lote
+│   ├── news-review-sort-select.tsx cambia ?sort= vía router.get
+│   └── news-cluster-row.tsx        fila de tabla: tema + fuentes + badge IA/estado + Aceptar/Descartar, o "Ya en la página" + Editar si ya fue aceptado
 └── hooks/
     ├── use-run-scraper.ts          lanza error si sources_scraped === 0 (sin fuentes activas)
+    ├── use-analyze-with-ai.ts      lanza error si viene `error` en la respuesta
     ├── use-accept-news-cluster.ts
     └── use-reject-news-cluster.ts
 

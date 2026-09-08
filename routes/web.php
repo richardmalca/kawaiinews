@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
 
             Route::get('news-review', [NewsReviewController::class, 'index'])->name('news-review.index');
             Route::post('news-review/scrape', [NewsReviewController::class, 'scrape'])->name('news-review.scrape');
+            Route::post('news-review/analyze', [NewsReviewController::class, 'analyze'])->name('news-review.analyze');
             Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])->name('news-review.accept');
             Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
 

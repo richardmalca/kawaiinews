@@ -11,6 +11,7 @@ use App\Services\NewsClusterService;
 use App\Services\NewsScraperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,11 +23,14 @@ class NewsReviewController extends Controller
         private readonly NewsArticleService $newsArticleService,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $sort = $request->string('sort', 'relevance')->value();
+
         return Inertia::render('admin/news-review/index', [
-            'clusters' => NewsClusterResource::collection($this->newsClusterService->reviewQueue())->resolve(),
+            'clusters' => NewsClusterResource::collection($this->newsClusterService->reviewQueue($sort))->resolve(),
             'hasActiveSources' => $this->hasScrapableSources(),
+            'sort' => $sort,
         ]);
     }
 
@@ -44,6 +48,11 @@ class NewsReviewController extends Controller
         $result = $this->newsScraperService->run();
 
         return response()->json($result);
+    }
+
+    public function analyze(): JsonResponse
+    {
+        return response()->json($this->newsClusterService->analyzeWithAi());
     }
 
     private function hasScrapableSources(): bool

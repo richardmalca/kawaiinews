@@ -25,6 +25,7 @@ class NewsArticleService
             'body' => $draft['body'],
             'featured_image' => $newsCluster->image_url,
             'status' => 'draft',
+            'published_at' => $newsCluster->earliestPublishedAt(),
         ]);
     }
 
@@ -50,7 +51,9 @@ class NewsArticleService
             'body' => $data['body'] ?? null,
             'featured_image' => $data['featured_image'] ?? null,
             'status' => $data['status'],
-            'published_at' => $data['status'] === 'published' ? ($newsArticle->published_at ?? now()) : null,
+            'published_at' => $data['status'] === 'published'
+                ? ($newsArticle->published_at ?? now())
+                : $newsArticle->published_at,
         ]);
 
         $newsArticle->save();

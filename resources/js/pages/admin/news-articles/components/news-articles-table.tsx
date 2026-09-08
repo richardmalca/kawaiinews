@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { ImageOff, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -32,6 +32,7 @@ export default function NewsArticlesTable({ articles }: Props) {
         <Table>
             <TableHeader>
                 <TableRow>
+                    <TableHead className="w-12"></TableHead>
                     <TableHead>Título</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Estado</TableHead>
@@ -42,31 +43,46 @@ export default function NewsArticlesTable({ articles }: Props) {
             <TableBody>
                 {articles.map((article) => (
                     <TableRow key={article.id}>
-                        <TableCell className="max-w-xs truncate font-medium">
+                        <TableCell className="py-1.5">
+                            {article.featured_image ? (
+                                <img
+                                    src={article.featured_image}
+                                    alt=""
+                                    className="border-input h-8 w-8 border object-cover"
+                                />
+                            ) : (
+                                <div className="bg-muted text-muted-foreground flex h-8 w-8 items-center justify-center border border-input">
+                                    <ImageOff className="h-3.5 w-3.5" />
+                                </div>
+                            )}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate py-1.5 font-medium">
                             {article.title}
                         </TableCell>
-                        <TableCell className="capitalize">
+                        <TableCell className="py-1.5 capitalize">
                             {article.category}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-1.5">
                             <NewsArticleStatusBadge status={article.status} />
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground py-1.5 text-xs">
                             {article.created_at}
                         </TableCell>
-                        <TableCell className="flex justify-end gap-1">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                            >
-                                <Link href={edit(article.id).url}>
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Editar</span>
-                                </Link>
-                            </Button>
-                            <DeleteNewsArticleDialog article={article} />
+                        <TableCell className="py-1.5">
+                            <div className="flex justify-end gap-1">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    asChild
+                                >
+                                    <Link href={edit(article.id).url}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Editar</span>
+                                    </Link>
+                                </Button>
+                                <DeleteNewsArticleDialog article={article} />
+                            </div>
                         </TableCell>
                     </TableRow>
                 ))}

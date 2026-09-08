@@ -17,10 +17,12 @@ use Illuminate\Support\Carbon;
  * @property int $sources_count
  * @property float $relevance_score
  * @property string $status
+ * @property string|null $ai_verdict
+ * @property string|null $ai_reason
  * @property Carbon $first_seen_at
  * @property Carbon $last_seen_at
  */
-#[Fillable(['title', 'category', 'summary', 'image_url', 'sources_count', 'relevance_score', 'status', 'first_seen_at', 'last_seen_at'])]
+#[Fillable(['title', 'category', 'summary', 'image_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'first_seen_at', 'last_seen_at'])]
 class NewsCluster extends Model
 {
     /**
@@ -49,5 +51,15 @@ class NewsCluster extends Model
     public function isPending(): bool
     {
         return $this->status === 'pending';
+    }
+
+    public function earliestPublishedAt(): ?Carbon
+    {
+        $earliest = $this->scrapedItems
+            ->pluck('published_at')
+            ->filter()
+            ->min();
+
+        return $earliest ? Carbon::instance($earliest) : null;
     }
 }
