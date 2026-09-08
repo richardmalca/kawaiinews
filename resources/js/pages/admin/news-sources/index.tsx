@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import NewsSourceBulkActions from '@/pages/admin/news-sources/components/news-source-bulk-actions';
 import NewsSourceCategoryCard from '@/pages/admin/news-sources/components/news-source-category-card';
 import NewsSourceSummary from '@/pages/admin/news-sources/components/news-source-summary';
 import type {
@@ -18,10 +19,13 @@ export default function NewsSourcesIndex({ groups, summary }: Props) {
             <Head title="Fuentes de noticias" />
 
             <div className="space-y-8 p-4">
-                <Heading
-                    title="Fuentes de noticias"
-                    description="Activa los sitios que se usarán para obtener noticias de anime, manga, geek, gaming, Japón y películas"
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title="Fuentes de noticias"
+                        description="Activa los sitios que se usarán para obtener noticias de anime, manga, geek, gaming, Japón y películas"
+                    />
+                    <NewsSourceBulkActions />
+                </div>
 
                 <NewsSourceSummary summary={summary} />
 

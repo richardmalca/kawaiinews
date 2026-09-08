@@ -31,6 +31,10 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->only(['index', 'update', 'destroy']);
             Route::post('news-sources/{newsSource}/toggle', [NewsSourceController::class, 'toggle'])
                 ->name('news-sources.toggle');
+            Route::post('news-sources/activate-all', [NewsSourceController::class, 'activateAll'])
+                ->name('news-sources.activate-all');
+            Route::post('news-sources/deactivate-all', [NewsSourceController::class, 'deactivateAll'])
+                ->name('news-sources.deactivate-all');
         });
     });
 

@@ -31,6 +31,16 @@ class NewsSourceService
         $newsSource->delete();
     }
 
+    public function activateAll(): void
+    {
+        NewsSource::query()->update(['is_active' => true]);
+    }
+
+    public function deactivateAll(): void
+    {
+        NewsSource::query()->update(['is_active' => false]);
+    }
+
     public function groupedByCategory(): array
     {
         $categories = config('news_sources_catalog');

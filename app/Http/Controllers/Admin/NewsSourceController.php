@@ -46,6 +46,20 @@ class NewsSourceController extends Controller
         return to_route('admin.news-sources.index');
     }
 
+    public function activateAll(): RedirectResponse
+    {
+        $this->newsSourceService->activateAll();
+
+        return to_route('admin.news-sources.index');
+    }
+
+    public function deactivateAll(): RedirectResponse
+    {
+        $this->newsSourceService->deactivateAll();
+
+        return to_route('admin.news-sources.index');
+    }
+
     public function destroy(NewsSource $newsSource): RedirectResponse
     {
         $this->newsSourceService->delete($newsSource);
