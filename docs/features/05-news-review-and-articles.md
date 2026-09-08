@@ -59,6 +59,8 @@ El prompt le pide explícitamente al modelo:
 
 Layout de dos columnas estilo WordPress: contenido principal a la izquierda (título grande, permalink editable, resumen, editor de bloques) y un sidebar a la derecha con una card por control de publicación (Estado, Categoría, Etiquetas, Imagen destacada). El botón "Guardar" vive en el header de la página, no hay que scrollear para encontrarlo.
 
+En pantallas chicas (debajo de `lg`) el sidebar no apila las 4 cards en una sola columna a ancho completo (se veían gigantes en mobile) — usa `grid grid-cols-2` para que Estado+Categoría y Etiquetas+Imagen destacada queden de a pares, y vuelve a una sola columna (`lg:grid-cols-1`) en desktop donde ya hay espacio de sobra al lado del contenido.
+
 - **Título** — `<input>` grande sin borde de caja (estilo H1), no un `Input` de formulario genérico.
 - **Slug** — `ArticlePermalinkField`: se muestra como texto `/noticias/{slug}` (como el permalink de WordPress), con un botón "Editar" que lo convierte en un campo editable al click; se autogenera del título mientras no se toque a mano (`useArticleSlug`).
 - **Estado** — `ArticleStatusToggle`: `ToggleGroup` de 2 opciones (Borrador/Publicada) en vez de un `<select>`, porque con solo 2 valores un desplegable es fricción de más.
@@ -86,6 +88,9 @@ Modal (`MediaLibraryDialog`) reutilizable para elegir la imagen destacada de una
 - Grid de imágenes ya guardadas (`Media::orderByDesc('id')`), click para seleccionar y cerrar el modal.
 - **Subir archivo** — sube al disco `public` (`Storage::disk('public')`, requiere `php artisan storage:link`), crea un registro `Media` con `source = 'upload'`.
 - **Agregar por URL** — no descarga el archivo, solo registra la URL externa como `source = 'url'` para que quede en la biblioteca y sea reutilizable en otras noticias.
+- **Generar con IA** — `source = 'ai'`. Usa `Prism::image()`, que a diferencia de `Prism::text()` **no lo soporta cualquier proveedor**: solo OpenAI (`dall-e-3`) y Gemini (`imagen-4`) generan imágenes. `MediaLibraryService::generateWithAi()` busca el primer `AiProvider` configurado con `provider` en `['openai', 'gemini']` (no necesariamente el "activo" para texto — Anthropic, el proveedor activo por defecto en este proyecto, no genera imágenes) y usa un modelo de imagen fijo por proveedor (no el `default_model` del proveedor, que es un modelo de texto). Si no hay ninguno configurado, lanza un error claro en vez de fallar silenciosamente: "No hay un proveedor con soporte de imágenes configurado (OpenAI o Gemini)."
+  - **No hay campo de texto libre para el prompt.** El botón "Generar con IA a partir de la noticia" arma el prompt automáticamente en `edit.tsx` a partir de `title` + `excerpt` + el `body` sin tags HTML (`aiImagePrompt`), y solo se habilita cuando los tres campos están completos (`isContentComplete`) — así la imagen generada siempre corresponde al contenido real de la noticia, no a lo que el usuario tipeó aparte. Si falta algo, el botón queda deshabilitado con un `title` explicando qué falta.
+- Al borrar (`delete()`), si la URL apunta al disco `public` local (subida o generada con IA en base64) también borra el archivo físico; si es una URL externa (agregada por URL, o generada por un proveedor que devuelve URL en vez de base64) solo borra el registro.
 
 `app/Services/MediaLibraryService.php` centraliza `list()`, `storeUpload()`, `storeFromUrl()`, `delete()` (borra también el archivo físico si `source === 'upload'`).
 

@@ -54,6 +54,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
             Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');
             Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
+            Route::post('media/generate', [MediaLibraryController::class, 'generate'])->name('media.generate');
             Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
         });
     });

@@ -1,4 +1,4 @@
-import { ImagePlus, Link2, Upload } from 'lucide-react';
+import { ImagePlus, Link2, Sparkles, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,14 +17,26 @@ import { cn } from '@/lib/utils';
 type Props = {
     onSelect: (url: string) => void;
     trigger: React.ReactNode;
+    aiPrompt?: string | null;
 };
 
-export default function MediaLibraryDialog({ onSelect, trigger }: Props) {
+export default function MediaLibraryDialog({
+    onSelect,
+    trigger,
+    aiPrompt = null,
+}: Props) {
     const [open, setOpen] = useState(false);
     const [urlInput, setUrlInput] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { items, loading, uploading, loadItems, uploadFile, addFromUrl } =
-        useMediaLibrary();
+    const {
+        items,
+        loading,
+        uploading,
+        loadItems,
+        uploadFile,
+        addFromUrl,
+        generateWithAi,
+    } = useMediaLibrary();
 
     const handleOpenChange = (nextOpen: boolean) => {
         setOpen(nextOpen);
@@ -70,6 +82,18 @@ export default function MediaLibraryDialog({ onSelect, trigger }: Props) {
         }
     };
 
+    const handleGenerate = async () => {
+        if (!aiPrompt) {
+            return;
+        }
+
+        const media = await generateWithAi(aiPrompt);
+
+        if (media) {
+            handlePick(media.url);
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -77,8 +101,8 @@ export default function MediaLibraryDialog({ onSelect, trigger }: Props) {
                 <DialogHeader>
                     <DialogTitle>Biblioteca de medios</DialogTitle>
                     <DialogDescription>
-                        Elegí una imagen ya subida, subí una nueva o agregala
-                        desde una URL
+                        Elegí una imagen ya subida, subí una nueva, agregala
+                        desde una URL o generala con IA a partir de la noticia
                     </DialogDescription>
                 </DialogHeader>
 
@@ -120,7 +144,30 @@ export default function MediaLibraryDialog({ onSelect, trigger }: Props) {
                             Agregar
                         </Button>
                     </div>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploading || !aiPrompt}
+                        title={
+                            aiPrompt
+                                ? undefined
+                                : 'Completá título, resumen y contenido para generar una imagen con IA'
+                        }
+                        onClick={handleGenerate}
+                    >
+                        {uploading ? <Spinner /> : <Sparkles />}
+                        Generar con IA a partir de la noticia
+                    </Button>
                 </div>
+
+                {!aiPrompt && (
+                    <p className="text-muted-foreground text-xs">
+                        Completá título, resumen y contenido de la noticia para
+                        poder generar una imagen con IA basada en ese texto.
+                    </p>
+                )}
 
                 <div className="max-h-[32rem] overflow-y-auto">
                     {loading && (

@@ -101,5 +101,5 @@ export type MediaItem = {
     id: number;
     url: string;
     original_name: string | null;
-    source: 'upload' | 'url';
+    source: 'upload' | 'url' | 'ai';
 };

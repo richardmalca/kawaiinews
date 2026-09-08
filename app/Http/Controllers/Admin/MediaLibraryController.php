@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\GenerateMediaRequest;
 use App\Http\Requests\Admin\StoreMediaFromUrlRequest;
 use App\Http\Requests\Admin\StoreMediaUploadRequest;
 use App\Http\Resources\MediaResource;
@@ -10,6 +11,7 @@ use App\Models\Media;
 use App\Services\MediaLibraryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Throwable;
 
 class MediaLibraryController extends Controller
 {
@@ -34,6 +36,17 @@ class MediaLibraryController extends Controller
         $media = $this->mediaLibraryService->storeFromUrl($request->validated('url'));
 
         return response()->json((new MediaResource($media))->resolve());
+    }
+
+    public function generate(GenerateMediaRequest $request): JsonResponse
+    {
+        try {
+            $media = $this->mediaLibraryService->generateWithAi($request->validated('prompt'));
+
+            return response()->json((new MediaResource($media))->resolve());
+        } catch (Throwable $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
     }
 
     public function destroy(Media $media): RedirectResponse

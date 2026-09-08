@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { index, store, storeFromUrl } from '@/routes/admin/media';
+import { generate, index, store, storeFromUrl } from '@/routes/admin/media';
 import type { MediaItem } from '@/types/admin';
 
 function readCsrfToken(): string {
@@ -97,5 +97,51 @@ export function useMediaLibrary() {
         }
     };
 
-    return { items, loading, uploading, loadItems, uploadFile, addFromUrl };
+    const generateWithAi = async (prompt: string) => {
+        setUploading(true);
+
+        try {
+            const response = await fetch(generate().url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': readCsrfToken(),
+                },
+                body: JSON.stringify({ prompt }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message ?? 'No se pudo generar la imagen');
+            }
+
+            const media = data as MediaItem;
+            setItems((current) => [media, ...current]);
+            toast.success('Imagen generada con IA');
+
+            return media;
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo generar la imagen',
+            );
+            return null;
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return {
+        items,
+        loading,
+        uploading,
+        loadItems,
+        uploadFile,
+        addFromUrl,
+        generateWithAi,
+    };
 }

@@ -35,6 +35,7 @@ export default function NewsArticleEdit({
     const [category, setCategory] = useState(article.category);
     const [status, setStatus] = useState<NewsArticle['status']>(article.status);
     const [tags, setTags] = useState<string[]>(article.tags);
+    const [excerpt, setExcerpt] = useState(article.excerpt ?? '');
     const [body, setBody] = useState(article.body ?? '');
     const [featuredImage, setFeaturedImage] = useState(
         article.featured_image ?? '',
@@ -44,16 +45,25 @@ export default function NewsArticleEdit({
         article.slug,
     );
 
+    const plainBody = body
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const isContentComplete = Boolean(
+        title.trim() && excerpt.trim() && plainBody,
+    );
+    const aiImagePrompt = isContentComplete
+        ? `Ilustración editorial para una noticia titulada "${title}". Resumen: ${excerpt}. Contexto: ${plainBody.slice(0, 500)}`
+        : null;
+
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        const formData = new FormData(event.currentTarget);
 
         saveArticle(article.id, {
             title,
             slug,
             category,
-            excerpt: formData.get('excerpt') as string,
+            excerpt,
             body,
             featured_image: featuredImage,
             status,
@@ -122,7 +132,10 @@ export default function NewsArticleEdit({
                                             name="excerpt"
                                             rows={2}
                                             placeholder="Un par de oraciones que resuman la noticia..."
-                                            defaultValue={article.excerpt ?? ''}
+                                            value={excerpt}
+                                            onChange={(event) =>
+                                                setExcerpt(event.target.value)
+                                            }
                                         />
                                         <InputError message={errors.excerpt} />
                                     </div>
@@ -145,7 +158,7 @@ export default function NewsArticleEdit({
                             </Card>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1 lg:gap-6">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium">
@@ -209,6 +222,7 @@ export default function NewsArticleEdit({
                                             <div className="flex gap-2">
                                                 <MediaLibraryDialog
                                                     onSelect={setFeaturedImage}
+                                                    aiPrompt={aiImagePrompt}
                                                     trigger={
                                                         <Button
                                                             type="button"
@@ -236,6 +250,7 @@ export default function NewsArticleEdit({
                                     ) : (
                                         <MediaLibraryDialog
                                             onSelect={setFeaturedImage}
+                                            aiPrompt={aiImagePrompt}
                                             trigger={
                                                 <Button
                                                     type="button"
