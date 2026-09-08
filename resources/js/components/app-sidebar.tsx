@@ -23,7 +23,7 @@ export function AppSidebar() {
     const isSuperadmin = auth.user?.roles.includes('superadmin');
     const canManageUsers = isSuperadmin || auth.user?.roles.includes('admin');
 
-    const mainNavItems: NavItem[] = [
+    const platformNavItems: NavItem[] = [
         {
             title: 'Panel',
             href: dashboard(),
@@ -38,21 +38,24 @@ export function AppSidebar() {
                   },
               ]
             : []),
-        ...(isSuperadmin
-            ? [
-                  {
-                      title: 'Modelo de IA',
-                      href: aiProvidersIndex(),
-                      icon: BrainCircuit,
-                  },
-                  {
-                      title: 'Fuentes de noticias',
-                      href: newsSourcesIndex(),
-                      icon: Rss,
-                  },
-              ]
-            : []),
     ];
+
+    const externalServicesNavItems: NavItem[] = isSuperadmin
+        ? [
+              {
+                  title: 'Modelo de IA',
+                  href: aiProvidersIndex(),
+                  icon: BrainCircuit,
+              },
+              {
+                  title: 'Fuentes de noticias',
+                  href: newsSourcesIndex(),
+                  icon: Rss,
+              },
+          ]
+        : [];
+
+    const maintenanceNavItems: NavItem[] = [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -69,7 +72,12 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain label="Plataforma" items={platformNavItems} />
+                <NavMain
+                    label="Servicios externos"
+                    items={externalServicesNavItems}
+                />
+                <NavMain label="Mantenimiento" items={maintenanceNavItems} />
             </SidebarContent>
 
             <SidebarFooter>
