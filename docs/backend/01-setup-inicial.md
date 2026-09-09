@@ -85,6 +85,12 @@ Para agregar un grupo nuevo: crear el array de items correspondiente en `AppSide
 - El puerto de cada proyecto se controla con `APP_URL` + `SERVER_PORT` en su `.env`.
 - El `.env` de subproyectos puede estar bloqueado para Read/Edit directo por permisos; en PowerShell usar `[System.IO.File]::ReadAllText/WriteAllText`.
 
+## Migrar de SQLite a MySQL sin perder datos
+
+`php artisan db:copy-sqlite-to-mysql` (`App\Console\Commands\CopySqliteToMysqlCommand`) — comando de una sola vez, no forma parte del deploy normal. Copia todas las tablas de datos reales (`users`, `roles`, `ai_providers`, `news_sources`, `news_clusters`, `scraped_items`, `tags`, `media`, `news_articles`, `shares`, `favorites`, `likes`, pivotes de Spatie Permission) desde un `database.sqlite` viejo a la conexión `mysql` ya configurada en `.env`, **preservando los IDs originales** (necesario para no romper relaciones como `news_articles.author_id`) y reseteando el `AUTO_INCREMENT` de cada tabla a `MAX(id)+1` al terminar. Tablas transitorias (`cache`, `cache_locks`, `sessions`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `migrations`) se saltan a propósito. El archivo `.sqlite` nunca se toca ni se borra.
+
+Requiere correr `php artisan migrate` contra `mysql` primero (para tener el esquema creado). Soporta `--dry-run` (solo muestra qué copiaría) y `--sqlite-path=` (default `database/database.sqlite`); si una tabla ya tiene filas en mysql, la salta para no duplicar (así se puede re-correr sin drama).
+
 ## Siguientes documentos
 
 - [02-admin-users.md](02-admin-users.md) — gestión de usuarios + redirect post-login por rol.
