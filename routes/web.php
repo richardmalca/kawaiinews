@@ -63,6 +63,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('ai-providers/{aiProvider}/activate', [AiProviderController::class, 'activate'])
                 ->name('ai-providers.activate');
             Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])
+                ->middleware('throttle:ai-costly')
                 ->name('ai-providers.test');
 
             Route::resource('news-sources', NewsSourceController::class)
@@ -80,10 +81,16 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
 
             Route::get('news-review', [NewsReviewController::class, 'index'])->name('news-review.index');
             Route::post('news-review/scrape', [NewsReviewController::class, 'scrape'])->name('news-review.scrape');
-            Route::post('news-review/analyze', [NewsReviewController::class, 'analyze'])->name('news-review.analyze');
-            Route::post('news-review/apply-ai-verdicts', [NewsReviewController::class, 'applyAiVerdicts'])->name('news-review.apply-ai-verdicts');
+            Route::post('news-review/analyze', [NewsReviewController::class, 'analyze'])
+                ->middleware('throttle:ai-costly')
+                ->name('news-review.analyze');
+            Route::post('news-review/apply-ai-verdicts', [NewsReviewController::class, 'applyAiVerdicts'])
+                ->middleware('throttle:ai-costly')
+                ->name('news-review.apply-ai-verdicts');
             Route::get('news-review/runs/{runId}', [NewsReviewController::class, 'runStatus'])->name('news-review.run-status');
-            Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])->name('news-review.accept');
+            Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])
+                ->middleware('throttle:ai-costly')
+                ->name('news-review.accept');
             Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
 
             Route::resource('news-articles', NewsArticleController::class)
@@ -94,13 +101,17 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
             Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');
             Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
-            Route::post('media/generate', [MediaLibraryController::class, 'generate'])->name('media.generate');
+            Route::post('media/generate', [MediaLibraryController::class, 'generate'])
+                ->middleware('throttle:ai-costly')
+                ->name('media.generate');
             Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
 
             Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');
             Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
             Route::post('audio', [MediaLibraryController::class, 'storeAudio'])->name('audio.store');
-            Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])->name('news-articles.audio.generate');
+            Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])
+                ->middleware('throttle:ai-costly')
+                ->name('news-articles.audio.generate');
 
             Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
         });

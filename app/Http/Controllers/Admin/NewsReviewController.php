@@ -30,21 +30,19 @@ class NewsReviewController extends Controller
         $category = $request->string('category')->value() ?: null;
         $page = max(1, $request->integer('page', 1));
 
-        $clusters = $this->newsClusterService->reviewQueue($sort, $category);
-        $total = $clusters->count();
-        $items = $clusters->forPage($page, self::PER_PAGE)->values();
+        $clusters = $this->newsClusterService->reviewQueue($sort, $category, self::PER_PAGE, $page);
 
         return Inertia::render('admin/news-review/index', [
-            'clusters' => NewsClusterResource::collection($items)->resolve(),
+            'clusters' => NewsClusterResource::collection($clusters->items())->resolve(),
             'hasActiveSources' => $this->hasScrapableSources(),
             'hasPublishVerdicts' => NewsCluster::where('status', 'pending')->where('ai_verdict', 'publish')->exists(),
             'sort' => $sort,
             'category' => $category,
             'categories' => array_keys(config('news_sources_catalog')),
             'meta' => [
-                'current_page' => $page,
-                'last_page' => max(1, (int) ceil($total / self::PER_PAGE)),
-                'total' => $total,
+                'current_page' => $clusters->currentPage(),
+                'last_page' => $clusters->lastPage(),
+                'total' => $clusters->total(),
             ],
         ]);
     }

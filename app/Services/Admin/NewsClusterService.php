@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\AiProvider;
 use App\Models\NewsCluster;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
@@ -13,18 +14,33 @@ class NewsClusterService
 {
     public function __construct(private readonly NewsArticleService $newsArticleService) {}
 
-    public function reviewQueue(string $sort = 'relevance', ?string $category = null): Collection
-    {
-        $clusters = NewsCluster::whereIn('status', ['pending', 'accepted'])
-            ->when($category, fn ($query) => $query->where('category', $category))
-            ->with(['scrapedItems.newsSource', 'article'])
-            ->get();
+    /**
+     * Subquery correlacionada (no un JOIN + GROUP BY) para que funcione
+     * igual en SQLite/MySQL/Postgres sin depender de reglas de GROUP BY
+     * distintas por motor.
+     */
+    private const EARLIEST_PUBLISHED_AT_SQL = '(select min(published_at) from scraped_items where scraped_items.news_cluster_id = news_clusters.id)';
 
-        return match ($sort) {
-            'newest' => $clusters->sortByDesc(fn (NewsCluster $cluster) => $cluster->earliestPublishedAt() ?? $cluster->first_seen_at)->values(),
-            'oldest' => $clusters->sortBy(fn (NewsCluster $cluster) => $cluster->earliestPublishedAt() ?? $cluster->first_seen_at)->values(),
-            default => $clusters->sortByDesc('relevance_score')->values(),
+    /**
+     * Antes traía TODOS los clusters pending/accepted a memoria y paginaba
+     * con Collection::forPage() en PHP — sin límite en la base, así que
+     * crecía sin parar con cada scraping. Ahora pagina en SQL.
+     */
+    public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1): LengthAwarePaginator
+    {
+        $query = NewsCluster::query()
+            ->selectRaw('news_clusters.*, '.self::EARLIEST_PUBLISHED_AT_SQL.' as earliest_published_at')
+            ->whereIn('status', ['pending', 'accepted'])
+            ->when($category, fn ($q) => $q->where('category', $category))
+            ->with(['scrapedItems.newsSource', 'article']);
+
+        match ($sort) {
+            'newest' => $query->orderByRaw('coalesce('.self::EARLIEST_PUBLISHED_AT_SQL.', first_seen_at) desc'),
+            'oldest' => $query->orderByRaw('coalesce('.self::EARLIEST_PUBLISHED_AT_SQL.', first_seen_at) asc'),
+            default => $query->orderByDesc('relevance_score'),
         };
+
+        return $query->paginate($perPage, page: $page);
     }
 
     public function reject(NewsCluster $newsCluster): void

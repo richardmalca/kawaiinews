@@ -67,3 +67,5 @@ Hay dos niveles de activación masiva: los botones de arriba de la página afect
 
 - `last_scraped_at` se setea automáticamente por `NewsScraperService::run()` (fase 5) cada vez que el scraper procesa esa fuente, sin importar si encontró noticias nuevas o no.
 - Antes de correr el scraper desde `/admin/news-review`, esa página valida que exista al menos una fuente activa con `rss_url` — si no hay ninguna, muestra una alerta y bloquea el botón (ver [05-news-review-and-articles.md](05-news-review-and-articles.md)).
+- Este controlador no tiene rate limit propio (no llama a un proveedor de IA, no cuesta dinero real). El limitador `ai-costly` (`AppServiceProvider::configureRateLimiting()`, 10 por minuto por usuario) sí aplica a `news-review.analyze`, `news-review.apply-ai-verdicts`, `news-review.accept`, `media.generate`, `news-articles.audio.generate` y `ai-providers.test` — todo lo que efectivamente le pega a un modelo de IA.
+- Tests en `tests/Feature/Admin/NewsSourceControllerTest.php`.

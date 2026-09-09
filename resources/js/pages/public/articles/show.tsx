@@ -16,6 +16,8 @@ import {
     Plus,
 } from 'lucide-react';
 import { useState } from 'react';
+import { ArticleActionsPanel } from './components/article-actions-panel';
+import { ArticleMobileDock } from './components/article-mobile-dock';
 import { ArticleContent } from './components/article-content';
 import { ArticleHeader } from './components/article-header';
 import { ArticleMetaFooter } from './components/article-meta-footer';
@@ -242,8 +244,23 @@ export default function ShowArticle({
                 {!focusMode && (
                     <aside
                         id="tendencias"
-                        className="scroll-mt-24 space-y-6 transition-all duration-300 lg:sticky lg:top-32 lg:col-span-4"
+                        className="scroll-mt-24 space-y-6 transition-all duration-300 lg:sticky lg:top-24 lg:col-span-4"
                     >
+                        <ArticleActionsPanel
+                            liked={liked}
+                            likersCount={likersCount}
+                            favorited={favorited}
+                            isLiking={isLiking}
+                            isFavoriting={isFavoriting}
+                            fontSize={fontSize}
+                            copiedText={copiedText}
+                            sharesCount={sharesCount}
+                            onToggleLike={toggleLike}
+                            onToggleFavorite={toggleFavorite}
+                            onCopyPlainText={handleCopyPlainText}
+                            setFontSize={setFontSize}
+                        />
+
                         {trending.data.length > 0 && (
                             <TrendingSidebar articles={trending.data} />
                         )}
@@ -254,6 +271,20 @@ export default function ShowArticle({
             <div className="mt-16">
                 <RelatedArticles articles={related.data} />
             </div>
+
+            <ArticleMobileDock
+                liked={liked}
+                likersCount={likersCount}
+                favorited={favorited}
+                isLiking={isLiking}
+                isFavoriting={isFavoriting}
+                fontSize={fontSize}
+                copiedText={copiedText}
+                onToggleLike={toggleLike}
+                onToggleFavorite={toggleFavorite}
+                onCopyPlainText={handleCopyPlainText}
+                setFontSize={setFontSize}
+            />
 
             <LoginDialog
                 open={isLoginOpen}

@@ -117,3 +117,23 @@ test('a lower ranked role cannot trigger these ai jobs', function () {
         ->postJson(route('admin.news-articles.audio.generate', $article))
         ->assertForbidden();
 });
+
+test('generating images gets rate limited after 10 requests per minute', function () {
+    Storage::fake('public');
+
+    AiProvider::factory()->create([
+        'provider' => 'openai',
+        'api_key' => 'test-key',
+        'is_active_for_images' => true,
+    ]);
+
+    Prism::fake([ImageResponseFake::make()]);
+
+    for ($i = 0; $i < 10; $i++) {
+        $this->postJson(route('admin.media.generate'), ['prompt' => "intento {$i}"])
+            ->assertOk();
+    }
+
+    $this->postJson(route('admin.media.generate'), ['prompt' => 'intento 11'])
+        ->assertStatus(429);
+});

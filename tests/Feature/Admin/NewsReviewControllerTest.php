@@ -37,3 +37,22 @@ test('review queue can be filtered by category', function () {
         ->where('category', 'gaming')
     );
 });
+
+test('review queue can be sorted by newest and oldest, falling back to first_seen_at without scraped items', function () {
+    $old = NewsCluster::factory()->create([
+        'status' => 'pending',
+        'title' => 'Cluster viejo',
+        'first_seen_at' => now()->subDays(5),
+    ]);
+    $new = NewsCluster::factory()->create([
+        'status' => 'pending',
+        'title' => 'Cluster nuevo',
+        'first_seen_at' => now(),
+    ]);
+
+    $this->get(route('admin.news-review.index', ['sort' => 'newest']))
+        ->assertInertia(fn ($page) => $page->where('clusters.0.id', $new->id));
+
+    $this->get(route('admin.news-review.index', ['sort' => 'oldest']))
+        ->assertInertia(fn ($page) => $page->where('clusters.0.id', $old->id));
+});
