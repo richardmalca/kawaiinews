@@ -147,3 +147,49 @@ export type MediaItem = {
     created_at?: string | null;
     created_at_formatted?: string | null;
 };
+
+export type DashboardSummary = {
+    users: {
+        total: number;
+        new_today: number;
+        new_this_week: number;
+    };
+    views: {
+        total: number;
+        today: number;
+        this_week: number;
+    };
+    reactions_today: number;
+    shares_today: number;
+    articles: {
+        published: number;
+        drafts: number;
+    };
+};
+
+export type DashboardTimelinePoint = {
+    date: string;
+    views: number;
+    users: number;
+    reactions: number;
+    shares: number;
+};
+
+export type DashboardTopArticle = {
+    id: number;
+    title: string;
+    slug: string;
+    category: string;
+    views: number;
+    likes: number;
+    favorites: number;
+    shares: number;
+};
+
+export type DashboardCategoryStat = {
+    category: string;
+    label: string;
+    articles: number;
+    views: number;
+    likes: number;
+};

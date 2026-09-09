@@ -82,10 +82,32 @@ class ArticleViewService
                 ->where('id', $articleId)
                 ->increment('views_count', $count);
 
+            $this->incrementDailyViews($articleId, $count);
+
             $flushed++;
         }
 
         return $flushed;
+    }
+
+    private function incrementDailyViews(int $articleId, int $count): void
+    {
+        $today = now()->toDateString();
+
+        $updated = DB::table('article_view_daily')
+            ->where('news_article_id', $articleId)
+            ->where('date', $today)
+            ->increment('views', $count);
+
+        if ($updated === 0) {
+            DB::table('article_view_daily')->insert([
+                'news_article_id' => $articleId,
+                'date' => $today,
+                'views' => $count,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     private function markPending(int $articleId): void

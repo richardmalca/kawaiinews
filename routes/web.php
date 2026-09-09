@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController;
 use App\Http\Controllers\Admin\JobRunController;
 use App\Http\Controllers\Admin\MediaLibraryController;
@@ -61,7 +62,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::inertia('/', 'admin/dashboard')->name('dashboard');
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::middleware('role:superadmin|admin')->group(function () {
             Route::resource('users', UserController::class)

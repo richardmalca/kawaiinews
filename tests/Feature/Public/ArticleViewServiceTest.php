@@ -3,6 +3,7 @@
 use App\Models\NewsArticle;
 use App\Services\Public\ArticleViewService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     // El driver `array` (default de testing) auto-inicializa Cache::increment()
@@ -95,4 +96,41 @@ test('different viewers each count as a separate view', function () {
 
     $article->refresh();
     expect($article->views_count)->toBe(2);
+});
+
+test('flushing pending views also records the daily breakdown used by the dashboard', function () {
+    $article = NewsArticle::factory()->create(['views_count' => 0]);
+    $service = app(ArticleViewService::class);
+
+    foreach (['10.0.0.10', '10.0.0.11', '10.0.0.12'] as $ip) {
+        $service->record($article, Request::create('/', 'GET', server: [
+            'REMOTE_ADDR' => $ip,
+            'HTTP_USER_AGENT' => 'PestBrowser/1.0',
+        ]));
+    }
+
+    $service->flushPending();
+
+    $today = now()->toDateString();
+    $row = DB::table('article_view_daily')
+        ->where('news_article_id', $article->id)
+        ->where('date', $today)
+        ->first();
+
+    expect($row)->not->toBeNull()
+        ->and($row->views)->toBe(3);
+
+    // Un segundo flush el mismo día debe sumar, no pisar el valor.
+    $service->record($article, Request::create('/', 'GET', server: [
+        'REMOTE_ADDR' => '10.0.0.13',
+        'HTTP_USER_AGENT' => 'PestBrowser/1.0',
+    ]));
+    $service->flushPending();
+
+    $row = DB::table('article_view_daily')
+        ->where('news_article_id', $article->id)
+        ->where('date', $today)
+        ->first();
+
+    expect($row->views)->toBe(4);
 });
