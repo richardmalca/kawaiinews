@@ -28,6 +28,15 @@ class NewsArticleResource extends JsonResource
             'created_at' => $this->created_at?->diffForHumans(),
             'audio_url' => $this->audio_url,
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')->values()),
+            'author' => $this->whenLoaded('author', fn () => $this->author ? [
+                'id' => $this->author->id,
+                'name' => $this->author->name,
+                'username' => $this->author->username,
+            ] : null),
+            'likers_count' => (int) ($this->likers_count ?? $this->likers()->count()),
+            'shares_count' => (int) ($this->shares_count ?? $this->shares()->count()),
+            'has_liked' => $request->user() ? $request->user()->hasLiked($this->resource) : false,
+            'has_favorited' => $request->user() ? $request->user()->hasFavorited($this->resource) : false,
         ];
     }
 }

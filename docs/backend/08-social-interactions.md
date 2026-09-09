@@ -53,10 +53,27 @@ PATCH  perfil/{username}/ajustes        public.profile.settings.update
 DELETE perfil/{username}/ajustes        public.profile.settings.destroy
 ```
 
-## Pendiente (explícitamente fuera de esta fase)
+## Implementación Frontend Concluida
 
-- UI del perfil público, de `public/profile/settings/edit` y de `public/profile/settings/choose-username` (frontend público). Los nombres de ruta (`public.profile.settings.*`) quedaron en inglés como identificador interno; la URL real es en español (`/perfil/{username}/ajustes`).
-- Comentarios, moderación de noticias enviadas por usuarios no-editores, sistema de "subir noticia" público.
+- **Botones Interactivos en Lectura de Noticia** (`resources/js/pages/public/articles/`):
+    - `use-article-interactions.ts`: Hook para gestionar me gusta, favorito y compartir con actualización optimista y persistencia en backend con tokens CSRF.
+    - `show.tsx`: Botones integrados en la barra de herramientas superior con contadores en tiempo real (Likes, Guardar/Favorito).
+    - `share-buttons.tsx`: Registro automático de canal en el endpoint `/compartir` al pulsar en Twitter, WhatsApp, Telegram o Copiar Enlace, con badge del total de compartidos.
+    - `article-header.tsx`: Enlace público directo al perfil del autor si el artículo cuenta con `author_id`.
+- **Perfil Público de Usuario** (`resources/js/pages/public/profile/show.tsx`):
+    - Cabecera con avatar, banner con gradiente temático, rol de redactor e insignias.
+    - Contadores de seguidores, seguidos y noticias publicadas.
+    - Botón interactivo "Seguir" / "Siguiendo" con actualización instantánea.
+    - Sección de noticias compartidas recientemente respetando la privacidad `show_shares_on_profile`.
+- **Ajustes de Perfil y Cuenta** (`resources/js/pages/public/profile/settings/`):
+    - `edit.tsx`: Edición de nombre, @usuario, correo y checkbox de visibilidad de compartidos en el perfil, además de zona de eliminación de cuenta con confirmación de contraseña.
+    - `choose-username.tsx`: Pantalla guiada para usuarios nuevos autenticados para registrar su identificador único.
+    - Integración en el menú desplegable de usuario en el Navbar (`navbar.tsx`).
+
+## Pendiente (fuera de esta fase)
+
+- Comentarios y respuestas en noticias.
+- Moderación de noticias enviadas por usuarios de la comunidad.
 
 ## Testing
 

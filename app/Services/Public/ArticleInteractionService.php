@@ -33,12 +33,20 @@ class ArticleInteractionService
         ];
     }
 
-    public function recordShare(?User $user, NewsArticle $article, ?string $channel): Share
+    /**
+     * @return array{shared: bool, total_shares: int}
+     */
+    public function recordShare(?User $user, NewsArticle $article, ?string $channel): array
     {
-        return Share::create([
+        Share::create([
             'user_id' => $user?->id,
             'news_article_id' => $article->id,
             'channel' => $channel,
         ]);
+
+        return [
+            'shared' => true,
+            'total_shares' => $article->shares()->count(),
+        ];
     }
 }

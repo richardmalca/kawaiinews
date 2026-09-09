@@ -77,12 +77,47 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
     - Cabecera del formulario de edición en el panel administrativo (`resources/js/pages/admin/news-articles/edit.tsx`).
 - **Footer Responsivo**: Botones de redes sociales compactos (`32x32px`) en `share-buttons.tsx` y texto minimalista en `footer.tsx`.
 
-## 9. Pruebas Automatizadas
+## 10. Interacciones Sociales y Perfil Público
+ 
+- **Interacciones en Noticias** (`show.tsx`):
+    - **Me gusta (Like)**: Botón con icono de corazón y contador en tiempo real (`POST noticias/{slug}/me-gusta`).
+    - **Favoritos (Bookmark)**: Botón para guardar o retirar de favoritos (`POST noticias/{slug}/favorito`).
+    - **Compartir con Contador**: Registro dinámico de compartidos vía `POST noticias/{slug}/compartir` en Twitter, WhatsApp, Telegram o enlace copiado, con badge del total de compartidos en `share-buttons.tsx`.
+    - **Autoría y Enlace al Perfil**: La cabecera del artículo enlaza al perfil público del redactor (`/perfil/{username}`).
+- **Perfil Público de Usuario** (`/perfil/{username}`):
+    - Vista `resources/js/pages/public/profile/show.tsx` con banner estilizado, foto de perfil, rol de redactor y contadores de seguidores, seguidos y noticias publicadas.
+    - Botón interactivo de seguir/dejar de seguir (`POST perfil/{username}/seguir`).
+    - Cuadrícula de artículos compartidos (solo visible si el usuario habilitó `show_shares_on_profile`).
+- **Ajustes de Cuenta para Lectores** (`/perfil/{username}/ajustes` y `/perfil/mi-cuenta/ajustes`):
+    - Vista `resources/js/pages/public/profile/settings/edit.tsx` con formulario para editar nombre, nombre de usuario público, correo y privacidad de compartidos.
+    - Zona de peligro para eliminación permanente de cuenta con confirmación de contraseña.
+    - Vista `choose-username.tsx` para usuarios nuevos sin nombre de usuario asignado con validación y sanitización en vivo (`resources/js/lib/username-rules.ts`).
+    - Reglas de nombre de usuario: máximo 25 caracteres, minúsculas automáticas, sin espacios (conversión a guion bajo `_`), sin caracteres especiales ni puntos (`/^[a-zA-Z0-9_]+$/`).
+    - Detección automática y disparadores interactivos:
+        - `ChooseUsernameDialog` (`resources/js/components/public/choose-username-dialog.tsx`): diálogo modal con opción **"Hacer más tarde"** para postergarlo y seguir navegando sin bloqueos forzados.
+        - **Bloqueo con apertura inmediata**: Si el usuario omitió la configuración inicial ("Hacer más tarde") e intenta dar "Me gusta", guardar en "Favoritos" o entrar a su perfil, el modal se abre de inmediato exigiéndole completar su `@usuario` antes de ejecutar la acción.
+        - `UsernameRequiredBanner` (`resources/js/components/public/username-required-banner.tsx`): aviso superior persistente y discreto con botón interactivo para abrir el modal en cualquier momento.
+    - Acceso directo a "Mi perfil público" y "Ajustes de cuenta" desde el menú de usuario en el Navbar (`navbar.tsx`).
 
-- **Archivo**: `tests/Feature/Public/PublicNewsTest.php`
-- Cobertura:
+## 11. Modal de Inicio de Sesión Público (Google OAuth) y Restricción de Panel
+ 
+- **Modal de Inicio de Sesión** (`resources/js/components/public/login-dialog.tsx`):
+    - Apertura en cualquier página pública desde el botón "Iniciar sesión" en `navbar.tsx`.
+    - Integración en `useArticleInteractions`: Al intentar dar "Me gusta" o "Favorito" sin estar autenticado, abre el modal en lugar de desviar la navegación.
+    - Única opción para lectores: botón accesible "Continuar con Google" (`/auth/google`).
+    - Redirección con retorno: envía `return_to` al endpoint `/auth/google`, de modo que tras autorizar en Google, el usuario vuelve exactamente a la noticia o página que estaba leyendo.
+- **Restricción de Acceso en Backend (`/login`)**:
+    - El formulario de correo y contraseña en `/login` queda reservado exclusivamente para el equipo de redacción (`superadmin`, `admin`, `editor`).
+    - Si un usuario registrado con Google intenta ingresar su correo y contraseña en `/login`, `Fortify::authenticateUsing()` rechaza la solicitud indicando: `"Esta cuenta fue creada con Google. Por favor inicia sesión usando el botón 'Continuar con Google'."`
+    - Si un usuario sin roles administrativos intenta ingresar en `/login`, se rechaza con: `"El acceso al panel administrativo está restringido al equipo de redacción."`
+
+## 12. Pruebas Automatizadas
+
+- **Archivos**: `tests/Feature/Public/PublicNewsTest.php`, `tests/Feature/Auth/AuthenticationTest.php`, `SocialInteractionsTest.php` y `ProfileSettingsTest.php`.
+- Cobertura completa de:
     - Exclusión de borradores en portada.
     - Filtrado correcto por ruta de categoría.
     - Búsqueda por palabra clave con parámetro `?q=...`.
     - Acceso al detalle por slug con `whereNotNull('published_at')`.
     - Página `/tendencias` con paginación y ordenamiento por popularidad de visitas.
+    - Follow/unfollow, likes, favoritos, registro de compartidos y privacidad de perfiles.

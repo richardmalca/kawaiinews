@@ -1,7 +1,8 @@
 import { CategoryBadge } from '@/components/public/category-badge';
 import { estimateReadingTime } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
-import { BookOpen, Calendar, Eye } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { BookOpen, Calendar, Eye, User } from 'lucide-react';
 import { ArticleAudioPlayer } from './article-audio-player';
 
 interface ArticleHeaderProps {
@@ -28,9 +29,19 @@ export function ArticleHeader({ article }: ArticleHeaderProps) {
             </h1>
 
             <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    Por Redacción KawaiiNews
-                </span>
+                {article.author?.username ? (
+                    <Link
+                        href={`/perfil/${article.author.username}`}
+                        className="inline-flex items-center gap-1 font-semibold text-rose-600 transition-colors hover:text-rose-700 hover:underline dark:text-rose-400 dark:hover:text-rose-300"
+                    >
+                        <User className="h-3 w-3" />
+                        <span>{article.author.name}</span>
+                    </Link>
+                ) : (
+                    <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                        Por Redacción KawaiiNews
+                    </span>
+                )}
                 <span className="text-neutral-300 dark:text-neutral-700">
                     •
                 </span>

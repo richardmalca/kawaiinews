@@ -2,32 +2,28 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Concerns\ProfileValidationRules;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\ProfileSettingsDeleteRequest;
 use App\Http\Requests\Public\ProfileSettingsUpdateRequest;
+use App\Services\Public\NewsService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/**
- * Configuración de la propia cuenta pública, en /perfil/{username}/ajustes
- * (layout público, sin el sidebar del panel admin, y URL en español como el
- * resto del sitio público). Separado a propósito de Settings\ProfileController,
- * que vive en /settings y usa el layout del panel admin (solo pensado para
- * superadmin/admin/editor).
- */
 class ProfileSettingsController extends Controller
 {
-    /**
-     * Alias estable (`perfil/mi-cuenta/ajustes`) para quien todavía no
-     * eligió su @usuario: no hay segmento de URL "propio" al que mandarlo
-     * todavía, así que lo llevamos a elegirlo antes de poder ver su
-     * configuración por la URL bonita `/perfil/{username}/ajustes`.
-     */
+    use ProfileValidationRules;
+
+    public function __construct(
+        private readonly NewsService $newsService,
+    ) {}
+
     public function redirectToSelf(Request $request): RedirectResponse|Response
     {
         $user = $request->user();
@@ -36,7 +32,24 @@ class ProfileSettingsController extends Controller
             return to_route('public.profile.settings.edit', $user->username);
         }
 
-        return Inertia::render('public/profile/settings/choose-username');
+        return Inertia::render('public/profile/settings/choose-username', [
+            'categories' => $this->newsService->getCategoriesSummary(),
+        ]);
+    }
+
+    public function updateSelf(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'username' => $this->usernameRules($request->user()->id, required: true),
+        ]);
+
+        $request->user()->update([
+            'username' => $validated['username'],
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Nombre de usuario asignado correctamente.']);
+
+        return to_route('public.profile.settings.edit', $request->user()->username);
     }
 
     public function edit(Request $request, string $username): Response
@@ -46,22 +59,43 @@ class ProfileSettingsController extends Controller
         return Inertia::render('public/profile/settings/edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'categories' => $this->newsService->getCategoriesSummary(),
         ]);
     }
 
     public function update(ProfileSettingsUpdateRequest $request, string $username): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($request->hasFile('custom_avatar')) {
+            if ($user->custom_avatar && Storage::disk('public')->exists(str_replace('/storage/', '', $user->custom_avatar))) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $user->custom_avatar));
+            }
+
+            $path = $request->file('custom_avatar')->store('avatars', 'public');
+            $validated['custom_avatar'] = '/storage/'.$path;
+            $validated['avatar_source'] = 'custom';
         }
 
-        $request->user()->save();
+        if ($request->hasFile('banner')) {
+            if ($user->banner && Storage::disk('public')->exists(str_replace('/storage/', '', $user->banner))) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $user->banner));
+            }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+            $path = $request->file('banner')->store('banners', 'public');
+            $validated['banner'] = '/storage/'.$path;
+        }
 
-        return to_route('public.profile.settings.edit', $request->user()->username);
+        if ($request->filled('avatar_source')) {
+            $validated['avatar_source'] = $request->input('avatar_source');
+        }
+
+        $user->update($validated);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Perfil actualizado con éxito.']);
+
+        return to_route('public.profile.settings.edit', $user->fresh()->username);
     }
 
     public function destroy(ProfileSettingsDeleteRequest $request, string $username): RedirectResponse

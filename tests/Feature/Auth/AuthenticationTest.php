@@ -12,7 +12,10 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
+    $this->seed(RoleSeeder::class);
+
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -20,7 +23,55 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('home', absolute: false));
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
+});
+
+test('non-privileged users cannot authenticate using the login screen', function () {
+    $user = User::factory()->create();
+
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors(['email']);
+});
+
+test('a reader who signed up with google gets a specific message when trying password login', function () {
+    $user = User::factory()->create(['google_id' => '123456789']);
+
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors(['email']);
+    expect(session('errors')->get('email')[0])->toContain('Google');
+});
+
+test('a reader without a google account gets the generic restricted-access message', function () {
+    $user = User::factory()->create(['google_id' => null]);
+
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors(['email']);
+    expect(session('errors')->get('email')[0])->toContain('restringido');
+});
+
+test('a nonexistent email does not leak whether the account exists', function () {
+    $response = $this->post(route('login.store'), [
+        'email' => 'no-existe@example.com',
+        'password' => 'password',
+    ]);
+
+    $this->assertGuest();
+    $response->assertSessionHasErrors(['email']);
 });
 
 test('privileged users are redirected to the admin panel after login', function () {
@@ -40,6 +91,7 @@ test('privileged users are redirected to the admin panel after login', function 
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+    $this->seed(RoleSeeder::class);
 
     Features::twoFactorAuthentication([
         'confirm' => true,
@@ -47,6 +99,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
     ]);
 
     $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('editor');
 
     $response = $this->post(route('login'), [
         'email' => $user->email,

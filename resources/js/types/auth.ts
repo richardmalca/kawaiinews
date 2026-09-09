@@ -1,8 +1,14 @@
 export type User = {
     id: number;
     name: string;
+    username?: string | null;
+    show_shares_on_profile?: boolean;
     email: string;
     avatar?: string;
+    custom_avatar?: string | null;
+    banner?: string | null;
+    avatar_source?: 'google' | 'custom';
+    active_avatar?: string | null;
     roles: string[];
     email_verified_at: string | null;
     two_factor_enabled?: boolean;

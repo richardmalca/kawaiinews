@@ -28,6 +28,9 @@ trait ProfileValidationRules
             'username' => $this->usernameRules($userId, $usernameRequired),
             'email' => $this->emailRules($userId),
             'show_shares_on_profile' => ['sometimes', 'boolean'],
+            'avatar_source' => ['sometimes', 'string', 'in:google,custom'],
+            'custom_avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,webp,gif', 'max:2048'],
+            'banner' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
         ];
     }
 
@@ -39,17 +42,11 @@ trait ProfileValidationRules
     protected function usernameRules(?int $userId = null, bool $required = false): array
     {
         return [
-            // "sometimes"/"nullable" por defecto: el formulario de
-            // /settings/profile (panel admin) no gestiona el @usuario, así
-            // que no debe romper el guardado normal del nombre/email. La
-            // página pública de configuración de perfil (/perfil/{username}/
-            // settings) pasa $required = true porque ahí sí es el campo
-            // principal.
             ...($required ? ['required'] : ['sometimes', 'nullable']),
             'string',
             'min:3',
-            'max:30',
-            'regex:/^[a-zA-Z0-9_.]+$/',
+            'max:25',
+            'regex:/^[a-zA-Z0-9_]+$/',
             Rule::notIn(self::RESERVED_USERNAMES),
             $userId === null
                 ? Rule::unique(User::class)

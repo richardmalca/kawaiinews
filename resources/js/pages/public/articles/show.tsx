@@ -6,9 +6,11 @@ import type { PublicArticle, PublicCategorySummary } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Bookmark,
     Check,
     Columns2,
     FileText,
+    Heart,
     Maximize2,
     Minus,
     Plus,
@@ -19,6 +21,8 @@ import { ArticleHeader } from './components/article-header';
 import { ArticleMetaFooter } from './components/article-meta-footer';
 import { ArticleTags } from './components/article-tags';
 import { RelatedArticles } from './components/related-articles';
+import { useArticleInteractions } from './hooks/use-article-interactions';
+import { LoginDialog } from '@/components/public/login-dialog';
 
 interface ShowArticleProps {
     article: { data: PublicArticle };
@@ -35,6 +39,21 @@ export default function ShowArticle({
 }: ShowArticleProps) {
     const item = article.data;
     const progress = useReadingProgress();
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const {
+        liked,
+        likersCount,
+        favorited,
+        sharesCount,
+        isLiking,
+        isFavoriting,
+        toggleLike,
+        toggleFavorite,
+        recordShare,
+    } = useArticleInteractions({
+        article: item,
+        onRequireAuth: () => setIsLoginOpen(true),
+    });
     const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('base');
     const [focusMode, setFocusMode] = useState(false);
     const [copiedText, setCopiedText] = useState(false);
@@ -95,6 +114,42 @@ export default function ShowArticle({
                             <Plus className="h-3 w-3" />
                         </button>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={toggleLike}
+                        disabled={isLiking}
+                        title={liked ? 'Ya no me gusta' : 'Me gusta'}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                            liked
+                                ? 'border-rose-500/40 bg-rose-500/10 text-rose-600 dark:border-rose-400/30 dark:bg-rose-500/20 dark:text-rose-400'
+                                : 'border-neutral-200/80 bg-neutral-100/70 text-neutral-600 hover:border-neutral-300 hover:text-neutral-950 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                    >
+                        <Heart
+                            className={`h-3 w-3 ${liked ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400' : ''}`}
+                        />
+                        <span>{likersCount > 0 ? likersCount : 'Me gusta'}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={toggleFavorite}
+                        disabled={isFavoriting}
+                        title={favorited ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                            favorited
+                                ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:border-amber-400/30 dark:bg-amber-500/20 dark:text-amber-400'
+                                : 'border-neutral-200/80 bg-neutral-100/70 text-neutral-600 hover:border-neutral-300 hover:text-neutral-950 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-400 dark:hover:text-white'
+                        }`}
+                    >
+                        <Bookmark
+                            className={`h-3 w-3 ${favorited ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400' : ''}`}
+                        />
+                        <span className="hidden sm:inline">
+                            {favorited ? 'Guardado' : 'Favorito'}
+                        </span>
+                    </button>
 
                     <button
                         type="button"
@@ -177,7 +232,11 @@ export default function ShowArticle({
                         <ArticleTags tags={item.tags} />
                     </div>
 
-                    <ArticleMetaFooter article={item} />
+                    <ArticleMetaFooter
+                        article={item}
+                        sharesCount={sharesCount}
+                        onShare={recordShare}
+                    />
                 </article>
 
                 {!focusMode && (
@@ -195,6 +254,13 @@ export default function ShowArticle({
             <div className="mt-16">
                 <RelatedArticles articles={related.data} />
             </div>
+
+            <LoginDialog
+                open={isLoginOpen}
+                onOpenChange={setIsLoginOpen}
+                title="Inicia sesión para interactuar"
+                description="Únete con tu cuenta de Google para dar me gusta, guardar en favoritos y apoyar a los redactores de KawaiiNews."
+            />
         </PublicLayout>
     );
 }

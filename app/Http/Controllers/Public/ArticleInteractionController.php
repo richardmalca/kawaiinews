@@ -38,12 +38,12 @@ class ArticleInteractionController extends Controller
     {
         $article = $this->newsService->findPublishedBySlug($slug);
 
-        $this->articleInteractionService->recordShare(
-            $request->user(),
-            $article,
-            $request->validated('channel'),
+        return response()->json(
+            $this->articleInteractionService->recordShare(
+                $request->user(),
+                $article,
+                $request->validated('channel'),
+            )
         );
-
-        return response()->json(['shared' => true]);
     }
 }

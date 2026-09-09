@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
@@ -15,12 +16,15 @@ test('two factor challenge redirects to login when not authenticated', function 
 });
 
 test('two factor challenge can be rendered', function () {
+    $this->seed(RoleSeeder::class);
+
     Features::twoFactorAuthentication([
         'confirm' => true,
         'confirmPassword' => true,
     ]);
 
     $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('editor');
 
     $this->post(route('login'), [
         'email' => $user->email,

@@ -5,12 +5,15 @@ namespace App\Providers;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\TwoFactorLoginResponse;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
@@ -33,9 +36,39 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureAuthentication();
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+    }
+
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = User::where('email', $request->input('email'))->first();
+
+            if (! $user) {
+                return null;
+            }
+
+            if (! $user->hasAnyRole(['superadmin', 'admin', 'editor'])) {
+                if ($user->google_id) {
+                    throw ValidationException::withMessages([
+                        'email' => ['Esta cuenta fue creada con Google. Por favor inicia sesión usando el botón "Continuar con Google".'],
+                    ]);
+                }
+
+                throw ValidationException::withMessages([
+                    'email' => ['El acceso al panel administrativo está restringido al equipo de redacción.'],
+                ]);
+            }
+
+            if (Hash::check($request->input('password'), $user->password)) {
+                return $user;
+            }
+
+            return null;
+        });
     }
 
     /**

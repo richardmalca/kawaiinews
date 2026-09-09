@@ -119,6 +119,15 @@ export type NewsArticle = {
     created_at: string | null;
     audio_url?: string | null;
     views_count?: number;
+    likers_count?: number;
+    shares_count?: number;
+    has_liked?: boolean;
+    has_favorited?: boolean;
+    author?: {
+        id: number;
+        name: string;
+        username: string | null;
+    } | null;
     tags: string[];
 };
 

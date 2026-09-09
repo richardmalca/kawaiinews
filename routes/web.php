@@ -27,8 +27,6 @@ Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
 Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
 
-// El compartido se registra aunque el visitante no haya iniciado sesión
-// (queda como contador anónimo: user_id nulo).
 Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, 'share'])->name('public.articles.share');
 
 Route::middleware(['auth'])->group(function () {
@@ -36,14 +34,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])->name('public.articles.like');
     Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])->name('public.articles.favorite');
 
-    // Configuración de la propia cuenta pública: layout público, sin el
-    // sidebar del panel admin. No confundir con /settings/* (routes/settings.php),
-    // que es la configuración del panel admin y ahora está restringida a
-    // superadmin/admin/editor.
     Route::get('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'redirectToSelf'])
         ->name('public.profile.settings.self');
+    Route::patch('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'updateSelf'])
+        ->name('public.profile.settings.self.update');
     Route::get('perfil/{username}/ajustes', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
     Route::patch('perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
+    Route::post('perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update.post');
     Route::delete('perfil/{username}/ajustes', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
 });
 

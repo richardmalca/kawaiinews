@@ -4,13 +4,19 @@ import { ShareButtons } from './share-buttons';
 
 interface ArticleMetaFooterProps {
     article: PublicArticle;
+    sharesCount?: number;
+    onShare?: (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'link') => void;
 }
 
-export function ArticleMetaFooter({ article }: ArticleMetaFooterProps) {
+export function ArticleMetaFooter({ article, sharesCount, onShare }: ArticleMetaFooterProps) {
     return (
         <div className="border-t border-neutral-200 pt-6 dark:border-neutral-800">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                <ShareButtons title={article.title} />
+                <ShareButtons
+                    title={article.title}
+                    sharesCount={sharesCount ?? article.shares_count}
+                    onShare={onShare}
+                />
 
                 <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                     {article.published_at_formatted && (

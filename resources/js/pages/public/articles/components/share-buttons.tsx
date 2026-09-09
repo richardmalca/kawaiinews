@@ -4,9 +4,11 @@ import { useState } from 'react';
 interface ShareButtonsProps {
     title: string;
     url?: string;
+    sharesCount?: number;
+    onShare?: (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'link') => void;
 }
 
-export function ShareButtons({ title, url }: ShareButtonsProps) {
+export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsProps) {
     const [copied, setCopied] = useState(false);
     const shareUrl =
         url || (typeof window !== 'undefined' ? window.location.href : '');
@@ -15,6 +17,7 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
         try {
             await navigator.clipboard.writeText(shareUrl);
             setCopied(true);
+            onShare?.('link');
             setTimeout(() => setCopied(false), 2000);
         } catch {
             setCopied(false);
@@ -34,14 +37,21 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
     )}&text=${encodeURIComponent(title)}`;
 
     return (
-        <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="hidden items-center gap-1 text-xs font-semibold text-neutral-400 sm:inline-flex">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-400">
                 <Share2 className="h-3.5 w-3.5" />
-                Compartir:
+                <span>Compartir</span>
+                {typeof sharesCount === 'number' && sharesCount > 0 && (
+                    <span className="rounded-full bg-neutral-100 px-1.5 py-0.2 font-mono text-[10px] font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                        {sharesCount}
+                    </span>
+                )}
+                :
             </span>
 
             <a
                 href={twitterShareUrl}
+                onClick={() => onShare?.('twitter')}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Compartir en X / Twitter"
@@ -53,6 +63,7 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
 
             <a
                 href={whatsappShareUrl}
+                onClick={() => onShare?.('whatsapp')}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Compartir en WhatsApp"
@@ -64,6 +75,7 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
 
             <a
                 href={telegramShareUrl}
+                onClick={() => onShare?.('telegram')}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Compartir en Telegram"

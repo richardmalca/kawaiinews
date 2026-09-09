@@ -3,7 +3,6 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,18 +34,12 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'username', 'email', 'password', 'show_shares_on_profile'])]
+#[Fillable(['name', 'username', 'email', 'password', 'show_shares_on_profile', 'avatar', 'custom_avatar', 'banner', 'avatar_source'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
-    /** @use HasFactory<UserFactory> */
     use Favoriter, Followable, Follower, HasFactory, HasRoles, Liker, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -55,6 +48,15 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'show_shares_on_profile' => 'boolean',
         ];
+    }
+
+    public function getActiveAvatarUrlAttribute(): ?string
+    {
+        if ($this->avatar_source === 'custom' && $this->custom_avatar) {
+            return $this->custom_avatar;
+        }
+
+        return $this->avatar ?: $this->custom_avatar;
     }
 
     /**

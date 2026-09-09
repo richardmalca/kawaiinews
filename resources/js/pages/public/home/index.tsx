@@ -25,15 +25,17 @@ export default function Home({
     featured,
     articles,
     trending,
-    categories,
+    categories = {},
     selectedCategory,
     search,
 }: HomeProps) {
     const isFiltered = Boolean(selectedCategory || search);
-    const featuredArticle = !isFiltered ? featured.data[0] : null;
+    const featuredArticles = featured?.data ?? [];
+    const articleList = articles?.data ?? [];
+    const featuredArticle = !isFiltered ? featuredArticles[0] ?? null : null;
     const gridArticles = featuredArticle
-        ? articles.data.filter((a) => a.id !== featuredArticle.id)
-        : articles.data;
+        ? articleList.filter((a) => a.id !== featuredArticle.id)
+        : articleList;
 
     let pageTitle = 'KawaiiNews - Noticias de Anime, Manga y Gaming';
     if (search) {
@@ -80,7 +82,7 @@ export default function Home({
                     id="tendencias"
                     className="scroll-mt-24 space-y-6 transition-all duration-300 lg:sticky lg:top-32 lg:col-span-4"
                 >
-                    {trending.data.length > 0 && (
+                    {trending?.data && trending.data.length > 0 && (
                         <TrendingSidebar articles={trending.data} />
                     )}
                 </div>

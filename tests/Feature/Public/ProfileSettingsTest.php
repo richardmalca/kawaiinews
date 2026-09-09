@@ -92,3 +92,27 @@ test('a username cannot collide with a reserved route segment', function () {
         ])
         ->assertInvalid('username');
 });
+
+test('a username cannot exceed 25 characters or contain special characters', function () {
+    $user = User::factory()->create(['username' => null]);
+
+    $this->actingAs($user)
+        ->patch(route('public.profile.settings.self.update'), [
+            'username' => 'usuario_con_mas_de_veinticinco_caracteres',
+        ])
+        ->assertInvalid('username');
+
+    $this->actingAs($user)
+        ->patch(route('public.profile.settings.self.update'), [
+            'username' => 'DarkBot@ds',
+        ])
+        ->assertInvalid('username');
+
+    $this->actingAs($user)
+        ->patch(route('public.profile.settings.self.update'), [
+            'username' => 'darkbot_dv',
+        ])
+        ->assertValid('username');
+
+    expect($user->fresh()->username)->toBe('darkbot_dv');
+});

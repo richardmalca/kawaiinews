@@ -1,7 +1,9 @@
 import type { PublicCategorySummary } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { login, logout } from '@/routes';
+import { logout } from '@/routes';
 import { dashboard } from '@/routes/admin';
+import { LoginDialog } from './login-dialog';
+import { openChooseUsernameModal } from '@/lib/username-rules';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,6 +17,7 @@ import {
     LogOut,
     Newspaper,
     Search,
+    Settings,
     Shield,
     Sparkles,
     User,
@@ -39,6 +42,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -160,10 +164,16 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                         type="button"
                                         className="flex items-center gap-2 rounded-xl border border-neutral-200/80 bg-neutral-100/80 px-2.5 py-1.5 text-xs font-medium text-neutral-800 transition-all hover:border-neutral-300 hover:bg-neutral-200/60 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80"
                                     >
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                                            {auth.user.name
-                                                .charAt(0)
-                                                .toUpperCase()}
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-rose-500/10 font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                                            {(auth.user.active_avatar || auth.user.avatar) ? (
+                                                <img
+                                                    src={(auth.user.active_avatar || auth.user.avatar) as string}
+                                                    alt={auth.user.name}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                auth.user.name.charAt(0).toUpperCase()
+                                            )}
                                         </div>
                                         <span className="hidden max-w-[120px] truncate sm:inline-block">
                                             {auth.user.name}
@@ -183,6 +193,37 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                         </p>
                                     </div>
                                     <DropdownMenuSeparator />
+                                    {auth.user.username ? (
+                                        <DropdownMenuItem asChild>
+                                            <Link
+                                                href={`/perfil/${auth.user.username}`}
+                                                className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                            >
+                                                <User className="h-3.5 w-3.5 text-rose-500" />
+                                                <span>Mi perfil público</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem asChild>
+                                            <button
+                                                type="button"
+                                                onClick={openChooseUsernameModal}
+                                                className="flex w-full cursor-pointer items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400"
+                                            >
+                                                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                                                <span>Elige tu @usuario</span>
+                                            </button>
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href="/perfil/mi-cuenta/ajustes"
+                                            className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                        >
+                                            <Settings className="h-3.5 w-3.5 text-neutral-500" />
+                                            <span>Ajustes de cuenta</span>
+                                        </Link>
+                                    </DropdownMenuItem>
                                     {isPrivileged && (
                                         <DropdownMenuItem asChild>
                                             <Link
@@ -208,13 +249,20 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Link
-                                href={login()}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100/70 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 dark:hover:text-white"
-                            >
-                                <User className="h-3.5 w-3.5" />
-                                <span>Iniciar sesión</span>
-                            </Link>
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLoginOpen(true)}
+                                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100/70 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 dark:hover:text-white"
+                                >
+                                    <User className="h-3.5 w-3.5" />
+                                    <span>Iniciar sesión</span>
+                                </button>
+                                <LoginDialog
+                                    open={isLoginOpen}
+                                    onOpenChange={setIsLoginOpen}
+                                />
+                            </>
                         )}
                     </div>
                 </div>
