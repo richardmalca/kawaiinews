@@ -148,7 +148,7 @@ class DashboardService
         }
 
         $lastScrapedAt = Carbon::parse($lastScraped);
-        $hoursAgo = now()->diffInHours($lastScrapedAt, true);
+        $hoursAgo = (int) round(now()->diffInHours($lastScrapedAt, true));
 
         if ($hoursAgo > 6) {
             return ['status' => 'warning', 'label' => 'Último scraping', 'detail' => "Hace {$hoursAgo}hs que no se scrapea — revisá el cron (news:scrape corre cada 3hs)."];
@@ -174,7 +174,7 @@ class DashboardService
 
         // `jobs.created_at` es un timestamp unix (entero), no un datetime —
         // así lo define la migración base de Laravel para esta tabla.
-        $minutesWaiting = now()->diffInMinutes(Carbon::createFromTimestamp($oldestPendingJob), true);
+        $minutesWaiting = (int) round(now()->diffInMinutes(Carbon::createFromTimestamp($oldestPendingJob), true));
 
         if ($minutesWaiting > 5) {
             return ['status' => 'critical', 'label' => 'Worker de cola', 'detail' => "Hay jobs esperando hace {$minutesWaiting} minutos — el worker de colas probablemente no está corriendo."];
