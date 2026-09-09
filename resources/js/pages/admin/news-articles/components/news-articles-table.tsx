@@ -10,7 +10,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import DeleteNewsArticleDialog from '@/pages/admin/news-articles/components/delete-news-article-dialog';
-import NewsArticleStatusBadge from '@/pages/admin/news-articles/components/news-article-status-badge';
+import NewsArticleStatusToggleCell from '@/pages/admin/news-articles/components/news-article-status-toggle-cell';
 import { edit } from '@/routes/admin/news-articles';
 import type { NewsArticle } from '@/types/admin';
 
@@ -63,7 +63,7 @@ export default function NewsArticlesTable({ articles }: Props) {
                             {article.category}
                         </TableCell>
                         <TableCell className="py-1.5">
-                            <NewsArticleStatusBadge status={article.status} />
+                            <NewsArticleStatusToggleCell article={article} />
                         </TableCell>
                         <TableCell className="text-muted-foreground py-1.5 text-xs">
                             {article.created_at}

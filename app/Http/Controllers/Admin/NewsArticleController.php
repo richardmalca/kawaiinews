@@ -59,6 +59,13 @@ class NewsArticleController extends Controller
         return to_route('admin.news-articles.edit', $newsArticle);
     }
 
+    public function toggleStatus(NewsArticle $newsArticle): RedirectResponse
+    {
+        $this->newsArticleService->toggleStatus($newsArticle);
+
+        return back();
+    }
+
     public function destroy(NewsArticle $newsArticle): RedirectResponse
     {
         $this->newsArticleService->delete($newsArticle);

@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -86,11 +85,9 @@ export default function NewsArticlesIndex({
                     </Select>
                 </div>
 
-                <Card>
-                    <CardContent>
-                        <NewsArticlesTable articles={articles} />
-                    </CardContent>
-                </Card>
+                <div className="overflow-x-auto">
+                    <NewsArticlesTable articles={articles} />
+                </div>
 
                 {meta.last_page > 1 && (
                     <div className="flex items-center justify-between">

@@ -67,6 +67,22 @@ class NewsArticleService
         return $newsArticle;
     }
 
+    public function toggleStatus(NewsArticle $newsArticle): NewsArticle
+    {
+        $newsStatus = $newsArticle->status === 'published' ? 'draft' : 'published';
+
+        $newsArticle->update([
+            'status' => $newsStatus,
+            'published_at' => $newsStatus === 'published'
+                ? ($newsArticle->published_at ?? now())
+                : $newsArticle->published_at,
+        ]);
+
+        PublicNewsCacheVersion::bump();
+
+        return $newsArticle;
+    }
+
     public function delete(NewsArticle $newsArticle): void
     {
         $newsArticle->delete();
