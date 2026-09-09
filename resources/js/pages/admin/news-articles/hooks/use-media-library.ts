@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { waitForJobRun } from '@/lib/job-run';
 import {
     destroy,
     generate,
@@ -134,13 +135,13 @@ export function useMediaLibrary() {
                 }),
             });
 
-            const data = await response.json();
+            const queued = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.message ?? 'No se pudo generar la imagen');
+            if (!response.ok || !queued.run_id) {
+                throw new Error(queued.message ?? 'No se pudo generar la imagen');
             }
 
-            const media = data as MediaItem;
+            const media = await waitForJobRun<MediaItem>(queued.run_id);
             setItems((current) => [media, ...current]);
             toast.success('Imagen generada con IA');
 

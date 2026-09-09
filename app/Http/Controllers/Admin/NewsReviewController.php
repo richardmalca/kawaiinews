@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\NewsClusterResource;
+use App\Jobs\AcceptNewsClusterJob;
 use App\Jobs\AnalyzeNewsClustersJob;
 use App\Jobs\ApplyAiVerdictsJob;
 use App\Jobs\ScrapeNewsSourcesJob;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
-use App\Services\Admin\NewsArticleService;
 use App\Services\Admin\NewsClusterService;
 use App\Support\JobRunStatus;
 use Illuminate\Http\JsonResponse;
@@ -20,10 +20,7 @@ use Inertia\Response;
 
 class NewsReviewController extends Controller
 {
-    public function __construct(
-        private readonly NewsClusterService $newsClusterService,
-        private readonly NewsArticleService $newsArticleService,
-    ) {}
+    public function __construct(private readonly NewsClusterService $newsClusterService) {}
 
     private const PER_PAGE = 20;
 
@@ -98,12 +95,13 @@ class NewsReviewController extends Controller
         return NewsSource::where('is_active', true)->whereNotNull('rss_url')->exists();
     }
 
-    public function accept(NewsCluster $newsCluster, Request $request): RedirectResponse
+    public function accept(NewsCluster $newsCluster, Request $request): JsonResponse
     {
-        $this->newsClusterService->accept($newsCluster);
-        $article = $this->newsArticleService->createFromCluster($newsCluster, $request->user()->id);
+        $runId = JobRunStatus::start();
 
-        return to_route('admin.news-articles.edit', $article);
+        AcceptNewsClusterJob::dispatch($runId, $newsCluster, $request->user()->id);
+
+        return response()->json(['run_id' => $runId]);
     }
 
     public function reject(NewsCluster $newsCluster): RedirectResponse

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\JobRunController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsReviewController;
@@ -100,6 +101,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
             Route::post('audio', [MediaLibraryController::class, 'storeAudio'])->name('audio.store');
             Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])->name('news-articles.audio.generate');
+
+            Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
         });
     });
 

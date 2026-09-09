@@ -8,13 +8,15 @@ use App\Http\Requests\Admin\StoreAudioUploadRequest;
 use App\Http\Requests\Admin\StoreMediaFromUrlRequest;
 use App\Http\Requests\Admin\StoreMediaUploadRequest;
 use App\Http\Resources\Admin\MediaResource;
+use App\Jobs\GenerateAudioJob;
+use App\Jobs\GenerateMediaJob;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Services\Admin\MediaLibraryService;
+use App\Support\JobRunStatus;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Throwable;
 
 class MediaLibraryController extends Controller
 {
@@ -74,38 +76,20 @@ class MediaLibraryController extends Controller
 
     public function generate(GenerateMediaRequest $request): JsonResponse
     {
-        try {
-            $media = $this->mediaLibraryService->generateWithAi(
-                $request->validated('prompt'),
-                $request->validated('news_article_id'),
-            );
+        $runId = JobRunStatus::start();
 
-            return response()->json((new MediaResource($media))->resolve());
-        } catch (Throwable $exception) {
-            return response()->json(['message' => $this->friendlyGenerationError($exception)], 422);
-        }
+        GenerateMediaJob::dispatch($runId, $request->validated('prompt'), $request->validated('news_article_id'));
+
+        return response()->json(['run_id' => $runId]);
     }
 
     public function generateAudio(NewsArticle $newsArticle): JsonResponse
     {
-        try {
-            $media = $this->mediaLibraryService->generateNarration($newsArticle);
+        $runId = JobRunStatus::start();
 
-            return response()->json((new MediaResource($media))->resolve());
-        } catch (Throwable $exception) {
-            return response()->json(['message' => $this->friendlyGenerationError($exception)], 422);
-        }
-    }
+        GenerateAudioJob::dispatch($runId, $newsArticle);
 
-    private function friendlyGenerationError(Throwable $exception): string
-    {
-        $message = $exception->getMessage();
-
-        if (str_contains($message, 'rejected by the safety system')) {
-            return 'OpenAI rechazó generar esta imagen por su filtro de seguridad de contenido (puede pasar con ciertos nombres o descripciones, sin previo aviso). Probá de nuevo (a veces con el mismo texto funciona en el segundo intento) o ajustá el resumen/contenido de la noticia y volvé a intentar.';
-        }
-
-        return $message;
+        return response()->json(['run_id' => $runId]);
     }
 
     public function destroy(Media $media): JsonResponse

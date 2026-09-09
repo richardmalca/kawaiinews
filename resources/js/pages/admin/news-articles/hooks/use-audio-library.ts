@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { generateAudio } from '@/actions/App/Http/Controllers/Admin/MediaLibraryController';
+import { waitForJobRun } from '@/lib/job-run';
 import { destroy } from '@/routes/admin/media';
 import { index, store } from '@/routes/admin/audio';
 import type { MediaItem } from '@/types/admin';
@@ -93,13 +94,13 @@ export function useAudioLibrary() {
                 },
             });
 
-            const data = await response.json();
+            const queued = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.message ?? 'No se pudo generar el audio');
+            if (!response.ok || !queued.run_id) {
+                throw new Error(queued.message ?? 'No se pudo generar el audio');
             }
 
-            const media = data as MediaItem;
+            const media = await waitForJobRun<MediaItem>(queued.run_id);
             setItems((current) => [media, ...current]);
             toast.success('Audio generado');
 

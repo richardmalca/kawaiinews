@@ -102,10 +102,27 @@ Además de la narración generada por IA, el sistema permite subir archivos de a
     - `AudioLibraryDialog` cuenta con botón "Subir archivo" y un input file oculto.
     - El hook `useAudioLibrary` implementa la función `uploadAudio(file: File)` que realiza la petición `multipart/form-data` con token CSRF y refresca la lista.
 
+## Generación en cola (no bloquea el servidor)
+
+Las tres operaciones que llaman a un modelo de IA de forma lenta (imagen, audio, y el borrador de artículo al aceptar un cluster en `/admin/news-review`) corrían **síncronas** dentro del request HTTP: con `php artisan serve` de un solo hilo, cualquiera de esas llamadas (20-60s+) bloqueaba toda la app para cualquier usuario mientras duraba. Se pasaron a cola, reusando el mismo patrón `JobRunStatus` + polling que ya existía para scrape/analizar/aplicar veredictos en `/admin/news-review`:
+
+- `App\Jobs\GenerateMediaJob` — envuelve `MediaLibraryService::generateWithAi()`.
+- `App\Jobs\GenerateAudioJob` — envuelve `MediaLibraryService::generateNarration()`.
+- `App\Jobs\AcceptNewsClusterJob` — envuelve `NewsClusterService::accept()` + `NewsArticleService::createFromCluster()`.
+
+Los tres controladores (`MediaLibraryController::generate()`/`generateAudio()`, `NewsReviewController::accept()`) ahora solo hacen `JobRunStatus::start()` + `dispatch()` y devuelven `{run_id}` en JSON (antes `generate()`/`generateAudio()` devolvían el `Media` directo y `accept()` era un `RedirectResponse`). El polling genérico vive en `GET admin/jobs/runs/{runId}` (`JobRunController::show()`), compartido por cualquier job futuro que use `JobRunStatus`.
+
+Errores "amigables" (ej. el rechazo del filtro de seguridad de OpenAI) se centralizaron en `App\Support\FriendlyAiError::forException()`, usado por los tres jobs.
+
+**Frontend**: `resources/js/lib/job-run.ts` expone `waitForJobRun<T>(runId)`, un polling genérico (cada 1.5s) reutilizado por `use-media-library.ts`, `use-audio-library.ts` y `use-accept-news-cluster.ts`. `useAcceptNewsCluster` ya no espera un redirect del servidor: hace `fetch` a `accept()`, espera el job, y navega con `router.visit()` a la edición del artículo recién creado.
+
+**Requiere que el worker de cola corra** — `composer run dev` (`php artisan dev`) ya lo levanta junto al servidor. Si alguien corre solo `php artisan serve` sin el worker, los jobs quedan en `queued` para siempre (usan `QUEUE_CONNECTION=database` por defecto). En tests, `QUEUE_CONNECTION=sync` (`phpunit.xml`) hace que los jobs corran inline, así que las aserciones pueden leer el resultado justo después del request.
+
 ## Tests
 
 - `tests/Feature/Admin/MediaArticleLinkTest.php` — imagen subida/generada queda vinculada al artículo (`news_article_id`), narración generada crea un `Media` `type=audio` vinculado, `listAudio()` no mezcla imágenes con audios (usa `Prism::fake()` con `AudioResponse`/`GeneratedAudio` para no llamar a la API real).
-- `tests/Feature/Admin/MediaLibraryControllerTest.php` — subida manual de audio vía `POST admin/audio`, validaciones de tipo MIME y tamaño máximo.
+- `tests/Feature/Admin/MediaLibraryControllerTest.php` — subida manual de audio vía `POST admin/audio`, validaciones de tipo MIME y tamaño máximo, y que un SVG se rechaza en la subida de imágenes.
+- `tests/Feature/Admin/AsyncAiJobsTest.php` — los tres flujos en cola (imagen, audio, aceptar cluster) devuelven `run_id` y, tras esperar el job, `GET admin/jobs/runs/{runId}` reporta `status: done` con el resultado esperado; un rol sin permiso (`editor`) recibe 403 al intentar disparar cualquiera de estos jobs.
 
 ## Pendiente / no cubierto acá
 
