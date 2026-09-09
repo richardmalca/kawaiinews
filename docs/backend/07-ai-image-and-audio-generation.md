@@ -41,12 +41,12 @@ El pedido original generaba imágenes verticales (`1024x1536`, relación 2:3) y 
 Fix en dos partes:
 
 1. **`MediaLibraryService::IMAGE_ASPECT_OPTIONS`** — opciones específicas por proveedor pasadas vía `withProviderOptions()`:
-   ```php
-   private const IMAGE_ASPECT_OPTIONS = [
-       'openai' => ['size' => '1536x1024'], // gpt-image-1 solo acepta 3 tamaños fijos; este es el más ancho (3:2, no hay 16:9 exacto)
-       'gemini' => ['aspect_ratio' => '16:9'], // imagen-4 sí acepta relación de aspecto libre
-   ];
-   ```
+    ```php
+    private const IMAGE_ASPECT_OPTIONS = [
+        'openai' => ['size' => '1536x1024'], // gpt-image-1 solo acepta 3 tamaños fijos; este es el más ancho (3:2, no hay 16:9 exacto)
+        'gemini' => ['aspect_ratio' => '16:9'], // imagen-4 sí acepta relación de aspecto libre
+    ];
+    ```
 2. **El prompt dejó de citar el título** y agregó una instrucción explícita de "no incluyas ningún texto, letra, título, cartel ni palabra escrita" (ver arriba). Verificado en vivo: la segunda generación quedó panorámica (1536×1024 real) y sin oraciones/carteles dibujados (solo quedó un "10" decorativo suelto, ligado al "diez años" del contexto — no texto de título).
 
 ### Costo real: `quality: medium` (se probó `low` primero)
@@ -87,9 +87,25 @@ resources/js/pages/admin/audio-library/
 
 Backend: `MediaLibraryController::audioIndex()` (`GET admin/audio-library`) renderiza la página con `MediaLibraryService::listAudio()` (incluye `newsArticle` cargado para el link). El editor de cada noticia (`ArticleAudioCard`, en el sidebar de `edit.tsx`) también muestra y permite generar el audio de esa noticia puntual sin salir del editor.
 
+## Subida manual de archivos de audio
+
+Además de la narración generada por IA, el sistema permite subir archivos de audio directamente desde el selector de audios (`AudioLibraryDialog` en el editor de noticias):
+
+- **Ruta Backend**: `POST admin/audio` (`admin.audio.store`) gestionada por `MediaLibraryController::storeAudio()`.
+- **Validación** (`StoreAudioUploadRequest`):
+    - Archivo `file`: requerido, tipo archivo binario de audio (`mimes:mp3,wav,ogg,m4a,aac`), máximo 20MB.
+    - `news_article_id`: opcional, valida existencia contra la tabla `news_articles,id`.
+- **Servicio** (`MediaLibraryService::storeAudioUpload()`):
+    - Almacena el archivo en el disco público dentro del directorio `audio`.
+    - Registra el registro `Media` con `type = 'audio'`, `file_path`, `file_name`, `mime_type`, `size` y asocia el `news_article_id` si fue proporcionado.
+- **Frontend**:
+    - `AudioLibraryDialog` cuenta con botón "Subir archivo" y un input file oculto.
+    - El hook `useAudioLibrary` implementa la función `uploadAudio(file: File)` que realiza la petición `multipart/form-data` con token CSRF y refresca la lista.
+
 ## Tests
 
 - `tests/Feature/Admin/MediaArticleLinkTest.php` — imagen subida/generada queda vinculada al artículo (`news_article_id`), narración generada crea un `Media` `type=audio` vinculado, `listAudio()` no mezcla imágenes con audios (usa `Prism::fake()` con `AudioResponse`/`GeneratedAudio` para no llamar a la API real).
+- `tests/Feature/Admin/MediaLibraryControllerTest.php` — subida manual de audio vía `POST admin/audio`, validaciones de tipo MIME y tamaño máximo.
 
 ## Pendiente / no cubierto acá
 

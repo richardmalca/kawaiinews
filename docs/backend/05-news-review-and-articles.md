@@ -27,7 +27,7 @@ La comparación de clusters candidatos **no filtra por status** — un tema ya r
 
 **Nota de idioma:** el título/resumen del cluster se guarda tal cual viene de la fuente original (inglés, portugués, español, según la fuente) — no se traduce en esta etapa a propósito, para no gastar una llamada a la IA por cada tema nuevo encontrado en cada corrida del scraper. La traducción ocurre recién en la Etapa B, al aceptar.
 
-**Trailers oficiales de YouTube.** `extractYoutubeUrl()` busca un link de `youtube.com`/`youtu.be` ya presente en la `<description>` o `<content:encoded>` del item — no se busca en YouTube por fuera del feed, solo se toma lo que la fuente ya trajo (evita traer el video incorrecto). Se propaga a `NewsCluster::video_url` con el mismo criterio que `image_url` (el primero que llega gana, `attachToCluster()` no lo pisa). Al aceptar el cluster, `NewsArticleService::appendVideoEmbed()` agrega un `<iframe>` real de YouTube al final del `body` — la URL/ID del video **no pasa por la IA**, se arma directo con regex desde `video_url`, para no arriesgar que el modelo invente o rompa el link. La bandeja de revisión muestra un ícono de YouTube junto al título cuando `has_video` es `true` (`NewsClusterResource`).
+**Trailers oficiales de YouTube.** `extractYoutubeUrl()` busca un link de `youtube.com`/`youtu.be` ya presente en la `<description>` o `<content:encoded>` del item. Si el feed RSS no incluye el trailer pero la noticia original en su página web sí lo embebe (caso común en sitios como Anime Corner o Anime News Network que ponen el `<iframe>` en el HTML de la nota), `extractYoutubeUrlFromPage($pageUrl)` realiza un fallback descargando el HTML del artículo (timeout 5s) e inspeccionando iframes o enlaces de YouTube. Se propaga a `NewsCluster::video_url` con el mismo criterio que `image_url` (el primero que llega gana, `attachToCluster()` no lo pisa). Al aceptar el cluster, `NewsArticleService::appendVideoEmbed()` agrega un `<iframe>` real de YouTube responsivo (`<div class="aspect-video">...</div>`) al final del `body` - la URL/ID del video **no pasa por la IA**, se arma directo con regex desde `video_url`, para no arriesgar que el modelo invente o rompa el link. La bandeja de revisión muestra un icono de YouTube junto al título cuando `has_video` es `true` (`NewsClusterResource`).
 
 Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review`, **y** un cron cada 30 minutos (`news:scrape`, ver [06-scheduling-caching-and-views.md](06-scheduling-caching-and-views.md)). El botón valida que haya al menos una fuente activa con `rss_url` antes de habilitarse — si no hay ninguna, la página muestra una alerta (`Alert` destructiva) con link directo a Fuentes de noticias y el botón queda deshabilitado; el endpoint `POST news-review/scrape` también valida esto server-side (devuelve `sources_scraped: 0` y un mensaje en `errors`, sin correr el scraper).
 
@@ -50,18 +50,23 @@ Esto reemplaza el enfoque anterior (todo síncrono, con el timeout de Prism subi
 
 ### `app/Services/NewsArticleService.php`
 
-- `createFromCluster()` — se llama al aceptar un cluster. Si hay un `AiProvider` activo con API key, arma un prompt con el título + resumen de cada fuente del cluster y le pide a Prism (mismo mecanismo que `AiProviderService::testConnection()`) que devuelva `TITULO:` / `RESUMEN:` / `CUERPO:` en un formato fijo, parseado con regex. Si no hay proveedor activo o falla la llamada, cae a un borrador mínimo (título y resumen del cluster, cuerpo vacío) — nunca bloquea la aceptación por un fallo de IA. El artículo se crea con `published_at` = la fecha real de la noticia (`NewsCluster::earliestPublishedAt()`), no la fecha en que se aceptó — así una noticia de hace un mes no aparece fechada como si fuera de hoy.
+- `createFromCluster()` — se llama al aceptar un cluster. Si hay un `AiProvider` activo con API key, arma un prompt con el título + resumen de cada fuente del cluster y le pide a Prism (mismo mecanismo que `AiProviderService::testConnection()`) que devuelva `TITULO:` / `RESUMEN:` / `CUERPO:` / `CATEGORIA:` / `TAGS:` en un formato fijo, parseado con regex. Si no hay proveedor activo o falla la llamada, cae a un borrador mínimo (título y resumen del cluster, cuerpo vacío, sin categoría/tags de IA) — nunca bloquea la aceptación por un fallo de IA. El artículo se crea con `published_at` = la fecha real de la noticia (`NewsCluster::earliestPublishedAt()`), no la fecha en que se aceptó — así una noticia de hace un mes no aparece fechada como si fuera de hoy.
 - `save()` — actualiza el artículo: recalcula el slug único (`Str::slug`) solo si el slug cambió, sincroniza tags (`firstOrCreate` por slug de tag). `published_at` se conserva siempre (ya no se pisa con `null` al guardar como borrador — antes de este ajuste, guardar un borrador borraba la fecha original precargada); solo se autocompleta con `now()` si estaba vacío y el estado pasa a `published`.
 
-### El prompt de generación (traducción + redacción + formato)
+### El prompt de generación (traducción + redacción + formato + categoría + tags)
 
 El prompt le pide explícitamente al modelo:
 
 - **Traducir y redactar en español** (sin importar el idioma original de las fuentes del cluster).
 - Un **título distinto del resumen** — no una repetición, sino un titular de prensa más atractivo (evita el problema de "la noticia sale igual que la descripción").
 - **HTML directo en el cuerpo** (no markdown): `<p>` por párrafo, `<strong>` para nombres propios y datos clave, `<em>` para citas o énfasis, `<u>` para el dato más importante, `<h3>` si hace falta un subtítulo — así carga sin conversión en el editor de bloques (ver más abajo).
+- **Una categoría** de la lista real del catálogo (`array_keys(config('news_sources_catalog'))` inyectado en el prompt, ej. `anime, manga, geek, gaming, japon, peliculas`) — antes el artículo se creaba siempre con la categoría de la *fuente* que scrapeó primero el cluster, que no necesariamente coincide con el tema real de la noticia (una fuente de "geek" puede cubrir una noticia que en realidad es de "gaming").
+- **3 a 6 tags** relacionados (personajes, franquicia, estudio, evento), sin el símbolo `#` aunque en el prompt se los describe como algo tipo hashtag para que el modelo entienda el formato esperado.
 
-`parseDraft()` extrae `TITULO:` / `RESUMEN:` / `CUERPO:` con regex de la respuesta del modelo.
+`parseDraft()` extrae `TITULO:` / `RESUMEN:` / `CUERPO:` / `CATEGORIA:` / `TAGS:` con regex de la respuesta del modelo:
+
+- **Categoría**: se pasa a minúsculas y se valida contra `array_keys(config('news_sources_catalog'))` — si el modelo devuelve algo que no es una clave real del catálogo (alucinación, categoría en otro idioma, etc.), `parseDraft()` devuelve `category: null` y `createFromCluster()` cae al fallback de siempre (`$newsCluster->category`, la del scraper). Nunca se guarda una categoría inventada.
+- **Tags**: se separan por coma, se les saca espacios/puntos/`#` sobrantes, y se sincronizan con `resolveTagIds()` (mismo `firstOrCreate` por slug que ya usaba el guardado manual desde el editor) — quedan reutilizables entre artículos igual que los tags puestos a mano.
 
 ### Tablas
 
@@ -137,12 +142,16 @@ resources/js/pages/admin/news-articles/
 │   ├── article-permalink-field.tsx     slug mostrado como permalink, editable al click
 │   ├── article-status-toggle.tsx       ToggleGroup de 2 opciones (borrador/publicada)
 │   ├── article-category-picker.tsx     ToggleGroup de pastillas, una categoría
+│   ├── article-audio-card.tsx          reproductor, narración IA y subida de audio
+│   ├── article-video-card.tsx          gestión y previsualización de trailer de YouTube en el contenido
 │   ├── rich-text-editor.tsx            wrapper de BlockNote (HTML <-> bloques)
 │   ├── media-library-dialog.tsx        modal: grid + subir archivo + agregar por URL
+│   ├── audio-library-dialog.tsx        modal: selección y subida de audios
 │   └── delete-news-article-dialog.tsx
 └── hooks/
     ├── use-article-slug.ts             slug autogenerado del título, editable a mano
     ├── use-media-library.ts            list/upload/addFromUrl vía fetch + XSRF-TOKEN
+    ├── use-audio-library.ts            list/upload de audios vía fetch
     ├── use-save-news-article.ts
     └── use-delete-news-article.ts
 ```
@@ -190,6 +199,7 @@ No había tests para ningún servicio de este flujo (scraper, clustering, revisi
 - `tests/Feature/NewsReviewControllerTest.php` — paginación (25 clusters → 20 en página 1, `meta.last_page = 2`) y filtro por categoría.
 - `tests/Feature/NewsArticleControllerTest.php` — mismo patrón para el listado de artículos (15 por página).
 - `tests/Feature/MediaLibraryControllerTest.php` — borrado de un `Media` vía `DELETE admin/media/{id}`.
+- `tests/Feature/Admin/NewsArticleDraftCategorizationTest.php` — usando `Prism::fake()` con `TextResponseFake`: la categoría y los tags que devuelve la IA quedan aplicados al artículo creado, y una categoría inventada por la IA (fuera del catálogo) cae al fallback de la categoría del cluster en vez de guardarse tal cual.
 
 ## Pendiente (no en esta fase)
 

@@ -11,10 +11,12 @@ use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\SitemapController;
+use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('categoria/{category}', HomeController::class)->name('public.category');
+Route::get('tendencias', TrendingController::class)->name('public.trending');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
@@ -72,6 +74,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
 
             Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');
             Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
+            Route::post('audio', [MediaLibraryController::class, 'storeAudio'])->name('audio.store');
             Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])->name('news-articles.audio.generate');
         });
     });

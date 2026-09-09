@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { generateAudio } from '@/actions/App/Http/Controllers/Admin/MediaLibraryController';
 import { destroy } from '@/routes/admin/media';
-import { index } from '@/routes/admin/audio';
+import { index, store } from '@/routes/admin/audio';
 import type { MediaItem } from '@/types/admin';
 
 function readCsrfToken(): string {
@@ -14,6 +14,7 @@ function readCsrfToken(): string {
 export function useAudioLibrary() {
     const [items, setItems] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [generating, setGenerating] = useState(false);
 
     const loadItems = async () => {
@@ -30,6 +31,52 @@ export function useAudioLibrary() {
             toast.error('No se pudo cargar la biblioteca de audios');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const uploadAudio = async (
+        file: File,
+        newsArticleId: number | null = null,
+    ) => {
+        setUploading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            if (newsArticleId) {
+                formData.append('news_article_id', String(newsArticleId));
+            }
+
+            const response = await fetch(store().url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': readCsrfToken(),
+                },
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data?.message ?? 'upload failed');
+            }
+
+            const media = (await response.json()) as MediaItem;
+            setItems((current) => [media, ...current]);
+            toast.success('Audio subido a la biblioteca');
+
+            return media;
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo subir el audio',
+            );
+            return null;
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -96,8 +143,10 @@ export function useAudioLibrary() {
     return {
         items,
         loading,
+        uploading,
         generating,
         loadItems,
+        uploadAudio,
         generateForArticle,
         deleteItem,
     };

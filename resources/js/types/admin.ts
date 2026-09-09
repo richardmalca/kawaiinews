@@ -118,6 +118,7 @@ export type NewsArticle = {
     published_at_time?: string | null;
     created_at: string | null;
     audio_url?: string | null;
+    views_count?: number;
     tags: string[];
 };
 

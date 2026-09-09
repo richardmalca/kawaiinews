@@ -34,8 +34,8 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
     )}&text=${encodeURIComponent(title)}`;
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1 text-xs font-semibold text-neutral-400">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="hidden items-center gap-1 text-xs font-semibold text-neutral-400 sm:inline-flex">
                 <Share2 className="h-3.5 w-3.5" />
                 Compartir:
             </span>
@@ -44,37 +44,39 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
                 href={twitterShareUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 text-xs font-medium text-neutral-700 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
-                aria-label="Compartir en X / Twitter"
+                title="Compartir en X / Twitter"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white text-xs font-bold text-neutral-700 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
+                aria-label="Compartir en X"
             >
-                <span className="font-bold">X</span>
+                𝕏
             </a>
 
             <a
                 href={whatsappShareUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                title="Compartir en WhatsApp"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
                 aria-label="Compartir en WhatsApp"
             >
-                <MessageCircle className="h-3.5 w-3.5" />
-                <span>WhatsApp</span>
+                <MessageCircle className="h-4 w-4" />
             </a>
 
             <a
                 href={telegramShareUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-500/20 dark:text-sky-400"
+                title="Compartir en Telegram"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/10 text-sky-600 transition-colors hover:bg-sky-500/20 dark:text-sky-400"
                 aria-label="Compartir en Telegram"
             >
-                <Send className="h-3.5 w-3.5" />
-                <span>Telegram</span>
+                <Send className="h-4 w-4" />
             </a>
 
             <button
                 type="button"
                 onClick={handleCopy}
+                title="Copiar enlace del artículo"
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 text-xs font-medium text-neutral-700 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
             >
                 {copied ? (
@@ -87,7 +89,7 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
                 ) : (
                     <>
                         <Copy className="h-3.5 w-3.5" />
-                        <span>Copiar enlace</span>
+                        <span className="hidden sm:inline">Copiar enlace</span>
                     </>
                 )}
             </button>

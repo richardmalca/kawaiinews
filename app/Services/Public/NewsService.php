@@ -34,8 +34,6 @@ class NewsService
     {
         $page = Paginator::resolveCurrentPage();
 
-        // Los listados con búsqueda libre no se cachean: la combinatoria de
-        // términos posibles haría que la caché casi nunca tenga un hit.
         if ($search) {
             return $this->paginatedArticlesQuery($category, $search, $perPage, $page);
         }
@@ -83,6 +81,35 @@ class NewsService
         return $this->hydrateOrdered($ids);
     }
 
+    public function getPaginatedTrending(int $perPage = 12): LengthAwarePaginator
+    {
+        $page = Paginator::resolveCurrentPage();
+
+        /** @var array{ids: array<int, int>, total: int} $pageData */
+        $pageData = $this->remember(
+            "trending-paginated-ids:{$perPage}:{$page}",
+            function () use ($perPage, $page) {
+                $query = NewsArticle::query()
+                    ->where('status', 'published')
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '>=', now()->subDays(14));
+
+                return [
+                    'ids' => (clone $query)->orderByDesc('views_count')->orderByDesc('published_at')->forPage($page, $perPage)->pluck('id')->all(),
+                    'total' => $query->count(),
+                ];
+            }
+        );
+
+        return (new ConcreteLengthAwarePaginator(
+            $this->hydrateOrdered($pageData['ids']),
+            $pageData['total'],
+            $perPage,
+            $page,
+            ['path' => Paginator::resolveCurrentPath()],
+        ))->withQueryString();
+    }
+
     /**
      * @return array<string, array{label: string, count: int}>
      */
@@ -111,8 +138,6 @@ class NewsService
 
     public function findPublishedBySlug(string $slug): NewsArticle
     {
-        // Sin caché: cada vista de detalle necesita el views_count real,
-        // y es una consulta por PK/slug indexado, ya es barata.
         return NewsArticle::query()
             ->with(['tags'])
             ->where('slug', $slug)
@@ -179,14 +204,6 @@ class NewsService
         );
     }
 
-    /**
-     * Solo valores serializables (arrays de escalares: IDs, conteos) pasan
-     * por acá. `config('cache.serializable_classes')` está en `false` en
-     * este proyecto (protección de Laravel contra ataques de deserialización
-     * de objetos) — cachear una Collection de Eloquent directamente hace que
-     * la lectura devuelva `__PHP_Incomplete_Class` en vez del objeto real,
-     * porque Laravel se niega a reconstruir clases PHP desde la caché.
-     */
     private function remember(string $key, \Closure $callback): mixed
     {
         $versioned = 'public-news:v'.PublicNewsCacheVersion::current().':'.$key;

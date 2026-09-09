@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PublicCategorySummary } from '@/types';
+import { BackToTop } from '@/components/public/back-to-top';
 import { PublicFooter } from '@/components/public/footer';
 import { PublicNavbar } from '@/components/public/navbar';
 
@@ -21,6 +22,7 @@ export default function PublicLayout({
                 {children}
             </main>
             <PublicFooter />
+            <BackToTop />
         </div>
     );
 }

@@ -18,11 +18,11 @@ La UI muestra siempre el catálogo completo; cada fila indica si ese proveedor y
 
 Al principio solo existía un `is_active` global, pensado para texto, y la generación de imágenes/audio elegía "el primer proveedor configurado que lo soporte" sin que el usuario pudiera decidirlo. Ahora son **tres interruptores independientes**, uno por capacidad:
 
-| Capacidad | Columna en `ai_providers` | Quién lo soporta hoy |
-| --- | --- | --- |
-| Texto | `is_active` | Los 11 proveedores del catálogo |
-| Imágenes | `is_active_for_images` | Solo los que tienen `image_model` en `config/ai_catalog.php` (hoy: OpenAI, Gemini) |
-| Audio (narración) | `is_active_for_audio` | Solo los que tienen `audio_model` en `config/ai_catalog.php` (hoy: solo OpenAI) |
+| Capacidad         | Columna en `ai_providers` | Quién lo soporta hoy                                                               |
+| ----------------- | ------------------------- | ---------------------------------------------------------------------------------- |
+| Texto             | `is_active`               | Los 11 proveedores del catálogo                                                    |
+| Imágenes          | `is_active_for_images`    | Solo los que tienen `image_model` en `config/ai_catalog.php` (hoy: OpenAI, Gemini) |
+| Audio (narración) | `is_active_for_audio`     | Solo los que tienen `audio_model` en `config/ai_catalog.php` (hoy: solo OpenAI)    |
 
 `AiProviderService::activate(AiProvider $provider, string $capability = 'text')` desactiva esa misma capacidad en todos los demás proveedores y la activa solo en el elegido — un switch exclusivo por capacidad, no un checkbox múltiple. Rechaza silenciosamente (no hace nada) si se intenta activar una capacidad que ese proveedor no soporta (`AiProvider::supportsImages()` / `supportsAudio()`, que solo miran si `config('ai_catalog.{provider}.image_model')` / `.audio_model` está seteado).
 
@@ -30,14 +30,14 @@ Podés tener proveedores distintos activos por capacidad al mismo tiempo (ej. An
 
 ## Backend
 
-| Capa          | Archivo                                                                             |
-| ------------- | ----------------------------------------------------------------------------------- |
-| Controlador   | `app/Http/Controllers/Admin/AiProviderController.php`                               |
-| Servicio      | `app/Services/Admin/AiProviderService.php`                                          |
+| Capa          | Archivo                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| Controlador   | `app/Http/Controllers/Admin/AiProviderController.php`                                             |
+| Servicio      | `app/Services/Admin/AiProviderService.php`                                                        |
 | Modelo        | `app/Models/AiProvider.php` (cast `api_key` => `encrypted`; `supportsImages()`/`supportsAudio()`) |
-| Form Requests | `app/Http/Requests/Admin/StoreAiProviderRequest.php`, `UpdateAiProviderRequest.php` |
-| Resource      | `app/Http/Resources/Admin/AiProviderResource.php`                                   |
-| Seeder        | `database/seeders/AiProviderSeeder.php`                                             |
+| Form Requests | `app/Http/Requests/Admin/StoreAiProviderRequest.php`, `UpdateAiProviderRequest.php`               |
+| Resource      | `app/Http/Resources/Admin/AiProviderResource.php`                                                 |
+| Seeder        | `database/seeders/AiProviderSeeder.php`                                                           |
 
 `AiProviderService` centraliza: `save()`, `activate($provider, $capability)`, `delete()`, `createFromCatalog()`, `catalog()` (merge catálogo + configurados + `supports_image`/`supports_audio` por entrada) y `summary()` (KPIs, incluyendo `active_image`/`active_audio`) y `testConnection()` (llama a Prism con la API key guardada, siempre para texto).
 

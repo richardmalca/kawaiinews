@@ -81,3 +81,42 @@ test('a youtube trailer link in the description is captured and propagated to th
     expect($scrapedItem->video_url)->toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         ->and($scrapedItem->newsCluster->video_url)->toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 });
+
+test('a youtube trailer link on the article page is captured when not present in rss feed', function () {
+    NewsSource::factory()->create([
+        'rss_url' => 'https://article-page-feed.test/feed',
+        'category' => 'gaming',
+    ]);
+
+    Http::fake([
+        'https://article-page-feed.test/feed' => Http::response(<<<'XML'
+            <?xml version="1.0"?>
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <title>Juego revela gameplay trailer</title>
+                        <link>https://article-page-feed.test/noticia-zelda</link>
+                        <description>Noticia sin enlace de video en el rss</description>
+                        <pubDate>Mon, 08 Sep 2026 10:00:00 +0000</pubDate>
+                    </item>
+                </channel>
+            </rss>
+            XML, 200),
+        'https://article-page-feed.test/noticia-zelda' => Http::response(<<<'HTML'
+            <!DOCTYPE html>
+            <html>
+                <body>
+                    <h1>Zelda Ocarina of Time Remake</h1>
+                    <iframe src="https://www.youtube.com/embed/wuFfiTEr2yc" width="560" height="315"></iframe>
+                </body>
+            </html>
+            HTML, 200),
+    ]);
+
+    app(NewsScraperService::class)->run();
+
+    $scrapedItem = ScrapedItem::where('url', 'https://article-page-feed.test/noticia-zelda')->firstOrFail();
+
+    expect($scrapedItem->video_url)->toBe('https://www.youtube.com/watch?v=wuFfiTEr2yc')
+        ->and($scrapedItem->newsCluster->video_url)->toBe('https://www.youtube.com/watch?v=wuFfiTEr2yc');
+});

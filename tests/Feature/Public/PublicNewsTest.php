@@ -87,3 +87,28 @@ test('public article detail displays published article by slug', function () {
         ->where('article.data.title', 'Detalle de Prueba Especial')
     );
 });
+
+test('public trending page displays trending articles ordered by popularity', function () {
+    NewsArticle::factory()->create([
+        'title' => 'Noticia Normal',
+        'status' => 'published',
+        'published_at' => now(),
+        'views_count' => 5,
+    ]);
+
+    NewsArticle::factory()->create([
+        'title' => 'Noticia Super Viral',
+        'status' => 'published',
+        'published_at' => now(),
+        'views_count' => 1500,
+    ]);
+
+    $response = $this->get(route('public.trending'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('public/trending/index')
+        ->has('articles.data', 2)
+        ->where('articles.data.0.title', 'Noticia Super Viral')
+    );
+});

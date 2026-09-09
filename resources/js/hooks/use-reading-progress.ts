@@ -30,7 +30,8 @@ export function useReadingProgress(targetSelector: string = 'article'): number {
                 }
 
                 const scrolledIntoArticle = currentScroll - startOffset;
-                const percentage = (scrolledIntoArticle / totalScrollable) * 100;
+                const percentage =
+                    (scrolledIntoArticle / totalScrollable) * 100;
 
                 setProgress(
                     Number(Math.min(100, Math.max(0, percentage)).toFixed(1)),

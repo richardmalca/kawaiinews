@@ -1,9 +1,26 @@
 import type { PublicCategorySummary } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { login } from '@/routes';
+import { login, logout } from '@/routes';
 import { dashboard } from '@/routes/admin';
-import { Search, Shield, Sparkles, User, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Flame,
+    Headphones,
+    LogOut,
+    Newspaper,
+    Search,
+    Shield,
+    Sparkles,
+    User,
+    X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from './theme-toggle';
 
 interface PublicNavbarProps {
@@ -22,6 +39,19 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const categoryEntries = Object.entries(categories ?? {});
 
@@ -42,7 +72,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                     <div className="flex items-center gap-6">
                         <Link
                             href="/"
-                            className="group flex items-center gap-2 shrink-0"
+                            className="group flex shrink-0 items-center gap-2"
                         >
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
                                 <Sparkles className="h-5 w-5 text-white" />
@@ -56,32 +86,37 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         <nav className="hidden items-center gap-1 md:flex">
                             <Link
                                 href="/"
-                                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                                     url === '/'
                                         ? 'bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-white'
-                                        : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white'
+                                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white'
                                 }`}
                             >
-                                Portada
+                                <Newspaper className="h-3.5 w-3.5" />
+                                <span>Portada</span>
                             </Link>
-                            {categoryEntries.slice(0, 5).map(([slug, data]) => {
-                                const isActive =
-                                    url.startsWith(`/categoria/${slug}`) ||
-                                    url.includes(`categoria=${slug}`);
-                                return (
-                                    <Link
-                                        key={slug}
-                                        href={`/categoria/${slug}`}
-                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                            isActive
-                                                ? 'bg-neutral-100 text-rose-600 dark:bg-neutral-900 dark:text-rose-400'
-                                                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white'
-                                        }`}
-                                    >
-                                        {data.label}
-                                    </Link>
-                                );
-                            })}
+
+                            <Link
+                                href="/tendencias"
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                    url === '/tendencias' ||
+                                    url.startsWith('/tendencias')
+                                        ? 'bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-white'
+                                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white'
+                                }`}
+                            >
+                                <Flame className="h-3.5 w-3.5 text-amber-500" />
+                                <span>Tendencias</span>
+                            </Link>
+
+                            <Link
+                                href="/feed"
+                                target="_blank"
+                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white"
+                            >
+                                <Headphones className="h-3.5 w-3.5 text-rose-500" />
+                                <span>Canal RSS</span>
+                            </Link>
                         </nav>
                     </div>
 
@@ -91,13 +126,17 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                             className="relative hidden items-center sm:flex"
                         >
                             <input
+                                ref={searchInputRef}
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Buscar noticias..."
-                                className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-3 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
+                                className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-12 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
                             />
                             <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-neutral-400" />
+                            <kbd className="pointer-events-none absolute right-2.5 hidden rounded border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 font-mono text-[9px] font-medium text-neutral-400 select-none sm:inline-block dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400">
+                                ⌘K
+                            </kbd>
                         </form>
 
                         <button
@@ -115,26 +154,65 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         <ThemeToggle />
 
                         {auth.user ? (
-                            isPrivileged ? (
-                                <Link
-                                    href={dashboard()}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-rose-600/20 transition-all hover:bg-rose-500"
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-2 rounded-xl border border-neutral-200/80 bg-neutral-100/80 px-2.5 py-1.5 text-xs font-medium text-neutral-800 transition-all hover:border-neutral-300 hover:bg-neutral-200/60 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80"
+                                    >
+                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-500/10 font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                                            {auth.user.name
+                                                .charAt(0)
+                                                .toUpperCase()}
+                                        </div>
+                                        <span className="hidden max-w-[120px] truncate sm:inline-block">
+                                            {auth.user.name}
+                                        </span>
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-52 rounded-2xl p-1.5"
                                 >
-                                    <Shield className="h-4 w-4" />
-                                    <span>Panel Admin</span>
-                                </Link>
-                            ) : (
-                                <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-1.5 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
-                                    <User className="h-4 w-4 text-rose-500" />
-                                    <span>{auth.user.name}</span>
-                                </div>
-                            )
+                                    <div className="px-2 py-1.5">
+                                        <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                                            {auth.user.name}
+                                        </p>
+                                        <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+                                            {auth.user.email}
+                                        </p>
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    {isPrivileged && (
+                                        <DropdownMenuItem asChild>
+                                            <Link
+                                                href={dashboard()}
+                                                className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                            >
+                                                <Shield className="h-3.5 w-3.5 text-rose-500" />
+                                                <span>Panel de Control</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={logout()}
+                                            method="post"
+                                            as="button"
+                                            className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                                        >
+                                            <LogOut className="h-3.5 w-3.5" />
+                                            <span>Cerrar sesión</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         ) : (
                             <Link
                                 href={login()}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 dark:hover:text-white"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100/70 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 dark:hover:text-white"
                             >
-                                <User className="h-4 w-4" />
+                                <User className="h-3.5 w-3.5" />
                                 <span>Iniciar sesión</span>
                             </Link>
                         )}
@@ -143,7 +221,10 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                 {isSearchOpen && (
                     <div className="border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
-                        <form onSubmit={handleSearchSubmit} className="relative">
+                        <form
+                            onSubmit={handleSearchSubmit}
+                            className="relative"
+                        >
                             <input
                                 type="text"
                                 value={searchQuery}
@@ -190,10 +271,12 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
             </div>
 
             {typeof progress === 'number' && (
-                <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-transparent overflow-hidden">
+                <div className="absolute right-0 bottom-0 left-0 h-0.5 overflow-hidden bg-transparent">
                     <div
-                        className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 transition-[width] duration-150 ease-out shadow-xs"
-                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                        className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 shadow-xs transition-[width] duration-150 ease-out"
+                        style={{
+                            width: `${Math.max(0, Math.min(100, progress))}%`,
+                        }}
                     />
                 </div>
             )}

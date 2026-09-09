@@ -1,10 +1,10 @@
 import { useSpeechNarrator } from '@/hooks/use-speech-narrator';
 import {
     AlertCircle,
-    Eye,
-    EyeOff,
+    ArrowUp,
     Headphones,
     Loader2,
+    Mic,
     Pause,
     Play,
     RotateCcw,
@@ -32,6 +32,7 @@ export function ArticleAudioPlayer({
     const speech = useSpeechNarrator(textToRead);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,6 @@ export function ArticleAudioPlayer({
     const [duration, setDuration] = useState(0);
     const [speedIndex, setSpeedIndex] = useState(0);
     const [hasError, setHasError] = useState(false);
-    const [autoScroll, setAutoScroll] = useState(true);
 
     const isAiAudio = Boolean(audioUrl && !hasError);
 
@@ -97,14 +97,6 @@ export function ArticleAudioPlayer({
         speech.play();
     };
 
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const nextTime = Number(e.target.value);
-        setCurrentTime(nextTime);
-        if (isAiAudio && audioRef.current) {
-            audioRef.current.currentTime = nextTime;
-        }
-    };
-
     const handleCycleSpeed = () => {
         const nextIndex = (speedIndex + 1) % PLAYBACK_SPEEDS.length;
         setSpeedIndex(nextIndex);
@@ -118,6 +110,9 @@ export function ArticleAudioPlayer({
     const activePaused = isAiAudio ? isPaused : speech.isPaused;
     const isInteracting = activePlaying || activePaused;
 
+    const currentSeconds = isAiAudio ? currentTime : speech.elapsedSeconds;
+    const totalSeconds = isAiAudio ? duration : speech.estimatedTotalSeconds;
+
     const formatTime = (secs: number) => {
         if (!Number.isFinite(secs) || secs <= 0) {
             return '0:00';
@@ -127,95 +122,11 @@ export function ArticleAudioPlayer({
         return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
-    const progressPercent =
-        duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
-
-    useEffect(() => {
-        if (!isAiAudio || !isPlaying || !autoScroll || duration <= 0) {
-            return;
-        }
-
-        const elements: HTMLElement[] = [];
-
-        const titleEl = document.getElementById('article-title');
-        if (titleEl) {
-            elements.push(titleEl);
-        }
-
-        const excerptEl = document.getElementById('article-excerpt');
-        if (excerptEl) {
-            elements.push(excerptEl);
-        }
-
-        const container = document.getElementById('article-content-body');
-        if (container) {
-            const bodyEls = container.querySelectorAll('p, h2, h3, blockquote');
-            bodyEls.forEach((el) => {
-                if (el instanceof HTMLElement && el.innerText.trim().length > 0) {
-                    elements.push(el);
-                }
-            });
-        }
-
-        if (elements.length === 0) {
-            return;
-        }
-
-        const lengths = elements.map((el) => Math.max(20, el.innerText.trim().length));
-        const totalChars = lengths.reduce((acc, curr) => acc + curr, 0);
-
-        let cumulative = 0;
-        const thresholds = lengths.map((len) => {
-            cumulative += len;
-            return cumulative / totalChars;
-        });
-
-        const currentRatio = Math.min(1, Math.max(0, currentTime / duration));
-
-        let activeIdx = thresholds.findIndex((t) => currentRatio <= t);
-        if (activeIdx === -1) {
-            activeIdx = elements.length - 1;
-        }
-
-        const currentElement = elements[activeIdx];
-
-        elements.forEach((el, idx) => {
-            if (idx === activeIdx) {
-                el.classList.add(
-                    'bg-rose-500/10',
-                    'dark:bg-rose-500/15',
-                    'rounded-xl',
-                    'px-2',
-                    'py-1',
-                    '-mx-2',
-                    'transition-all',
-                    'duration-300',
-                );
-            } else {
-                el.classList.remove(
-                    'bg-rose-500/10',
-                    'dark:bg-rose-500/15',
-                    'rounded-xl',
-                    'px-2',
-                    'py-1',
-                    '-mx-2',
-                );
-            }
-        });
-
-        if (currentElement) {
-            const rect = currentElement.getBoundingClientRect();
-            const isInView =
-                rect.top >= 120 && rect.bottom <= window.innerHeight - 100;
-
-            if (!isInView) {
-                currentElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                });
-            }
-        }
-    }, [currentTime, isPlaying, autoScroll, duration, isAiAudio]);
+    const progressPercent = isAiAudio
+        ? duration > 0
+            ? Math.min(100, (currentTime / duration) * 100)
+            : 0
+        : speech.progress;
 
     useEffect(() => {
         if (onProgressChange) {
@@ -228,7 +139,7 @@ export function ArticleAudioPlayer({
     }
 
     return (
-        <div className="group/player my-4">
+        <div ref={containerRef} className="inline-flex items-center">
             {audioUrl && !hasError && (
                 <audio
                     ref={audioRef}
@@ -269,148 +180,156 @@ export function ArticleAudioPlayer({
                 />
             )}
 
-            <div className="relative overflow-hidden rounded-2xl border border-neutral-200/90 bg-neutral-50/90 p-3 shadow-xs transition-all hover:border-neutral-300 dark:border-neutral-800/80 dark:bg-neutral-900/50 dark:hover:border-neutral-700">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handlePlayPause}
-                            disabled={isLoading}
-                            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white shadow-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-75 dark:bg-white dark:text-neutral-950"
-                            aria-label={activePlaying ? 'Pausar narración' : 'Escuchar artículo'}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-current" />
-                            ) : activePlaying ? (
-                                <Pause className="h-4 w-4 fill-current" />
-                            ) : (
-                                <Play className="h-4 w-4 fill-current translate-x-0.5" />
-                            )}
-                        </button>
+            <div className="flex flex-wrap items-center gap-3">
+                <button
+                    type="button"
+                    onClick={handlePlayPause}
+                    disabled={isLoading}
+                    className="group inline-flex items-center gap-2 rounded-full border border-neutral-200/90 bg-white/80 py-1 pr-3.5 pl-1.5 shadow-2xs backdrop-blur-xs transition-all hover:border-rose-300 hover:bg-rose-50/70 hover:shadow-xs active:scale-98 dark:border-neutral-800 dark:bg-neutral-900/80 dark:hover:border-rose-800/80 dark:hover:bg-rose-950/40"
+                    title={
+                        activePlaying
+                            ? 'Pausar narración'
+                            : 'Escuchar este artículo'
+                    }
+                >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white shadow-xs transition-transform group-hover:scale-105">
+                        {isLoading ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : activePlaying ? (
+                            <Pause className="h-3 w-3 fill-current" />
+                        ) : (
+                            <Play className="h-3 w-3 translate-x-0.5 fill-current" />
+                        )}
+                    </span>
 
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                                    {activePlaying
-                                        ? 'Reproduciendo narración'
-                                        : activePaused
-                                          ? 'Narración en pausa'
-                                          : 'Escuchar este artículo'}
-                                </span>
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-neutral-800 sm:text-xs dark:text-neutral-200">
+                        <Mic className="h-3 w-3 text-rose-500 sm:h-3.5 sm:w-3.5" />
+                        <span>
+                            {activePlaying
+                                ? 'Pausar'
+                                : activePaused
+                                  ? 'Reanudar'
+                                  : 'Escuchar'}
+                        </span>
+                    </span>
 
-                                {isAiAudio ? (
-                                    <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:border-rose-400/20 dark:bg-rose-500/20 dark:text-rose-400">
-                                        <Sparkles className="h-2.5 w-2.5" />
-                                        Audio IA
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-neutral-200/50 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
-                                        <Volume2 className="h-2.5 w-2.5" />
-                                        Voz navegador
-                                    </span>
-                                )}
+                    {isAiAudio ? (
+                        <span className="hidden items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-rose-600 sm:inline-flex dark:border-rose-400/20 dark:bg-rose-500/20 dark:text-rose-400">
+                            <Sparkles className="h-2.5 w-2.5" />
+                            Audio IA
+                        </span>
+                    ) : (
+                        <span className="hidden items-center gap-1 rounded-full border border-neutral-200 bg-neutral-200/60 px-1.5 py-0.5 text-[9px] font-medium text-neutral-600 sm:inline-flex dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
+                            <Volume2 className="h-2.5 w-2.5" />
+                            Voz
+                        </span>
+                    )}
 
-                                {activePlaying && (
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                                        <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
-                                    </span>
-                                )}
-                            </div>
+                    {activePlaying && (
+                        <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                        </span>
+                    )}
+                </button>
+            </div>
 
-                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                                {isAiAudio
-                                    ? 'Locución natural generada por inteligencia artificial'
-                                    : 'Lectura asistida mediante síntesis de voz en español'}
-                            </p>
-                        </div>
+            {hasError && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Archivo no disponible. Se alternó a voz del navegador.
+                    </span>
+                </div>
+            )}
+
+            {isInteracting && (
+                <div className="animate-in slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 shadow-2xl backdrop-blur-md duration-300 dark:border-neutral-800/80 dark:bg-neutral-950/95">
+                    <div className="relative h-1 w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
+                        <div
+                            className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 transition-all duration-150"
+                            style={{ width: `${progressPercent}%` }}
+                        />
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                        {isAiAudio && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={() => setAutoScroll(!autoScroll)}
-                                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium transition-colors ${
-                                        autoScroll
-                                            ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:border-rose-400/30 dark:bg-rose-500/20 dark:text-rose-400'
-                                            : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'
-                                    }`}
-                                    title={
-                                        autoScroll
-                                            ? 'Desplazamiento sincronizado activado'
-                                            : 'Desplazamiento sincronizado desactivado'
-                                    }
-                                >
-                                    {autoScroll ? (
-                                        <Eye className="h-3 w-3" />
-                                    ) : (
-                                        <EyeOff className="h-3 w-3" />
-                                    )}
-                                    <span className="hidden sm:inline">
-                                        Seguir
+                    <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                        <div className="flex min-w-0 items-center gap-3 pr-4">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                                <Headphones className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                                <h4 className="truncate text-xs font-bold text-neutral-900 sm:text-sm dark:text-neutral-100">
+                                    {title}
+                                </h4>
+                                <div className="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                    <span className="flex items-center gap-1">
+                                        <Mic className="h-3 w-3 text-rose-500" />
+                                        {isAiAudio
+                                            ? 'Audio IA'
+                                            : 'Voz navegador'}
                                     </span>
-                                </button>
+                                    <span>•</span>
+                                    <span className="font-mono">
+                                        {formatTime(currentSeconds)} /{' '}
+                                        {formatTime(totalSeconds)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            {isAiAudio && (
                                 <button
                                     type="button"
                                     onClick={handleCycleSpeed}
-                                    className="rounded-lg border border-neutral-200 bg-white px-2 py-1 font-mono text-[11px] font-semibold text-neutral-700 shadow-2xs transition-colors hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                                    title="Cambiar velocidad de reproducción"
+                                    className="hidden rounded-lg border border-neutral-200 bg-neutral-100 px-2 py-1 font-mono text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-200 sm:inline-flex dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-300"
+                                    title="Velocidad de reproducción"
                                 >
                                     {PLAYBACK_SPEEDS[speedIndex]}x
                                 </button>
-                            </>
-                        )}
+                            )}
 
-                        {isInteracting && (
                             <button
                                 type="button"
                                 onClick={handleRestart}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
-                                title="Reiniciar desde el inicio"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                title="Reiniciar"
                             >
-                                <RotateCcw className="h-3.5 w-3.5" />
+                                <RotateCcw className="h-4 w-4" />
                             </button>
-                        )}
-                    </div>
-                </div>
 
-                {isAiAudio && (duration > 0 || isInteracting) && (
-                    <div className="mt-3 pt-2.5 border-t border-neutral-200/60 dark:border-neutral-800/60">
-                        <div className="flex items-center gap-2.5">
-                            <span className="w-8 text-right font-mono text-[10px] text-neutral-500 dark:text-neutral-400">
-                                {formatTime(currentTime)}
-                            </span>
+                            <button
+                                type="button"
+                                onClick={handlePlayPause}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white shadow-md transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-neutral-950"
+                                aria-label={
+                                    activePlaying ? 'Pausar' : 'Reproducir'
+                                }
+                            >
+                                {activePlaying ? (
+                                    <Pause className="h-4 w-4 fill-current" />
+                                ) : (
+                                    <Play className="h-4 w-4 translate-x-0.5 fill-current" />
+                                )}
+                            </button>
 
-                            <div className="relative flex-1 flex items-center">
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={duration || 100}
-                                    step={0.5}
-                                    value={currentTime}
-                                    onChange={handleSeek}
-                                    className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-neutral-200 accent-rose-500 dark:bg-neutral-800"
-                                />
-                            </div>
-
-                            <span className="w-8 font-mono text-[10px] text-neutral-500 dark:text-neutral-400">
-                                {formatTime(duration)}
-                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    containerRef.current?.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'center',
+                                    });
+                                }}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                title="Subir al inicio del artículo"
+                            >
+                                <ArrowUp className="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
-                )}
-
-                {hasError && (
-                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                        <span>Archivo de audio no disponible. Se alternó a voz del navegador.</span>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
-

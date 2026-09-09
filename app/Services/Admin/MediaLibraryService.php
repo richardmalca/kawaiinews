@@ -16,14 +16,6 @@ class MediaLibraryService
 {
     private const AUDIO_MAX_CHARS = 3500;
 
-    /**
-     * Proveedor a usar para generar imágenes: el que el usuario marcó
-     * explícitamente como activo para imágenes en Modelo de IA
-     * (`is_active_for_images`) si soporta imágenes; si ninguno fue marcado
-     * (instalación vieja, o el usuario todavía no lo configuró), cae al
-     * primer proveedor configurado que sí las soporte — mismo criterio que
-     * usaba esta clase antes de poder elegir un activo por capacidad.
-     */
     private function resolveImageProvider(): ?AiProvider
     {
         $active = AiProvider::where('is_active_for_images', true)->whereNotNull('api_key')->first();
@@ -84,6 +76,19 @@ class MediaLibraryService
         ]);
     }
 
+    public function storeAudioUpload(UploadedFile $file, ?int $newsArticleId = null): Media
+    {
+        $path = $file->store('audio', 'public');
+
+        return Media::create([
+            'url' => Storage::disk('public')->url($path),
+            'original_name' => $file->getClientOriginalName(),
+            'source' => 'upload',
+            'type' => 'audio',
+            'news_article_id' => $newsArticleId,
+        ]);
+    }
+
     public function storeFromUrl(string $url, ?int $newsArticleId = null): Media
     {
         return Media::create([
@@ -95,21 +100,6 @@ class MediaLibraryService
         ]);
     }
 
-    /**
-     * Opciones para pedir formato panorámico (lo más parecido a 16:9 que
-     * soporta cada proveedor): OpenAI (`gpt-image-1`) solo acepta 3 tamaños
-     * fijos, el más ancho es `1536x1024` (3:2, no hay 16:9 exacto); Gemini
-     * (`imagen-4`) sí acepta `aspect_ratio` libre.
-     *
-     * `quality: medium` en OpenAI es explícito a propósito: sin este
-     * parámetro `gpt-image-1` usa `high` por defecto, que sale ~2-3 veces
-     * más caro que `medium` (~$0.17-0.19 vs ~$0.06-0.07) sin necesidad real
-     * para una imagen destacada. `low` (~$0.02-0.03) se probó primero por
-     * costo pero se notaba con poco detalle — `medium` es el balance que se
-     * decidió tras comparar ambas en la cuenta real.
-     *
-     * @var array<string, array<string, mixed>>
-     */
     private const IMAGE_ASPECT_OPTIONS = [
         'openai' => ['size' => '1536x1024', 'quality' => 'medium'],
         'gemini' => ['aspect_ratio' => '16:9'],
@@ -127,8 +117,6 @@ class MediaLibraryService
             ->using($provider->provider, config("ai_catalog.{$provider->provider}.image_model"), [
                 'api_key' => $provider->api_key,
             ])
-            // gpt-image-1 puede tardar bien más que el timeout HTTP por
-            // defecto de Prism (30s) en generar una imagen.
             ->withClientOptions(['timeout' => 120])
             ->withProviderOptions(self::IMAGE_ASPECT_OPTIONS[$provider->provider] ?? [])
             ->withPrompt($prompt)
@@ -163,41 +151,23 @@ class MediaLibraryService
         ]);
     }
 
-    /**
-     * Voz e instrucciones de tono por proveedor. `voice` es el identificador
-     * que espera cada API: OpenAI usa un nombre de voz fijo (`shimmer`),
-     * ElevenLabs usa el `voice_id` real de la voz (un hash, no un nombre) —
-     * `jBlmi27XRORxjPquUeCh` es "Brian - Warm, Smooth, Confident", una voz
-     * de la biblioteca pública de ElevenLabs.
-     *
-     * @var array<string, array{voice: string, options: array<string, mixed>}>
-     */
     private const AUDIO_VOICES = [
         'openai' => [
             'voice' => 'shimmer',
             'options' => [
                 'response_format' => 'mp3',
-                // gpt-4o-mini-tts (a diferencia de tts-1) acepta esta
-                // instrucción de tono en lenguaje natural.
                 'instructions' => 'Habla como un/a locutor/a de noticias de entretenimiento: cálido, natural y con ritmo conversacional, con las pausas y la entonación de una persona real contando algo que le interesa. Nada de tono robótico, monótono o de lectura mecánica.',
             ],
         ],
         'elevenlabs' => [
             'voice' => 'jBlmi27XRORxjPquUeCh',
             'options' => [
-                // El mapper de Prism para ElevenLabs arma el payload a
-                // partir de providerOptions, no del $model pasado a using():
-                // `model_id` hay que repetirlo acá para que viaje en el body.
                 'model_id' => 'eleven_multilingual_v2',
                 'voice_settings' => ['stability' => 0.5, 'similarity_boost' => 0.75],
             ],
         ],
     ];
 
-    /**
-     * Genera una narración en audio de la noticia con un tono natural (no
-     * el clásico "voz de robot leyendo texto").
-     */
     public function generateNarration(NewsArticle $newsArticle): Media
     {
         $provider = $this->resolveAudioProvider();

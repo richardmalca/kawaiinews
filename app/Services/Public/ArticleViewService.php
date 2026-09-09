@@ -37,10 +37,6 @@ class ArticleViewService
 
         $pendingKey = 'article-views:pending:'.$article->id;
 
-        // El driver `database` (y `file`) no auto-inicializan una clave al
-        // incrementarla si todavía no existe -a diferencia de Redis, que sí
-        // hace INCR desde 0-, así que hay que crearla primero con `add`
-        // (no-op si ya existe) antes de poder incrementarla de forma atómica.
         Cache::add($pendingKey, 0, now()->addHours(2));
         Cache::increment($pendingKey);
 

@@ -47,7 +47,9 @@ export function NewsSectionHeader({
                 >
                     <Filter className="h-3.5 w-3.5" />
                     <span>
-                        {search ? 'Limpiar búsqueda' : 'Ver todas las categorías'}
+                        {search
+                            ? 'Limpiar búsqueda'
+                            : 'Ver todas las categorías'}
                     </span>
                 </Link>
             )}

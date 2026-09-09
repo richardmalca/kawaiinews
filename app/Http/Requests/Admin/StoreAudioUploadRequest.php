@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class GenerateMediaRequest extends FormRequest
+class StoreAudioUploadRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,7 +17,7 @@ class GenerateMediaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'prompt' => ['required', 'string', 'max:4000'],
+            'file' => ['required', 'file', 'mimes:mp3,wav,ogg,m4a,aac', 'max:20480'],
             'news_article_id' => ['nullable', 'integer', 'exists:news_articles,id'],
         ];
     }

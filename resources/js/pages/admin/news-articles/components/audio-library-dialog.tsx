@@ -1,5 +1,5 @@
-import { AudioLines, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { AudioLines, Sparkles, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
 import DeleteMediaButton from '@/components/delete-media-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,11 +37,14 @@ export default function AudioLibraryDialog({
     canGenerate,
 }: Props) {
     const [open, setOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const {
         items,
         loading,
+        uploading,
         generating,
         loadItems,
+        uploadAudio,
         generateForArticle,
         deleteItem,
     } = useAudioLibrary();
@@ -66,6 +69,24 @@ export default function AudioLibraryDialog({
         setOpen(false);
     };
 
+    const handleFileChange = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        const media = await uploadAudio(file, articleId);
+
+        if (media) {
+            handlePick(media);
+        }
+
+        event.target.value = '';
+    };
+
     const handleGenerate = async () => {
         const media = await generateForArticle(articleId);
 
@@ -81,31 +102,53 @@ export default function AudioLibraryDialog({
                 <DialogHeader>
                     <DialogTitle>Biblioteca de audios</DialogTitle>
                     <DialogDescription>
-                        Elegí un audio ya generado o generá uno nuevo con IA a
-                        partir de esta noticia
+                        Elegí un audio ya subido, subí un archivo o generá uno
+                        nuevo con IA a partir de esta noticia
                     </DialogDescription>
                 </DialogHeader>
 
-                <div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={generating || !canGenerate}
-                        title={
-                            canGenerate
-                                ? undefined
-                                : 'Guardá título, resumen y contenido antes de generar el audio'
-                        }
-                        onClick={handleGenerate}
-                    >
-                        {generating ? <Spinner /> : <Sparkles />}
-                        Generar narración con IA a partir de esta noticia
-                    </Button>
+                <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac"
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={uploading || generating}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {uploading ? <Spinner /> : <Upload />}
+                            Subir archivo
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={generating || uploading || !canGenerate}
+                            title={
+                                canGenerate
+                                    ? undefined
+                                    : 'Guardá título, resumen y contenido antes de generar el audio'
+                            }
+                            onClick={handleGenerate}
+                        >
+                            {generating ? <Spinner /> : <Sparkles />}
+                            Generar narración con IA a partir de esta noticia
+                        </Button>
+                    </div>
+
                     {!canGenerate && (
-                        <p className="text-muted-foreground mt-2 text-xs">
+                        <p className="text-muted-foreground text-xs">
                             Guardá la noticia con título, resumen y contenido
-                            completos para poder narrarla.
+                            completos para poder narrarla con IA. También podés
+                            subir un archivo de audio directamente.
                         </p>
                     )}
                 </div>
@@ -162,7 +205,20 @@ export default function AudioLibraryDialog({
                                                 />
                                             </TableCell>
                                             <TableCell className="py-1.5 text-sm">
-                                                {item.provider} · {item.model}
+                                                {item.provider && item.model ? (
+                                                    <span>
+                                                        {item.provider} ·{' '}
+                                                        {item.model}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground capitalize">
+                                                        {item.source ===
+                                                        'upload'
+                                                            ? 'Subida manual'
+                                                            : (item.source ??
+                                                              'Audio')}
+                                                    </span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="py-1.5 text-sm">
                                                 {item.news_article_id ? (

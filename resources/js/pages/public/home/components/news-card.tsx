@@ -1,8 +1,12 @@
 import { CategoryBadge } from '@/components/public/category-badge';
-import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
+import {
+    FALLBACK_IMAGES,
+    estimateReadingTime,
+    handleImageFallback,
+} from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Calendar } from 'lucide-react';
+import { BookOpen, Calendar, Eye } from 'lucide-react';
 
 interface NewsCardProps {
     article: PublicArticle;
@@ -10,6 +14,7 @@ interface NewsCardProps {
 
 export function NewsCard({ article }: NewsCardProps) {
     const imageSrc = article.featured_image || FALLBACK_IMAGES.card;
+    const readingMinutes = estimateReadingTime(article.body);
 
     return (
         <Link
@@ -34,12 +39,30 @@ export function NewsCard({ article }: NewsCardProps) {
 
                 <div className="flex flex-1 flex-col justify-between p-5">
                     <div>
-                        <div className="mb-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                             {article.published_at && (
                                 <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
                                     {article.published_at}
                                 </span>
+                            )}
+                            <span className="text-neutral-300 dark:text-neutral-700">
+                                •
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <BookOpen className="h-3 w-3 text-rose-500 dark:text-rose-400" />
+                                {readingMinutes} min
+                            </span>
+                            {typeof article.views_count === 'number' && (
+                                <>
+                                    <span className="text-neutral-300 dark:text-neutral-700">
+                                        •
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <Eye className="h-3 w-3 text-neutral-400" />
+                                        {article.views_count}
+                                    </span>
+                                </>
                             )}
                         </div>
 

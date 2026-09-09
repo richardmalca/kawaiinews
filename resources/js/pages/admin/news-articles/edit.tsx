@@ -1,15 +1,18 @@
 import { Head, usePage } from '@inertiajs/react';
-import { ImageOff, Images } from 'lucide-react';
+import { Check, FileText, ImageOff, Images } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { formatArticleAsPlainText } from '@/lib/utils';
 import ArticleAudioCard from '@/pages/admin/news-articles/components/article-audio-card';
 import ArticleCategoryPicker from '@/pages/admin/news-articles/components/article-category-picker';
 import ArticlePermalinkField from '@/pages/admin/news-articles/components/article-permalink-field';
 import ArticleStatusToggle from '@/pages/admin/news-articles/components/article-status-toggle';
+import ArticleVideoCard from '@/pages/admin/news-articles/components/article-video-card';
 import MediaLibraryDialog from '@/pages/admin/news-articles/components/media-library-dialog';
 import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-article-tags-input';
 import RichTextEditor from '@/pages/admin/news-articles/components/rich-text-editor';
@@ -46,6 +49,23 @@ export default function NewsArticleEdit({
         article.title,
         article.slug,
     );
+    const [copiedText, setCopiedText] = useState(false);
+
+    const handleCopyPlainText = async () => {
+        try {
+            const formatted = formatArticleAsPlainText({
+                title,
+                excerpt,
+                body,
+            });
+            await navigator.clipboard.writeText(formatted);
+            setCopiedText(true);
+            toast.success('Noticia copiada en texto plano con pausas');
+            setTimeout(() => setCopiedText(false), 2000);
+        } catch {
+            toast.error('No se pudo copiar el texto');
+        }
+    };
 
     const plainBody = body
         .replace(/<[^>]+>/g, ' ')
@@ -54,8 +74,24 @@ export default function NewsArticleEdit({
     const isContentComplete = Boolean(
         title.trim() && excerpt.trim() && plainBody,
     );
+
+    const safeTitle = title.replace(/["“”]/g, '').trim();
+    const safeExcerpt = excerpt
+        .replace(/["“”]/g, '')
+        .slice(0, 180)
+        .trim();
+    const safeContext = plainBody
+        .replace(/["“”]/g, '')
+        .slice(0, 200)
+        .trim();
+
+    const categoryStyle =
+        category === 'gaming'
+            ? 'Stylized video game promotional concept art, vibrant dynamic digital gaming illustration, game atmosphere'
+            : 'Official 2D Japanese anime key visual illustration, authentic modern animation aesthetic, crisp lineart, cel-shaded coloring, studio animation quality';
+
     const aiImagePrompt = isContentComplete
-        ? `Ilustración editorial en formato panorámico (16:9) para una noticia sobre "${title}". Primero identificá de qué anime, videojuego o franquicia trata este título y usá su ambientación, paleta de colores y estilo visual general como referencia de inspiración — sin copiar personajes ni logos reales, con tu propio estilo artístico. Resumen: ${excerpt}. Contexto adicional: ${plainBody.slice(0, 500)}. Buen nivel de detalle, colores vibrantes, buena composición. No incluyas ningún texto, letra, título, cartel ni palabra escrita dentro de la imagen — solo la ilustración.`
+        ? `Cinematic editorial illustration in 16:9 widescreen format inspired by the topic: ${safeTitle}. Theme: ${safeExcerpt}. Background atmosphere: ${safeContext}. Art style: ${categoryStyle}, cinematic lighting, colorful scenic environment. Strict constraints: completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful fictional video game or anime artwork, no violence, no gore, no realistic human photos.`
         : null;
     const canGenerateAudio = Boolean(
         article.title.trim() &&
@@ -90,14 +126,34 @@ export default function NewsArticleEdit({
                             title="Editar noticia"
                             description="Ajusta el contenido antes de publicarla"
                         />
-                        <Button
-                            type="submit"
-                            form="edit-article-form"
-                            disabled={processing}
-                        >
-                            {processing && <Spinner />}
-                            Guardar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCopyPlainText}
+                                title="Copiar noticia a texto plano con pausas para narración o locución"
+                            >
+                                {copiedText ? (
+                                    <>
+                                        <Check className="text-emerald-500" />
+                                        <span>Copiado</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FileText />
+                                        <span>Copiar texto</span>
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="edit-article-form"
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Guardar
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -284,6 +340,11 @@ export default function NewsArticleEdit({
                                 value={audioUrl}
                                 onChange={setAudioUrl}
                                 canGenerate={canGenerateAudio}
+                            />
+
+                            <ArticleVideoCard
+                                body={body}
+                                onBodyChange={setBody}
                             />
                         </div>
                     </div>

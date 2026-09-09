@@ -1,8 +1,12 @@
 import { CategoryBadge } from '@/components/public/category-badge';
-import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
+import {
+    FALLBACK_IMAGES,
+    estimateReadingTime,
+    handleImageFallback,
+} from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, Calendar } from 'lucide-react';
+import { ArrowRight, BookOpen, Calendar, Eye, Flame } from 'lucide-react';
 
 interface HeroFeaturedProps {
     article: PublicArticle;
@@ -10,6 +14,7 @@ interface HeroFeaturedProps {
 
 export function HeroFeatured({ article }: HeroFeaturedProps) {
     const imageSrc = article.featured_image || FALLBACK_IMAGES.hero;
+    const readingMinutes = estimateReadingTime(article.body);
 
     return (
         <Link
@@ -23,22 +28,47 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                             src={imageSrc}
                             alt={article.title}
                             className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                            loading="eager"
                             onError={(e) =>
                                 handleImageFallback(e, FALLBACK_IMAGES.hero)
                             }
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-black/80 dark:from-neutral-950 dark:via-neutral-950/20 dark:lg:to-neutral-950" />
+                        <div className="absolute top-4 left-4">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-600/90 px-3 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-md">
+                                <Flame className="h-3.5 w-3.5 animate-pulse fill-amber-300 text-amber-300" />
+                                <span>Destacado</span>
+                            </span>
+                        </div>
                     </div>
 
                     <div className="flex flex-col justify-between p-6 lg:col-span-5 lg:p-8">
                         <div>
-                            <div className="mb-4 flex items-center gap-2">
+                            <div className="mb-4 flex flex-wrap items-center gap-2">
                                 <CategoryBadge category={article.category} />
                                 {article.published_at && (
                                     <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
                                         <Calendar className="h-3.5 w-3.5" />
                                         {article.published_at}
                                     </span>
+                                )}
+                                <span className="text-neutral-300 dark:text-neutral-700">
+                                    •
+                                </span>
+                                <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                    <BookOpen className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400" />
+                                    {readingMinutes} min
+                                </span>
+                                {typeof article.views_count === 'number' && (
+                                    <>
+                                        <span className="text-neutral-300 dark:text-neutral-700">
+                                            •
+                                        </span>
+                                        <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                            <Eye className="h-3.5 w-3.5 text-neutral-400" />
+                                            {article.views_count} vistas
+                                        </span>
+                                    </>
                                 )}
                             </div>
 

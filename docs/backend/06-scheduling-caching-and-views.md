@@ -68,7 +68,7 @@ Objetivo: contar vistas reales (una por visitante, no una por cada F5) sin escri
 
 **Bug real encontrado y corregido durante esta implementación:** `Cache::increment()` sobre una clave que todavía no existe se comporta distinto según el driver. Redis la crea en 0 automáticamente (semántica de `INCR`); los drivers `database` y `file` (este proyecto usa `database`) **no la crean** — el incremento se pierde silenciosamente, sin error. La primera vista de cada artículo no se contaba nunca. Se arregló llamando `Cache::add($key, 0, $ttl)` (no-op si ya existe) antes de `Cache::increment()`. Esto además expuso que el test original daba falsa confianza: corría con `CACHE_STORE=array` (el default de testing), cuyo driver sí auto-inicializa en incremento — por eso `tests/Feature/Public/ArticleViewServiceTest.php` fuerza `config(['cache.default' => 'database'])` en un `beforeEach`, para probar contra el mismo driver que dev/producción.
 
-`getTrendingTopics()` en `NewsService` ahora ordena por `views_count` (ventana de los últimos 14 días) en vez de solo por fecha — "trending" real, no "más reciente" disfrazado de trending.
+`getTrendingTopics()` en `NewsService` ahora ordena por `views_count` (ventana de los últimos 14 días) en vez de solo por fecha — "trending" real, no "más reciente" disfrazado de trending. Asimismo, `getPaginatedTrending(int $perPage = 12)` provee la consulta paginada y cacheada para la página dedicada `/tendencias` (`TrendingController`), rehidratando modelos a partir de los IDs cacheados sin romper con `serializable_classes`.
 
 **Trade-off aceptado:** `views_count` puede estar hasta 1 minuto desactualizado (el intervalo del flush) respecto a las vistas que realmente ocurrieron — se prefirió esto a escribir en la base en cada request.
 

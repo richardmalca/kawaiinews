@@ -54,12 +54,6 @@ class AiProviderService
         $aiProvider->update([$column => true]);
     }
 
-    /**
-     * Para proveedores sin modelos de texto (ej. ElevenLabs) el formulario
-     * no manda `default_model` — esta columna no es nullable en la base, así
-     * que se rellena con algo identificable que nunca se usa para generar
-     * texto (esos proveedores no pueden activarse para la capacidad texto).
-     */
     private function resolveDefaultModel(string $provider, ?string $submitted): string
     {
         if (filled($submitted)) {

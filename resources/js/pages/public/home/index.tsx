@@ -52,7 +52,10 @@ export default function Home({
                 </section>
             )}
 
-            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+            <div
+                id="noticias-principales"
+                className="grid scroll-mt-24 grid-cols-1 items-start gap-8 lg:grid-cols-12"
+            >
                 <div className="space-y-6 lg:col-span-8">
                     <NewsSectionHeader
                         selectedCategory={selectedCategory}
@@ -73,7 +76,10 @@ export default function Home({
                     <HomePagination links={articles.links} />
                 </div>
 
-                <div className="space-y-6 transition-all duration-300 lg:sticky lg:top-28 lg:col-span-4">
+                <div
+                    id="tendencias"
+                    className="scroll-mt-24 space-y-6 transition-all duration-300 lg:sticky lg:top-32 lg:col-span-4"
+                >
                     {trending.data.length > 0 && (
                         <TrendingSidebar articles={trending.data} />
                     )}

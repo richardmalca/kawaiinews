@@ -18,26 +18,23 @@ class NewsArticleService
         $draft = $this->generateDraft($newsCluster);
         $body = $this->appendVideoEmbed($draft['body'], $newsCluster->video_url);
 
-        return NewsArticle::create([
+        $newsArticle = NewsArticle::create([
             'news_cluster_id' => $newsCluster->id,
             'title' => $draft['title'],
             'slug' => $this->uniqueSlug($draft['title']),
-            'category' => $newsCluster->category,
+            'category' => $draft['category'] ?? $newsCluster->category,
             'excerpt' => $draft['excerpt'],
             'body' => $body,
             'featured_image' => $newsCluster->image_url,
             'status' => 'draft',
             'published_at' => $newsCluster->earliestPublishedAt(),
         ]);
+
+        $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
+
+        return $newsArticle;
     }
 
-    /**
-     * Si el cluster trae un link de YouTube tomado directo de la fuente
-     * (ver `NewsScraperService::extractYoutubeUrl()`), lo agrega como
-     * embed real al final del cuerpo — no se le pide a la IA que lo
-     * incluya ella misma, para no arriesgar que arme mal la URL o
-     * invente un video que no es el que trajo la fuente.
-     */
     private function appendVideoEmbed(?string $body, ?string $videoUrl): ?string
     {
         if (! $videoUrl) {
@@ -162,7 +159,7 @@ class NewsArticleService
     }
 
     /**
-     * @return array{title: string, excerpt: string|null, body: string|null}
+     * @return array{title: string, excerpt: string|null, body: string|null, category: string|null, tags: array<int, string>}
      */
     private function generateDraft(NewsCluster $newsCluster): array
     {
@@ -173,6 +170,8 @@ class NewsArticleService
                 'title' => $newsCluster->title,
                 'excerpt' => $newsCluster->summary,
                 'body' => null,
+                'category' => null,
+                'tags' => [],
             ];
         }
 
@@ -181,17 +180,21 @@ class NewsArticleService
                 ->map(fn ($item) => "- {$item->newsSource->label}: {$item->title}. {$item->summary}")
                 ->implode("\n");
 
+            $categories = implode(', ', array_keys(config('news_sources_catalog')));
+
             $prompt = <<<PROMPT
                 Redacta una noticia en español sobre el siguiente tema, cruzando la información de estas fuentes:
 
                 {$sourcesSummary}
 
-                IMPORTANTE sobre nombres propios: nunca traduzcas ni adaptes títulos de anime/manga/videojuegos, nombres de personajes, estudios, franquicias o marcas — dejalos exactamente como aparecen en las fuentes (ej. "Pretty Cure" se escribe "Pretty Cure", no "Preciosa Cura" ni ninguna traducción; "Re:Zero" queda "Re:Zero"). Solo traducís la prosa alrededor de esos nombres, nunca el nombre en sí.
+                IMPORTANTE sobre nombres propios: nunca traduzcas ni adaptes títulos de anime/manga/videojuegos, nombres de personajes, estudios, franquicias o marcas: dejalos exactamente como aparecen en las fuentes (ej. "Pretty Cure" se escribe "Pretty Cure", no "Preciosa Cura" ni ninguna traducción; "Re:Zero" queda "Re:Zero"). Solo traducís la prosa alrededor de esos nombres, nunca el nombre en sí.
 
                 Devuelve la respuesta EXACTAMENTE en este formato, sin texto adicional:
                 TITULO: (un titular llamativo tipo prensa, distinto y más atractivo que el resumen, no lo repitas)
                 RESUMEN: (1 o 2 oraciones que resuman la noticia, sin repetir literalmente el título)
                 CUERPO: (HTML válido, 3 a 4 párrafos en tono periodístico neutral. Envuelve cada párrafo en <p>. Usa <strong> para nombres propios y datos clave, <em> para citas textuales o énfasis, <u> para el dato más importante de la noticia, y si hace falta un subtítulo dentro de la nota usa <h3>)
+                CATEGORIA: (elegí exactamente una de estas opciones, la que mejor describa el tema principal de la noticia, sin inventar otras: {$categories})
+                TAGS: (3 a 6 palabras clave relacionadas, separadas por coma, sin el símbolo # - ej. nombres de personajes, del anime/juego/estudio, del evento. No repitas el título completo como tag)
                 PROMPT;
 
             $response = Prism::text()
@@ -207,23 +210,40 @@ class NewsArticleService
                 'title' => $newsCluster->title,
                 'excerpt' => $newsCluster->summary,
                 'body' => null,
+                'category' => null,
+                'tags' => [],
             ];
         }
     }
 
     /**
-     * @return array{title: string, excerpt: string|null, body: string|null}
+     * @return array{title: string, excerpt: string|null, body: string|null, category: string|null, tags: array<int, string>}
      */
     private function parseDraft(string $text, NewsCluster $newsCluster): array
     {
         preg_match('/TITULO:\s*(.+)/i', $text, $titleMatch);
         preg_match('/RESUMEN:\s*(.+?)(?=CUERPO:|$)/is', $text, $excerptMatch);
-        preg_match('/CUERPO:\s*(.+)/is', $text, $bodyMatch);
+        preg_match('/CUERPO:\s*(.+?)(?=CATEGORIA:|$)/is', $text, $bodyMatch);
+        preg_match('/CATEGORIA:\s*(\S+)/i', $text, $categoryMatch);
+        preg_match('/TAGS:\s*(.+)/i', $text, $tagsMatch);
+
+        $category = isset($categoryMatch[1]) ? Str::lower(trim($categoryMatch[1], " \t\n\r\0\x0B.")) : null;
+        $validCategories = array_keys(config('news_sources_catalog'));
+
+        $tags = isset($tagsMatch[1])
+            ? collect(explode(',', $tagsMatch[1]))
+                ->map(fn (string $tag) => trim($tag, " \t\n\r\0\x0B#."))
+                ->filter()
+                ->values()
+                ->all()
+            : [];
 
         return [
             'title' => trim($titleMatch[1] ?? $newsCluster->title) ?: $newsCluster->title,
             'excerpt' => isset($excerptMatch[1]) ? trim($excerptMatch[1]) : $newsCluster->summary,
             'body' => isset($bodyMatch[1]) ? trim($bodyMatch[1]) : $text,
+            'category' => in_array($category, $validCategories, true) ? $category : null,
+            'tags' => $tags,
         ];
     }
 }

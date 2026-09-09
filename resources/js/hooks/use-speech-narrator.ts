@@ -65,6 +65,10 @@ export function useSpeechNarrator(
         }
     }, []);
 
+    const [progress, setProgress] = useState(0);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const timerRef = useRef<number | null>(null);
+
     const cleanHtml = (raw: string) => {
         if (typeof document === 'undefined') {
             return raw;
@@ -72,6 +76,19 @@ export function useSpeechNarrator(
         const div = document.createElement('div');
         div.innerHTML = raw;
         return div.textContent || div.innerText || '';
+    };
+
+    const cleanText = cleanHtml(text);
+    const estimatedTotalSeconds = Math.max(
+        1,
+        Math.round(cleanText.length / 16),
+    );
+
+    const clearTimer = () => {
+        if (timerRef.current !== null) {
+            window.clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
     };
 
     const play = () => {
@@ -83,12 +100,26 @@ export function useSpeechNarrator(
             window.speechSynthesis.resume();
             setIsPaused(false);
             setIsPlaying(true);
+            timerRef.current = window.setInterval(() => {
+                setElapsedSeconds((prev) => {
+                    const next = prev + 1;
+                    setProgress(
+                        Math.min(
+                            100,
+                            Math.round((next / estimatedTotalSeconds) * 100),
+                        ),
+                    );
+                    return next;
+                });
+            }, 1000);
             return;
         }
 
         window.speechSynthesis.cancel();
+        clearTimer();
+        setElapsedSeconds(0);
+        setProgress(0);
 
-        const cleanText = cleanHtml(text);
         const utterance = new SpeechSynthesisUtterance(cleanText);
 
         if (selectedVoice) {
@@ -98,19 +129,44 @@ export function useSpeechNarrator(
         utterance.rate = rate;
         utterance.pitch = pitch;
 
+        utterance.onboundary = (e) => {
+            if (e.charIndex && cleanText.length > 0) {
+                const pct = Math.min(
+                    100,
+                    Math.round((e.charIndex / cleanText.length) * 100),
+                );
+                setProgress(pct);
+            }
+        };
+
         utterance.onstart = () => {
             setIsPlaying(true);
             setIsPaused(false);
+            timerRef.current = window.setInterval(() => {
+                setElapsedSeconds((prev) => {
+                    const next = prev + 1;
+                    setProgress(
+                        Math.min(
+                            100,
+                            Math.round((next / estimatedTotalSeconds) * 100),
+                        ),
+                    );
+                    return next;
+                });
+            }, 1000);
         };
 
         utterance.onend = () => {
             setIsPlaying(false);
             setIsPaused(false);
+            clearTimer();
+            setProgress(100);
         };
 
         utterance.onerror = () => {
             setIsPlaying(false);
             setIsPaused(false);
+            clearTimer();
         };
 
         utteranceRef.current = utterance;
@@ -122,6 +178,7 @@ export function useSpeechNarrator(
             return;
         }
         window.speechSynthesis.pause();
+        clearTimer();
         setIsPaused(true);
         setIsPlaying(false);
     };
@@ -131,8 +188,11 @@ export function useSpeechNarrator(
             return;
         }
         window.speechSynthesis.cancel();
+        clearTimer();
         setIsPlaying(false);
         setIsPaused(false);
+        setProgress(0);
+        setElapsedSeconds(0);
     };
 
     return {
@@ -141,6 +201,9 @@ export function useSpeechNarrator(
         isPaused,
         selectedVoice,
         availableVoices,
+        progress,
+        elapsedSeconds,
+        estimatedTotalSeconds,
         setSelectedVoice,
         play,
         pause,

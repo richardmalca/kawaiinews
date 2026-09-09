@@ -65,13 +65,22 @@ export function PublicFooter() {
 
                     <div>
                         <h4 className="mb-3 text-xs font-bold tracking-wider text-neutral-900 uppercase dark:text-neutral-200">
-                            Ecosistema
+                            Ecosistema & Comunidad
                         </h4>
-                        <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                        <p className="mb-4 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                             Lo último en lanzamientos, estrenos, trailers y
                             actualidad sobre el mundo del entretenimiento
                             japonés y los videojuegos.
                         </p>
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+                            <span>Comunidad activa</span>
+                            <span>•</span>
+                            <span>Audio narrado</span>
+                            <span>•</span>
+                            <span className="font-medium text-rose-600 dark:text-rose-400">
+                                100% en español
+                            </span>
+                        </div>
                     </div>
                 </div>
 

@@ -73,8 +73,8 @@ export default function ArticleAudioCard({
                         />
                         {!canGenerate && (
                             <p className="text-muted-foreground text-xs">
-                                Guardá título, resumen y contenido completos
-                                para poder generar una narración con IA.
+                                Podés subir un archivo de audio o guardar
+                                título, resumen y contenido para narrar con IA.
                             </p>
                         )}
                     </>

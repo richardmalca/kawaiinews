@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\GenerateMediaRequest;
+use App\Http\Requests\Admin\StoreAudioUploadRequest;
 use App\Http\Requests\Admin\StoreMediaFromUrlRequest;
 use App\Http\Requests\Admin\StoreMediaUploadRequest;
 use App\Http\Resources\Admin\MediaResource;
@@ -51,6 +52,16 @@ class MediaLibraryController extends Controller
         return response()->json((new MediaResource($media))->resolve());
     }
 
+    public function storeAudio(StoreAudioUploadRequest $request): JsonResponse
+    {
+        $media = $this->mediaLibraryService->storeAudioUpload(
+            $request->file('file'),
+            $request->validated('news_article_id'),
+        );
+
+        return response()->json((new MediaResource($media))->resolve());
+    }
+
     public function storeFromUrl(StoreMediaFromUrlRequest $request): JsonResponse
     {
         $media = $this->mediaLibraryService->storeFromUrl(
@@ -86,19 +97,12 @@ class MediaLibraryController extends Controller
         }
     }
 
-    /**
-     * Algunos errores de los proveedores de IA vienen en inglés y con
-     * jerga técnica de su API — acá se traducen los casos más comunes a
-     * algo que tenga sentido para quien está usando el editor. El resto
-     * de errores (API key inválida, red caída, etc.) se muestran tal cual
-     * los devuelve el proveedor.
-     */
     private function friendlyGenerationError(Throwable $exception): string
     {
         $message = $exception->getMessage();
 
         if (str_contains($message, 'rejected by the safety system')) {
-            return 'OpenAI rechazó generar esta imagen por su filtro de seguridad de contenido (puede pasar con ciertos nombres o descripciones, sin previo aviso). Probá de nuevo — a veces con el mismo texto funciona en el segundo intento — o ajustá el resumen/contenido de la noticia y volvé a intentar.';
+            return 'OpenAI rechazó generar esta imagen por su filtro de seguridad de contenido (puede pasar con ciertos nombres o descripciones, sin previo aviso). Probá de nuevo (a veces con el mismo texto funciona en el segundo intento) o ajustá el resumen/contenido de la noticia y volvé a intentar.';
         }
 
         return $message;

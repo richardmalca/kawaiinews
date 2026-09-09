@@ -93,7 +93,7 @@ class NewsScraperService
                 'url' => $link,
                 'summary' => $this->extractSummary($entry),
                 'image_url' => $this->extractImage($entry),
-                'video_url' => $this->extractYoutubeUrl($entry),
+                'video_url' => $this->extractYoutubeUrl($entry, $link),
                 'published_at' => $this->parseDate((string) $entry->pubDate),
             ];
         }
@@ -153,13 +153,7 @@ class NewsScraperService
         return null;
     }
 
-    /**
-     * Busca un link de YouTube ya presente en la noticia original (en la
-     * descripción o en `content:encoded`, donde suelen venir los trailers
-     * embebidos como <iframe>/<a>) — no se busca en YouTube por fuera del
-     * feed, solo se toma lo que la fuente ya trae.
-     */
-    private function extractYoutubeUrl(SimpleXMLElement $entry): ?string
+    private function extractYoutubeUrl(SimpleXMLElement $entry, string $pageUrl = ''): ?string
     {
         $description = (string) $entry->description;
 
@@ -170,6 +164,31 @@ class NewsScraperService
 
         if (preg_match('#https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)[\w-]+|youtu\.be/[\w-]+)[^\s"\'<>]*#i', $haystack, $matches)) {
             return $matches[0];
+        }
+
+        if ($pageUrl !== '') {
+            return $this->extractYoutubeUrlFromPage($pageUrl);
+        }
+
+        return null;
+    }
+
+    private function extractYoutubeUrlFromPage(string $pageUrl): ?string
+    {
+        try {
+            $response = Http::timeout(5)->get($pageUrl);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $html = $response->body();
+
+            if (preg_match('#https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})#i', $html, $matches)) {
+                return 'https://www.youtube.com/watch?v='.$matches[1];
+            }
+        } catch (Throwable) {
+            return null;
         }
 
         return null;
