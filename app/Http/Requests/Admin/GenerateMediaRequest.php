@@ -18,6 +18,7 @@ class GenerateMediaRequest extends FormRequest
     {
         return [
             'prompt' => ['required', 'string', 'max:1000'],
+            'news_article_id' => ['nullable', 'integer', 'exists:news_articles,id'],
         ];
     }
 }

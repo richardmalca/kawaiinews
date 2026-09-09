@@ -6,6 +6,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import ArticleAudioCard from '@/pages/admin/news-articles/components/article-audio-card';
 import ArticleCategoryPicker from '@/pages/admin/news-articles/components/article-category-picker';
 import ArticlePermalinkField from '@/pages/admin/news-articles/components/article-permalink-field';
 import ArticleStatusToggle from '@/pages/admin/news-articles/components/article-status-toggle';
@@ -40,6 +41,7 @@ export default function NewsArticleEdit({
     const [featuredImage, setFeaturedImage] = useState(
         article.featured_image ?? '',
     );
+    const [audioUrl, setAudioUrl] = useState(article.audio_url ?? '');
     const { slug, handleTitleChange, handleSlugChange } = useArticleSlug(
         article.title,
         article.slug,
@@ -53,8 +55,13 @@ export default function NewsArticleEdit({
         title.trim() && excerpt.trim() && plainBody,
     );
     const aiImagePrompt = isContentComplete
-        ? `Ilustración editorial para una noticia titulada "${title}". Resumen: ${excerpt}. Contexto: ${plainBody.slice(0, 500)}`
+        ? `Ilustración editorial en formato panorámico (16:9) para una noticia sobre: ${excerpt}. Contexto adicional: ${plainBody.slice(0, 500)}. Estilo prolijo y atractivo, colores vibrantes, buena composición. No incluyas ningún texto, letra, título, cartel ni palabra escrita dentro de la imagen — solo la ilustración.`
         : null;
+    const canGenerateAudio = Boolean(
+        article.title.trim() &&
+        (article.excerpt ?? '').trim() &&
+        (article.body ?? '').trim(),
+    );
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -66,6 +73,7 @@ export default function NewsArticleEdit({
             excerpt,
             body,
             featured_image: featuredImage,
+            audio_url: audioUrl,
             status,
             tags,
         });
@@ -223,6 +231,7 @@ export default function NewsArticleEdit({
                                                 <MediaLibraryDialog
                                                     onSelect={setFeaturedImage}
                                                     aiPrompt={aiImagePrompt}
+                                                    newsArticleId={article.id}
                                                     trigger={
                                                         <Button
                                                             type="button"
@@ -251,6 +260,7 @@ export default function NewsArticleEdit({
                                         <MediaLibraryDialog
                                             onSelect={setFeaturedImage}
                                             aiPrompt={aiImagePrompt}
+                                            newsArticleId={article.id}
                                             trigger={
                                                 <Button
                                                     type="button"
@@ -268,6 +278,13 @@ export default function NewsArticleEdit({
                                     />
                                 </CardContent>
                             </Card>
+
+                            <ArticleAudioCard
+                                articleId={article.id}
+                                value={audioUrl}
+                                onChange={setAudioUrl}
+                                canGenerate={canGenerateAudio}
+                            />
                         </div>
                     </div>
                 </div>

@@ -6,7 +6,7 @@ import { store } from '@/routes/admin/ai-providers';
 type AddAiProviderData = {
     provider: string;
     label: string;
-    default_model: string;
+    default_model?: string;
     api_key: string;
 };
 

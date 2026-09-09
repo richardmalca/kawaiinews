@@ -10,6 +10,7 @@ type SaveNewsArticleData = {
     excerpt: string;
     body: string;
     featured_image: string;
+    audio_url: string;
     status: 'draft' | 'published';
     tags: string[];
 };

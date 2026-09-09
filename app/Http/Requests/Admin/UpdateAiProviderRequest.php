@@ -15,7 +15,7 @@ class UpdateAiProviderRequest extends FormRequest
     {
         return [
             'label' => ['required', 'string', 'max:255'],
-            'default_model' => ['required', 'string', 'max:255'],
+            'default_model' => ['nullable', 'string', 'max:255'],
             'api_key' => ['nullable', 'string'],
         ];
     }

@@ -15,7 +15,7 @@ class AiProviderService
     {
         $aiProvider->fill([
             'label' => $data['label'],
-            'default_model' => $data['default_model'],
+            'default_model' => $this->resolveDefaultModel($aiProvider->provider, $data['default_model'] ?? null),
         ]);
 
         if (filled($data['api_key'] ?? null)) {
@@ -27,11 +27,48 @@ class AiProviderService
         return $aiProvider;
     }
 
-    public function activate(AiProvider $aiProvider): void
-    {
-        AiProvider::where('id', '!=', $aiProvider->id)->update(['is_active' => false]);
+    private const CAPABILITY_COLUMNS = [
+        'text' => 'is_active',
+        'image' => 'is_active_for_images',
+        'audio' => 'is_active_for_audio',
+    ];
 
-        $aiProvider->update(['is_active' => true]);
+    public function activate(AiProvider $aiProvider, string $capability = 'text'): void
+    {
+        $column = self::CAPABILITY_COLUMNS[$capability] ?? self::CAPABILITY_COLUMNS['text'];
+
+        if ($capability === 'text' && ! $aiProvider->supportsText()) {
+            return;
+        }
+
+        if ($capability === 'image' && ! $aiProvider->supportsImages()) {
+            return;
+        }
+
+        if ($capability === 'audio' && ! $aiProvider->supportsAudio()) {
+            return;
+        }
+
+        AiProvider::where('id', '!=', $aiProvider->id)->update([$column => false]);
+
+        $aiProvider->update([$column => true]);
+    }
+
+    /**
+     * Para proveedores sin modelos de texto (ej. ElevenLabs) el formulario
+     * no manda `default_model` — esta columna no es nullable en la base, así
+     * que se rellena con algo identificable que nunca se usa para generar
+     * texto (esos proveedores no pueden activarse para la capacidad texto).
+     */
+    private function resolveDefaultModel(string $provider, ?string $submitted): string
+    {
+        if (filled($submitted)) {
+            return $submitted;
+        }
+
+        return config("ai_catalog.{$provider}.audio_model")
+            ?? config("ai_catalog.{$provider}.image_model")
+            ?? $provider;
     }
 
     public function delete(AiProvider $aiProvider): void
@@ -44,11 +81,13 @@ class AiProviderService
      */
     public function createFromCatalog(array $data): AiProvider
     {
+        $supportsText = filled(config("ai_catalog.{$data['provider']}.models"));
+
         $aiProvider = AiProvider::create([
             'provider' => $data['provider'],
             'label' => $data['label'],
-            'default_model' => $data['default_model'],
-            'is_active' => AiProvider::query()->doesntExist(),
+            'default_model' => $this->resolveDefaultModel($data['provider'], $data['default_model'] ?? null),
+            'is_active' => $supportsText && AiProvider::query()->doesntExist(),
         ]);
 
         if (filled($data['api_key'] ?? null)) {
@@ -65,6 +104,9 @@ class AiProviderService
      *     models: array<int, string>,
      *     configured: bool,
      *     provider_id: int|null,
+     *     supports_text: bool,
+     *     supports_image: bool,
+     *     supports_audio: bool,
      * }>
      */
     public function catalog(): array
@@ -78,6 +120,9 @@ class AiProviderService
                 'models' => $entry['models'],
                 'configured' => $configured->has($providerKey),
                 'provider_id' => $configured->get($providerKey),
+                'supports_text' => filled($entry['models'] ?? []),
+                'supports_image' => filled($entry['image_model'] ?? null),
+                'supports_audio' => filled($entry['audio_model'] ?? null),
             ])
             ->values()
             ->all();
@@ -89,12 +134,16 @@ class AiProviderService
      *     configured: int,
      *     models: array<int, string>,
      *     active: array{label: string, provider: string, model: string}|null,
+     *     active_image: array{label: string, provider: string}|null,
+     *     active_audio: array{label: string, provider: string}|null,
      * }
      */
     public function summary(): array
     {
         $providers = AiProvider::all();
         $active = $providers->firstWhere('is_active', true);
+        $activeImage = $providers->firstWhere('is_active_for_images', true);
+        $activeAudio = $providers->firstWhere('is_active_for_audio', true);
 
         return [
             'total' => $providers->count(),
@@ -104,6 +153,14 @@ class AiProviderService
                 'label' => $active->label,
                 'provider' => $active->provider,
                 'model' => $active->default_model,
+            ] : null,
+            'active_image' => $activeImage ? [
+                'label' => $activeImage->label,
+                'provider' => $activeImage->provider,
+            ] : null,
+            'active_audio' => $activeAudio ? [
+                'label' => $activeAudio->label,
+                'provider' => $activeAudio->provider,
             ] : null,
         ];
     }
@@ -117,6 +174,13 @@ class AiProviderService
             return [
                 'success' => false,
                 'message' => 'Agrega una API key antes de probar la conexión.',
+            ];
+        }
+
+        if (! $aiProvider->supportsText()) {
+            return [
+                'success' => false,
+                'message' => 'Este proveedor no genera texto (solo imagen/audio), no hay una conexión de texto que probar acá.',
             ];
         }
 

@@ -26,6 +26,7 @@ class UpdateNewsArticleRequest extends FormRequest
             'excerpt' => ['nullable', 'string', 'max:500'],
             'body' => ['nullable', 'string'],
             'featured_image' => ['nullable', 'string', 'url', 'max:500'],
+            'audio_url' => ['nullable', 'string', 'url', 'max:500'],
             'status' => ['required', 'string', Rule::in(['draft', 'published'])],
             'tags' => ['array'],
             'tags.*' => ['string', 'max:50'],

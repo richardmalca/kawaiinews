@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -19,10 +21,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $excerpt
  * @property string|null $body
  * @property string|null $featured_image
+ * @property string|null $audio_url
  * @property string $status
  * @property Carbon|null $published_at
+ * @property int $views_count
  */
-#[Fillable(['news_cluster_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'status', 'published_at'])]
+#[Fillable(['news_cluster_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'audio_url', 'status', 'published_at'])]
 class NewsArticle extends Model
 {
     /** @use HasFactory<NewsArticleFactory> */
@@ -35,6 +39,7 @@ class NewsArticle extends Model
     {
         return [
             'published_at' => 'datetime',
+            'views_count' => 'integer',
         ];
     }
 
@@ -46,6 +51,16 @@ class NewsArticle extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
+    }
+
+    public function media(): HasMany
+    {
+        return $this->hasMany(Media::class);
+    }
+
+    public function latestAudio(): HasOne
+    {
+        return $this->hasOne(Media::class)->where('type', 'audio')->latestOfMany();
     }
 
     public function isPublished(): bool

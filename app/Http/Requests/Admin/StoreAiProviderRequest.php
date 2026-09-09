@@ -22,7 +22,10 @@ class StoreAiProviderRequest extends FormRequest
                 Rule::unique('ai_providers', 'provider'),
             ],
             'label' => ['required', 'string', 'max:255'],
-            'default_model' => ['required', 'string', 'max:255'],
+            // Nullable: proveedores sin modelos de texto (ej. ElevenLabs, solo
+            // audio) no tienen nada que elegir acá; AiProviderService rellena
+            // un valor placeholder que nunca se usa para generar texto.
+            'default_model' => ['nullable', 'string', 'max:255'],
             'api_key' => ['nullable', 'string'],
         ];
     }

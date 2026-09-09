@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\NewsClusterResource;
+use App\Jobs\AnalyzeNewsClustersJob;
+use App\Jobs\ApplyAiVerdictsJob;
+use App\Jobs\ScrapeNewsSourcesJob;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
 use App\Services\Admin\NewsArticleService;
 use App\Services\Admin\NewsClusterService;
-use App\Services\Admin\NewsScraperService;
+use App\Support\JobRunStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +22,6 @@ class NewsReviewController extends Controller
 {
     public function __construct(
         private readonly NewsClusterService $newsClusterService,
-        private readonly NewsScraperService $newsScraperService,
         private readonly NewsArticleService $newsArticleService,
     ) {}
 
@@ -38,6 +40,7 @@ class NewsReviewController extends Controller
         return Inertia::render('admin/news-review/index', [
             'clusters' => NewsClusterResource::collection($items)->resolve(),
             'hasActiveSources' => $this->hasScrapableSources(),
+            'hasPublishVerdicts' => NewsCluster::where('status', 'pending')->where('ai_verdict', 'publish')->exists(),
             'sort' => $sort,
             'category' => $category,
             'categories' => array_keys(config('news_sources_catalog')),
@@ -60,14 +63,34 @@ class NewsReviewController extends Controller
             ]);
         }
 
-        $result = $this->newsScraperService->run();
+        $runId = JobRunStatus::start();
 
-        return response()->json($result);
+        ScrapeNewsSourcesJob::dispatch($runId);
+
+        return response()->json(['run_id' => $runId]);
     }
 
     public function analyze(): JsonResponse
     {
-        return response()->json($this->newsClusterService->analyzeWithAi());
+        $runId = JobRunStatus::start();
+
+        AnalyzeNewsClustersJob::dispatch($runId);
+
+        return response()->json(['run_id' => $runId]);
+    }
+
+    public function applyAiVerdicts(): JsonResponse
+    {
+        $runId = JobRunStatus::start();
+
+        ApplyAiVerdictsJob::dispatch($runId);
+
+        return response()->json(['run_id' => $runId]);
+    }
+
+    public function runStatus(string $runId): JsonResponse
+    {
+        return response()->json(JobRunStatus::get($runId));
     }
 
     private function hasScrapableSources(): bool

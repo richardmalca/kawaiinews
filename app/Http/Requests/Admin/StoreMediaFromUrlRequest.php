@@ -18,6 +18,7 @@ class StoreMediaFromUrlRequest extends FormRequest
     {
         return [
             'url' => ['required', 'string', 'url', 'max:2048'],
+            'news_article_id' => ['nullable', 'integer', 'exists:news_articles,id'],
         ];
     }
 }

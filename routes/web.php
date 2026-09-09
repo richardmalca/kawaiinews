@@ -8,12 +8,16 @@ use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('categoria/{category}', HomeController::class)->name('public.category');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
+Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
     ->prefix('admin')
@@ -50,6 +54,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::get('news-review', [NewsReviewController::class, 'index'])->name('news-review.index');
             Route::post('news-review/scrape', [NewsReviewController::class, 'scrape'])->name('news-review.scrape');
             Route::post('news-review/analyze', [NewsReviewController::class, 'analyze'])->name('news-review.analyze');
+            Route::post('news-review/apply-ai-verdicts', [NewsReviewController::class, 'applyAiVerdicts'])->name('news-review.apply-ai-verdicts');
+            Route::get('news-review/runs/{runId}', [NewsReviewController::class, 'runStatus'])->name('news-review.run-status');
             Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])->name('news-review.accept');
             Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
 
@@ -61,6 +67,10 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
             Route::post('media/generate', [MediaLibraryController::class, 'generate'])->name('media.generate');
             Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
+
+            Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');
+            Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
+            Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])->name('news-articles.audio.generate');
         });
     });
 

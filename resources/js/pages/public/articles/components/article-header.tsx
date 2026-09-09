@@ -12,12 +12,18 @@ export function ArticleHeader({ article }: ArticleHeaderProps) {
                 <CategoryBadge category={article.category} />
             </div>
 
-            <h1 className="text-2xl leading-tight font-black tracking-tight text-neutral-950 sm:text-3xl lg:text-4xl dark:text-white">
+            <h1
+                id="article-title"
+                className="text-2xl leading-tight font-black tracking-tight text-neutral-950 transition-colors duration-300 sm:text-3xl lg:text-4xl dark:text-white"
+            >
                 {article.title}
             </h1>
 
             {article.excerpt && (
-                <p className="border-l-2 border-rose-500 pl-4 text-sm leading-relaxed text-neutral-600 sm:text-base dark:text-neutral-300">
+                <p
+                    id="article-excerpt"
+                    className="border-l-2 border-rose-500 pl-4 text-sm leading-relaxed text-neutral-600 transition-colors duration-300 sm:text-base dark:text-neutral-300"
+                >
                     {article.excerpt}
                 </p>
             )}

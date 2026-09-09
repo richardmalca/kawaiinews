@@ -11,6 +11,8 @@ use Throwable;
 
 class NewsClusterService
 {
+    public function __construct(private readonly NewsArticleService $newsArticleService) {}
+
     public function reviewQueue(string $sort = 'relevance', ?string $category = null): Collection
     {
         $clusters = NewsCluster::whereIn('status', ['pending', 'accepted'])
@@ -35,6 +37,32 @@ class NewsClusterService
         $newsCluster->update(['status' => 'accepted']);
 
         return $newsCluster;
+    }
+
+    /**
+     * Acepta y convierte en artículo todos los clusters `pending` que la IA
+     * marcó como `publish`, de una sola vez. Cada conversión sigue llamando
+     * a la IA para redactar el borrador (vía `createFromCluster`), así que
+     * esto se dispara desde una cola (`ApplyAiVerdictsJob`), no en el
+     * request HTTP, igual que el scraping y el análisis en lote.
+     *
+     * @return array{applied: int, article_ids: array<int, int>}
+     */
+    public function acceptAllPublishVerdicts(): array
+    {
+        $clusters = NewsCluster::where('status', 'pending')
+            ->where('ai_verdict', 'publish')
+            ->get();
+
+        $articleIds = [];
+
+        foreach ($clusters as $cluster) {
+            $this->accept($cluster);
+            $article = $this->newsArticleService->createFromCluster($cluster);
+            $articleIds[] = $article->id;
+        }
+
+        return ['applied' => count($articleIds), 'article_ids' => $articleIds];
     }
 
     private const BATCH_SIZE = 100;

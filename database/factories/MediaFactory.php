@@ -21,6 +21,17 @@ class MediaFactory extends Factory
             'url' => $this->faker->imageUrl(),
             'original_name' => $this->faker->words(3, true),
             'source' => 'upload',
+            'type' => 'image',
+            'news_article_id' => null,
         ];
+    }
+
+    public function audio(): static
+    {
+        return $this->state(fn () => [
+            'url' => 'https://example.test/audio/'.$this->faker->uuid().'.mp3',
+            'source' => 'ai',
+            'type' => 'audio',
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\AiProvider;
 use App\Models\NewsArticle;
 use App\Models\NewsCluster;
 use App\Models\Tag;
+use App\Support\PublicNewsCacheVersion;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -30,7 +31,7 @@ class NewsArticleService
     }
 
     /**
-     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, status: string, slug?: ?string}  $data
+     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
      * @param  array<int, string>  $tags
      */
     public function save(NewsArticle $newsArticle, array $data, array $tags = []): NewsArticle
@@ -50,6 +51,7 @@ class NewsArticleService
             'excerpt' => $data['excerpt'] ?? null,
             'body' => $data['body'] ?? null,
             'featured_image' => $data['featured_image'] ?? null,
+            'audio_url' => $data['audio_url'] ?? null,
             'status' => $data['status'],
             'published_at' => $data['status'] === 'published'
                 ? ($newsArticle->published_at ?? now())
@@ -60,12 +62,16 @@ class NewsArticleService
 
         $newsArticle->tags()->sync($this->resolveTagIds($tags));
 
+        PublicNewsCacheVersion::bump();
+
         return $newsArticle;
     }
 
     public function delete(NewsArticle $newsArticle): void
     {
         $newsArticle->delete();
+
+        PublicNewsCacheVersion::bump();
     }
 
     /**
@@ -129,6 +135,8 @@ class NewsArticleService
                 Redacta una noticia en español sobre el siguiente tema, cruzando la información de estas fuentes:
 
                 {$sourcesSummary}
+
+                IMPORTANTE sobre nombres propios: nunca traduzcas ni adaptes títulos de anime/manga/videojuegos, nombres de personajes, estudios, franquicias o marcas — dejalos exactamente como aparecen en las fuentes (ej. "Pretty Cure" se escribe "Pretty Cure", no "Preciosa Cura" ni ninguna traducción; "Re:Zero" queda "Re:Zero"). Solo traducís la prosa alrededor de esos nombres, nunca el nombre en sí.
 
                 Devuelve la respuesta EXACTAMENTE en este formato, sin texto adicional:
                 TITULO: (un titular llamativo tipo prensa, distinto y más atractivo que el resumen, no lo repitas)

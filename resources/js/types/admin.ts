@@ -15,8 +15,14 @@ export type AiProvider = {
     default_model: string;
     has_api_key: boolean;
     is_active: boolean;
+    is_active_for_images: boolean;
+    is_active_for_audio: boolean;
+    supports_image: boolean;
+    supports_audio: boolean;
     last_verified_at: string | null;
 };
+
+export type AiProviderCapability = 'text' | 'image' | 'audio';
 
 export type AiProviderSummary = {
     total: number;
@@ -27,6 +33,14 @@ export type AiProviderSummary = {
         provider: string;
         model: string;
     } | null;
+    active_image: {
+        label: string;
+        provider: string;
+    } | null;
+    active_audio: {
+        label: string;
+        provider: string;
+    } | null;
 };
 
 export type AiProviderCatalogEntry = {
@@ -35,6 +49,9 @@ export type AiProviderCatalogEntry = {
     models: string[];
     configured: boolean;
     provider_id: number | null;
+    supports_text: boolean;
+    supports_image: boolean;
+    supports_audio: boolean;
 };
 
 export type NewsSource = {
@@ -99,6 +116,7 @@ export type NewsArticle = {
     published_at_formatted?: string | null;
     published_at_time?: string | null;
     created_at: string | null;
+    audio_url?: string | null;
     tags: string[];
 };
 
@@ -109,4 +127,11 @@ export type MediaItem = {
     url: string;
     original_name: string | null;
     source: 'upload' | 'url' | 'ai';
+    provider: string | null;
+    model: string | null;
+    type: 'image' | 'audio';
+    news_article_id: number | null;
+    article_title?: string | null;
+    created_at?: string | null;
+    created_at_formatted?: string | null;
 };

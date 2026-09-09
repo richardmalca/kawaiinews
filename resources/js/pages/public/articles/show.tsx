@@ -4,6 +4,7 @@ import { TrendingSidebar } from '@/pages/public/home/components/trending-sidebar
 import type { PublicArticle, PublicCategorySummary } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { ArticleAudioPlayer } from './components/article-audio-player';
 import { ArticleContent } from './components/article-content';
 import { ArticleHeader } from './components/article-header';
 import { ArticleMetaFooter } from './components/article-meta-footer';
@@ -43,6 +44,12 @@ export default function ShowArticle({
             <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
                 <article className="space-y-8 lg:col-span-8">
                     <ArticleHeader article={item} />
+
+                    <ArticleAudioPlayer
+                        title={item.title}
+                        body={item.body}
+                        audioUrl={item.audio_url}
+                    />
 
                     {item.featured_image && (
                         <div className="my-6 flex justify-center">

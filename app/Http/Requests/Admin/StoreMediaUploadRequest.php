@@ -18,6 +18,7 @@ class StoreMediaUploadRequest extends FormRequest
     {
         return [
             'file' => ['required', 'image', 'max:8192'],
+            'news_article_id' => ['nullable', 'integer', 'exists:news_articles,id'],
         ];
     }
 }

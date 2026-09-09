@@ -10,6 +10,7 @@ use App\Models\AiProvider;
 use App\Services\Admin\AiProviderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,9 +41,11 @@ class AiProviderController extends Controller
         return to_route('admin.ai-providers.index');
     }
 
-    public function activate(AiProvider $aiProvider): RedirectResponse
+    public function activate(Request $request, AiProvider $aiProvider): RedirectResponse
     {
-        $this->aiProviderService->activate($aiProvider);
+        $capability = $request->string('capability', 'text')->value();
+
+        $this->aiProviderService->activate($aiProvider, $capability);
 
         return to_route('admin.ai-providers.index');
     }

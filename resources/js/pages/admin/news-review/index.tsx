@@ -11,6 +11,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import AnalyzeWithAiButton from '@/pages/admin/news-review/components/analyze-with-ai-button';
+import ApplyAiVerdictsButton from '@/pages/admin/news-review/components/apply-ai-verdicts-button';
 import NewsClusterRow from '@/pages/admin/news-review/components/news-cluster-row';
 import NewsReviewCategorySelect from '@/pages/admin/news-review/components/news-review-category-select';
 import NewsReviewSortSelect from '@/pages/admin/news-review/components/news-review-sort-select';
@@ -28,6 +29,7 @@ type Meta = {
 type Props = {
     clusters: NewsCluster[];
     hasActiveSources: boolean;
+    hasPublishVerdicts: boolean;
     sort: NewsReviewSort;
     category: string | null;
     categories: string[];
@@ -37,6 +39,7 @@ type Props = {
 export default function NewsReviewIndex({
     clusters,
     hasActiveSources,
+    hasPublishVerdicts,
     sort,
     category,
     categories,
@@ -66,6 +69,7 @@ export default function NewsReviewIndex({
                     />
                     <div className="flex flex-wrap gap-2">
                         <AnalyzeWithAiButton disabled={clusters.length === 0} />
+                        <ApplyAiVerdictsButton disabled={!hasPublishVerdicts} />
                         <RunScraperButton disabled={!hasActiveSources} />
                     </div>
                 </div>

@@ -37,12 +37,19 @@ export function useMediaLibrary() {
         }
     };
 
-    const uploadFile = async (file: File) => {
+    const uploadFile = async (
+        file: File,
+        newsArticleId: number | null = null,
+    ) => {
         setUploading(true);
 
         try {
             const formData = new FormData();
             formData.append('file', file);
+
+            if (newsArticleId) {
+                formData.append('news_article_id', String(newsArticleId));
+            }
 
             const response = await fetch(store().url, {
                 method: 'POST',
@@ -71,7 +78,10 @@ export function useMediaLibrary() {
         }
     };
 
-    const addFromUrl = async (url: string) => {
+    const addFromUrl = async (
+        url: string,
+        newsArticleId: number | null = null,
+    ) => {
         setUploading(true);
 
         try {
@@ -83,7 +93,7 @@ export function useMediaLibrary() {
                     'Content-Type': 'application/json',
                     'X-XSRF-TOKEN': readCsrfToken(),
                 },
-                body: JSON.stringify({ url }),
+                body: JSON.stringify({ url, news_article_id: newsArticleId }),
             });
 
             if (!response.ok) {
@@ -103,7 +113,10 @@ export function useMediaLibrary() {
         }
     };
 
-    const generateWithAi = async (prompt: string) => {
+    const generateWithAi = async (
+        prompt: string,
+        newsArticleId: number | null = null,
+    ) => {
         setUploading(true);
 
         try {
@@ -115,7 +128,10 @@ export function useMediaLibrary() {
                     'Content-Type': 'application/json',
                     'X-XSRF-TOKEN': readCsrfToken(),
                 },
-                body: JSON.stringify({ prompt }),
+                body: JSON.stringify({
+                    prompt,
+                    news_article_id: newsArticleId,
+                }),
             });
 
             const data = await response.json();

@@ -17,6 +17,13 @@ class MediaResource extends JsonResource
             'url' => $this->url,
             'original_name' => $this->original_name,
             'source' => $this->source,
+            'provider' => $this->provider,
+            'model' => $this->model,
+            'type' => $this->type,
+            'news_article_id' => $this->news_article_id,
+            'article_title' => $this->whenLoaded('newsArticle', fn () => $this->newsArticle?->title),
+            'created_at' => $this->created_at?->diffForHumans(),
+            'created_at_formatted' => $this->created_at?->format('d/m/Y H:i'),
         ];
     }
 }

@@ -21,6 +21,10 @@ class AiProviderResource extends JsonResource
             'default_model' => $this->default_model,
             'has_api_key' => $this->hasApiKey(),
             'is_active' => $this->is_active,
+            'is_active_for_images' => $this->is_active_for_images,
+            'is_active_for_audio' => $this->is_active_for_audio,
+            'supports_image' => $this->supportsImages(),
+            'supports_audio' => $this->supportsAudio(),
             'last_verified_at' => $this->last_verified_at?->diffForHumans(),
         ];
     }

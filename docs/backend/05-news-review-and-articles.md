@@ -27,7 +27,7 @@ La comparación de clusters candidatos **no filtra por status** — un tema ya r
 
 **Nota de idioma:** el título/resumen del cluster se guarda tal cual viene de la fuente original (inglés, portugués, español, según la fuente) — no se traduce en esta etapa a propósito, para no gastar una llamada a la IA por cada tema nuevo encontrado en cada corrida del scraper. La traducción ocurre recién en la Etapa B, al aceptar.
 
-Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review` (decisión explícita para v1, no hay cron todavía). El botón valida que haya al menos una fuente activa con `rss_url` antes de habilitarse — si no hay ninguna, la página muestra una alerta (`Alert` destructiva) con link directo a Fuentes de noticias y el botón queda deshabilitado; el endpoint `POST news-review/scrape` también valida esto server-side (devuelve `sources_scraped: 0` y un mensaje en `errors`, sin correr el scraper).
+Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review`, **y** un cron cada 30 minutos (`news:scrape`, ver [06-scheduling-caching-and-views.md](06-scheduling-caching-and-views.md)). El botón valida que haya al menos una fuente activa con `rss_url` antes de habilitarse — si no hay ninguna, la página muestra una alerta (`Alert` destructiva) con link directo a Fuentes de noticias y el botón queda deshabilitado; el endpoint `POST news-review/scrape` también valida esto server-side (devuelve `sources_scraped: 0` y un mensaje en `errors`, sin correr el scraper).
 
 ## Etapa B — Bandeja de revisión → CMS
 
@@ -38,6 +38,13 @@ Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review` (decisió
 - `accept()` / `reject()` — cambian el `status`.
 - `analyzeWithAi()` — analiza en lote los clusters `pending` sin veredicto todavía (`whereNull('ai_verdict')`, así no se re-analiza dos veces lo mismo). Arma un prompt con título/categoría/fuentes/antigüedad de cada uno y le pide al modelo un veredicto `PUBLICAR`/`DESCARTAR` + motivo corto por `ID`, parseado con regex (`ID:VEREDICTO:MOTIVO`). Se guarda en `news_clusters.ai_verdict` / `ai_reason` y se muestra como badge en la bandeja — **no descarta nada solo**, el usuario sigue decidiendo con Aceptar/Descartar.
     - **Por qué en lotes de 100 (`BATCH_SIZE`) y no todo en una sola llamada real:** con las ~220 noticias pendientes que puede acumular este proyecto, un solo prompt gigante superaba el timeout HTTP por defecto de Prism (30s) y no completaba. Se sube el timeout a 120s (`withClientOptions(['timeout' => 120])`) y se divide en tandas de 100 clusters — sigue siendo un puñado de llamadas (2-3) en vez de una por noticia, que era el objetivo real de "no quemar tokens".
+- `acceptAllPublishVerdicts()` — acepta y convierte en artículo, de una sola acción, **todos** los clusters `pending` que la IA marcó `ai_verdict = publish`. Ahorra tener que ir fila por fila aceptando lo que la IA ya recomendó publicar. Cada conversión sigue llamando a la IA para redactar el borrador (`NewsArticleService::createFromCluster()`), así que con muchos clusters marcados esto tarda — por eso corre en `ApplyAiVerdictsJob`, no en el request HTTP (ver abajo). Botón "Aceptar todo lo marcado 'Publicar'" en la bandeja, habilitado solo cuando `hasPublishVerdicts` (una consulta `exists()` que manda el controller) es `true`.
+
+### Scraping, análisis y "aceptar todo" corren en cola, no en el request HTTP
+
+`NewsReviewController::scrape()`, `analyze()` y `applyAiVerdicts()` ya no bloquean el request esperando el resultado — cada uno genera un `run_id` (`App\Support\JobRunStatus::start()`), despacha el job correspondiente (`ScrapeNewsSourcesJob`, `AnalyzeNewsClustersJob`, `ApplyAiVerdictsJob`, los tres `ShouldQueue`) y responde enseguida con `{run_id}`. El job hace el trabajo real y guarda el resultado (o el error) en caché bajo ese `run_id` (`JobRunStatus::complete()` / `fail()`, TTL 15 min). El frontend hace polling a `GET news-review/runs/{runId}` cada 1.5s (`use-job-run.ts` → `waitForJobRun()`) hasta que el estado deja de ser `queued`.
+
+Esto reemplaza el enfoque anterior (todo síncrono, con el timeout de Prism subido a 120s) — evita que el usuario se quede con el navegador colgado esperando una operación de varios minutos, y evita que un timeout de PHP/Nginx corte la operación a mitad de camino. Requiere que un worker de colas esté corriendo (`php artisan queue:work` en producción; en dev, `php artisan dev` ya levanta `queue:listen`).
 
 ### `app/Services/NewsArticleService.php`
 
@@ -184,7 +191,7 @@ No había tests para ningún servicio de este flujo (scraper, clustering, revisi
 
 ## Pendiente (no en esta fase)
 
-- Publicación real (sitio público) — por ahora "publicado" es solo un estado administrable, como pidió el usuario.
-- Disparo programado del scraper (cron) — quedó manual a propósito para v1.
+- ~~Publicación real (sitio público)~~ — hecho, ver `docs/frontend/`.
+- ~~Disparo programado del scraper (cron)~~ — hecho, ver [06-scheduling-caching-and-views.md](06-scheduling-caching-and-views.md).
 - Subida de imagen destacada como archivo — por ahora es una URL editable (se prellena con la imagen del cluster si el RSS trae una).
 - Traducir el título/resumen del cluster ya en la etapa de scraping (para que la bandeja se vea en español antes de aceptar) — evaluado y descartado por ahora: implicaría una llamada a la IA por cada tema nuevo encontrado en cada corrida del scraper, no solo al aceptar.

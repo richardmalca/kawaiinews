@@ -1,5 +1,7 @@
-import { ImagePlus, Link2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { ImagePlus, Link2, Sparkles, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
+import DeleteMediaButton from '@/components/delete-media-button';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -11,19 +13,29 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { useMediaLibrary } from '@/pages/admin/news-articles/hooks/use-media-library';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { useMediaLibrary } from '@/pages/admin/news-articles/hooks/use-media-library';
 
 type Props = {
     onSelect: (url: string) => void;
     trigger: React.ReactNode;
     aiPrompt?: string | null;
+    newsArticleId?: number | null;
 };
 
 export default function MediaLibraryDialog({
     onSelect,
     trigger,
     aiPrompt = null,
+    newsArticleId = null,
 }: Props) {
     const [open, setOpen] = useState(false);
     const [urlInput, setUrlInput] = useState('');
@@ -47,10 +59,17 @@ export default function MediaLibraryDialog({
         }
     };
 
-    const handlePick = (url: string) => {
-        onSelect(url);
+    const handlePick = (item: (typeof items)[number]) => {
+        if (isUsedElsewhere(item)) {
+            return;
+        }
+
+        onSelect(item.url);
         setOpen(false);
     };
+
+    const isUsedElsewhere = (item: (typeof items)[number]) =>
+        item.news_article_id !== null && item.news_article_id !== newsArticleId;
 
     const handleFileChange = async (
         event: React.ChangeEvent<HTMLInputElement>,
@@ -61,10 +80,10 @@ export default function MediaLibraryDialog({
             return;
         }
 
-        const media = await uploadFile(file);
+        const media = await uploadFile(file, newsArticleId);
 
         if (media) {
-            handlePick(media.url);
+            handlePick(media);
         }
 
         event.target.value = '';
@@ -75,25 +94,12 @@ export default function MediaLibraryDialog({
             return;
         }
 
-        const media = await addFromUrl(urlInput.trim());
+        const media = await addFromUrl(urlInput.trim(), newsArticleId);
 
         if (media) {
             setUrlInput('');
-            handlePick(media.url);
+            handlePick(media);
         }
-    };
-
-    const handleDelete = async (
-        event: React.MouseEvent<HTMLButtonElement>,
-        item: (typeof items)[number],
-    ) => {
-        event.stopPropagation();
-
-        if (!window.confirm('¿Eliminar esta imagen de la biblioteca?')) {
-            return;
-        }
-
-        await deleteItem(item);
     };
 
     const handleGenerate = async () => {
@@ -101,10 +107,10 @@ export default function MediaLibraryDialog({
             return;
         }
 
-        const media = await generateWithAi(aiPrompt);
+        const media = await generateWithAi(aiPrompt, newsArticleId);
 
         if (media) {
-            handlePick(media.url);
+            handlePick(media);
         }
     };
 
@@ -198,41 +204,93 @@ export default function MediaLibraryDialog({
                     )}
 
                     {!loading && items.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                            {items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="group relative aspect-square"
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePick(item.url)}
-                                        className={cn(
-                                            'border-input relative h-full w-full overflow-hidden border',
-                                            'hover:ring-primary hover:ring-2',
-                                        )}
-                                    >
-                                        <img
-                                            src={item.url}
-                                            alt={item.original_name ?? ''}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={(event) =>
-                                            handleDelete(event, item)
-                                        }
-                                        className="bg-destructive text-destructive-foreground absolute top-1 right-1 hidden h-6 w-6 items-center justify-center opacity-90 group-hover:flex"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                        <span className="sr-only">
-                                            Eliminar
-                                        </span>
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-16">
+                                        Imagen
+                                    </TableHead>
+                                    <TableHead>Modelo</TableHead>
+                                    <TableHead>Vinculada a</TableHead>
+                                    <TableHead>Fecha y hora</TableHead>
+                                    <TableHead className="text-right">
+                                        Acciones
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {items.map((item) => {
+                                    const usedElsewhere = isUsedElsewhere(item);
+
+                                    return (
+                                        <TableRow
+                                            key={item.id}
+                                            className={cn(
+                                                usedElsewhere
+                                                    ? 'cursor-not-allowed opacity-50'
+                                                    : 'cursor-pointer',
+                                            )}
+                                            onClick={() => handlePick(item)}
+                                        >
+                                            <TableCell className="py-1.5">
+                                                <img
+                                                    src={item.url}
+                                                    alt={
+                                                        item.original_name ?? ''
+                                                    }
+                                                    className="border-input h-10 w-10 border object-cover"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="py-1.5 text-sm">
+                                                {item.provider && item.model ? (
+                                                    <span>
+                                                        {item.provider} ·{' '}
+                                                        {item.model}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground capitalize">
+                                                        {item.source ===
+                                                        'upload'
+                                                            ? 'Subida manual'
+                                                            : 'URL externa'}
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="py-1.5 text-sm">
+                                                {item.news_article_id ? (
+                                                    usedElsewhere ? (
+                                                        <Badge variant="secondary">
+                                                            Ya usada en:{' '}
+                                                            {item.article_title ??
+                                                                `noticia #${item.news_article_id}`}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline">
+                                                            Esta noticia
+                                                        </Badge>
+                                                    )
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        Libre
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground py-1.5 text-xs">
+                                                {item.created_at_formatted}
+                                            </TableCell>
+                                            <TableCell className="py-1.5 text-right">
+                                                <DeleteMediaButton
+                                                    itemLabel="esta imagen"
+                                                    onConfirm={() =>
+                                                        deleteItem(item)
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
                     )}
                 </div>
             </DialogContent>

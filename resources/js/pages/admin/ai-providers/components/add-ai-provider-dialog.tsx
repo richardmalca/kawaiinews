@@ -44,7 +44,7 @@ export default function AddAiProviderDialog({ entry }: Props) {
         addProvider({
             provider: entry.provider,
             label: formData.get('label') as string,
-            default_model: defaultModel,
+            default_model: defaultModel || undefined,
             api_key: formData.get('api_key') as string,
         });
     };
@@ -89,30 +89,38 @@ export default function AddAiProviderDialog({ entry }: Props) {
                         <InputError message={errors.label} />
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor={`model-${entry.provider}`}>
-                            Modelo por defecto
-                        </Label>
-                        <Select
-                            value={defaultModel}
-                            onValueChange={setDefaultModel}
-                        >
-                            <SelectTrigger
-                                id={`model-${entry.provider}`}
-                                className="w-full"
+                    {entry.models.length > 0 ? (
+                        <div className="grid gap-2">
+                            <Label htmlFor={`model-${entry.provider}`}>
+                                Modelo por defecto
+                            </Label>
+                            <Select
+                                value={defaultModel}
+                                onValueChange={setDefaultModel}
                             >
-                                <SelectValue placeholder="Selecciona un modelo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {entry.models.map((model) => (
-                                    <SelectItem key={model} value={model}>
-                                        {model}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <InputError message={errors.default_model} />
-                    </div>
+                                <SelectTrigger
+                                    id={`model-${entry.provider}`}
+                                    className="w-full"
+                                >
+                                    <SelectValue placeholder="Selecciona un modelo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {entry.models.map((model) => (
+                                        <SelectItem key={model} value={model}>
+                                            {model}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.default_model} />
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-xs">
+                            {entry.label} no genera texto (solo
+                            {entry.supports_audio ? ' audio' : ' imágenes'}), no
+                            hace falta elegir un modelo acá.
+                        </p>
+                    )}
 
                     <div className="grid gap-2">
                         <Label htmlFor={`api-key-${entry.provider}`}>

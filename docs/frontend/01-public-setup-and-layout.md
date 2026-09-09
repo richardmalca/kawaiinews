@@ -47,3 +47,5 @@ resources/js/
 - Alterna entre `light` y `dark` invocando `updateAppearance()`.
 - Persiste la preferencia en `localStorage` y en cookie `appearance`.
 - El layout y los componentes aplican clases duales de Tailwind (`bg-neutral-50 dark:bg-neutral-950`, bordes, sombras y contrastes tipográficos acordes a cada modo).
+- `ThemeToggle` utiliza un estado de montaje (`mounted`) para evitar diferencias de renderizado (hydration mismatch) entre el servidor (donde el tema es 'system' por defecto) y el cliente (donde se resuelve inmediatamente contra `prefers-color-scheme` o `localStorage`).
+

@@ -35,9 +35,30 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
 - **Estado Activo**: Detecta si la ruta actual coincide con la categoría y aplica el estilo distintivo rosa (`text-rose-600 dark:text-rose-400 bg-rose-500/10`).
 - **SEO**: El título dinámico de la página (`Head`) se ajusta automáticamente (ej. `Anime - KawaiiNews` o `Búsqueda: "palabra" - KawaiiNews`).
 
-## 5. Pruebas Automatizadas
+## 5. Narrador de Artículos con Voz Humana / Audio IA
 
-- **Archivo**: `tests/Feature/PublicNewsTest.php`
+- **Hook**: `resources/js/hooks/use-speech-narrator.ts`
+- **Componente**: `resources/js/pages/public/articles/components/article-audio-player.tsx`
+- **Ubicación**: Debajo del encabezado en `resources/js/pages/public/articles/show.tsx`.
+- **Diseño**:
+  - Caja compacta estilizada con bordes suaves (`rounded-2xl`), tonos neutros integrados al diseño claro/oscuro.
+  - Elemento nativo `<audio preload="metadata">` para reproducción instantánea y precisa del MP3 en local/servidor.
+  - Indicador de estado claro: carga con spinner (`Loader2`), reproducción con onda/pulso animado o pausa.
+  - Barra de progreso interactiva (seek bar) para adelantar o retroceder en el audio generado por IA.
+  - Selector de velocidad (1x, 1.25x, 1.5x, 1.75x) y botón de reinicio rápido.
+- **Lectura sincronizada (Auto-scroll & Resaltado)**:
+  - Sigue la secuencia exacta de locución (`Titular -> Extracto/Bajada -> Párrafos del cuerpo`), calculando el tiempo proporcional según la longitud de caracteres de cada sección.
+  - El elemento actualmente narrado (sea el título, el extracto o un párrafo) se resalta con fondo sutil (`bg-rose-500/10 dark:bg-rose-500/15`).
+  - Desplaza la ventana suavemente (`scrollIntoView({ behavior: 'smooth', block: 'center' })`) manteniendo el foco de lectura.
+  - Incluye un botón de alternancia con icono de ojo (`Seguir`) para pausar o reactivar el auto-desplazamiento a voluntad.
+- Fallback automático e inteligente a síntesis de voz en español (`Web Speech API`) ante cualquier fallo de red o archivo ausente.
+
+
+
+
+## 6. Pruebas Automatizadas
+
+- **Archivo**: `tests/Feature/Public/NewsTest.php`
 - Cobertura:
   - Exclusión de borradores en portada.
   - Filtrado correcto por ruta de categoría.

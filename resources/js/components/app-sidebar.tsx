@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BrainCircuit,
     LayoutGrid,
+    Library,
     Newspaper,
     Rss,
     Search,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/admin';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
+import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
 import { index as newsSourcesIndex } from '@/routes/admin/news-sources';
@@ -75,6 +77,11 @@ export function AppSidebar() {
                   title: 'Noticias',
                   href: newsArticlesIndex(),
                   icon: Newspaper,
+              },
+              {
+                  title: 'Biblioteca de medios',
+                  href: mediaLibraryIndex(),
+                  icon: Library,
               },
           ]
         : [];
