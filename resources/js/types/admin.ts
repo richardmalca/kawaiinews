@@ -6,6 +6,7 @@ export type AdminUser = {
     role: string | null;
     email_verified_at: string | null;
     created_at: string;
+    published_articles_count: number;
 };
 
 export type AiProvider = {

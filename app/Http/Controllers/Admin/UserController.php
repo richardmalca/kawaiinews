@@ -19,7 +19,10 @@ class UserController extends Controller
 
     public function index(Request $request): Response
     {
-        $users = User::with('roles')->latest()->get();
+        $users = User::with('roles')
+            ->withCount(['authoredArticles as published_articles_count' => fn ($query) => $query->where('status', 'published')])
+            ->latest()
+            ->get();
 
         return Inertia::render('admin/users/index', [
             'users' => $users->map(fn (User $user) => (new UserResource($user))->resolve())->all(),

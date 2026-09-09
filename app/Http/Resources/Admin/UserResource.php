@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'role' => $this->roles->first()?->name,
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
+            'published_articles_count' => (int) ($this->published_articles_count ?? 0),
         ];
     }
 }

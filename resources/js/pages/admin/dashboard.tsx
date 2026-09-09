@@ -10,6 +10,7 @@ import {
 import Heading from '@/components/heading';
 import DashboardCategoryChart from '@/pages/admin/dashboard/components/dashboard-category-chart';
 import DashboardHealthPanel from '@/pages/admin/dashboard/components/dashboard-health-panel';
+import DashboardQuickActions from '@/pages/admin/dashboard/components/dashboard-quick-actions';
 import DashboardTimelineChart from '@/pages/admin/dashboard/components/dashboard-timeline-chart';
 import DashboardTopArticles from '@/pages/admin/dashboard/components/dashboard-top-articles';
 import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
@@ -48,6 +49,8 @@ export default function AdminDashboard({
                     title="Panel"
                     description="Cómo le está yendo a KawaiiNews, en números"
                 />
+
+                <DashboardQuickActions />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     <KpiCard
