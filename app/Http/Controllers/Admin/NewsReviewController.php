@@ -98,10 +98,10 @@ class NewsReviewController extends Controller
         return NewsSource::where('is_active', true)->whereNotNull('rss_url')->exists();
     }
 
-    public function accept(NewsCluster $newsCluster): RedirectResponse
+    public function accept(NewsCluster $newsCluster, Request $request): RedirectResponse
     {
         $this->newsClusterService->accept($newsCluster);
-        $article = $this->newsArticleService->createFromCluster($newsCluster);
+        $article = $this->newsArticleService->createFromCluster($newsCluster, $request->user()->id);
 
         return to_route('admin.news-articles.edit', $article);
     }

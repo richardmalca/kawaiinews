@@ -11,10 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Overtrue\LaravelFavorite\Traits\Favoriteable;
+use Overtrue\LaravelLike\Traits\Likeable;
 
 /**
  * @property int $id
  * @property int|null $news_cluster_id
+ * @property int|null $author_id
  * @property string $title
  * @property string $slug
  * @property string $category
@@ -26,11 +29,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $published_at
  * @property int $views_count
  */
-#[Fillable(['news_cluster_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'audio_url', 'status', 'published_at'])]
+#[Fillable(['news_cluster_id', 'author_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'audio_url', 'status', 'published_at'])]
 class NewsArticle extends Model
 {
     /** @use HasFactory<NewsArticleFactory> */
-    use HasFactory;
+    use Favoriteable, HasFactory, Likeable;
 
     /**
      * @return array<string, string>
@@ -46,6 +49,16 @@ class NewsArticle extends Model
     public function newsCluster(): BelongsTo
     {
         return $this->belongsTo(NewsCluster::class);
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function shares(): HasMany
+    {
+        return $this->hasMany(Share::class);
     }
 
     public function tags(): BelongsToMany

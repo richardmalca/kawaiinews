@@ -17,7 +17,33 @@ trait ProfileValidationRules
     {
         return [
             'name' => $this->nameRules(),
+            'username' => $this->usernameRules($userId),
             'email' => $this->emailRules($userId),
+            'show_shares_on_profile' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    /**
+     * Get the validation rules used to validate the public `@usuario` handle.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function usernameRules(?int $userId = null): array
+    {
+        return [
+            // "sometimes": el formulario de settings/profile todavía no
+            // envía este campo (la UI para elegir @usuario es un paso
+            // aparte), así que no debe romper el guardado normal del
+            // nombre/email hasta que exista esa UI.
+            'sometimes',
+            'nullable',
+            'string',
+            'min:3',
+            'max:30',
+            'regex:/^[a-zA-Z0-9_.]+$/',
+            $userId === null
+                ? Rule::unique(User::class)
+                : Rule::unique(User::class)->ignore($userId),
         ];
     }
 

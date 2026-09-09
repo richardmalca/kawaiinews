@@ -8,8 +8,11 @@ use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\ArticleInteractionController;
 use App\Http\Controllers\Public\FeedController;
+use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +23,18 @@ Route::get('tendencias', TrendingController::class)->name('public.trending');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
+
+Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
+
+// El compartido se registra aunque el visitante no haya iniciado sesión
+// (queda como contador anónimo: user_id nulo).
+Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, 'share'])->name('public.articles.share');
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])->name('public.profile.follow');
+    Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])->name('public.articles.like');
+    Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])->name('public.articles.favorite');
+});
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
     ->prefix('admin')

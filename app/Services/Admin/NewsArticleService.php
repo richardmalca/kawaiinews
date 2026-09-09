@@ -13,13 +13,14 @@ use Throwable;
 
 class NewsArticleService
 {
-    public function createFromCluster(NewsCluster $newsCluster): NewsArticle
+    public function createFromCluster(NewsCluster $newsCluster, ?int $authorId = null): NewsArticle
     {
         $draft = $this->generateDraft($newsCluster);
         $body = $this->appendVideoEmbed($draft['body'], $newsCluster->video_url);
 
         $newsArticle = NewsArticle::create([
             'news_cluster_id' => $newsCluster->id,
+            'author_id' => $authorId,
             'title' => $draft['title'],
             'slug' => $this->uniqueSlug($draft['title']),
             'category' => $draft['category'] ?? $newsCluster->category,
