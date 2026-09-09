@@ -60,3 +60,16 @@ test('audio upload rejects non audio files', function () {
     $response->assertUnprocessable()
         ->assertJsonValidationErrors(['file']);
 });
+
+test('image upload rejects svg files', function () {
+    Storage::fake('public');
+
+    $file = UploadedFile::fake()->create('malicioso.svg', 10, 'image/svg+xml');
+
+    $response = $this->postJson(route('admin.media.store'), [
+        'file' => $file,
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['file']);
+});

@@ -23,6 +23,6 @@ class ProfileSettingsUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id, usernameRequired: true);
+        return $this->profileRules($this->user()->id, usernameRequired: true, includeEmail: false);
     }
 }

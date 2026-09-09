@@ -41,12 +41,25 @@ class ProfileService
             'shares_visible' => $profileUser->show_shares_on_profile,
             'shares' => $profileUser->show_shares_on_profile
                 ? $profileUser->shares()
-                    ->with('newsArticle:id,title,slug,featured_image')
+                    ->with('newsArticle:id,title,slug,category,excerpt,featured_image')
                     ->latest()
                     ->limit(20)
                     ->get()
-                    ->pluck('newsArticle')
-                    ->filter()
+                    ->filter(fn ($share) => $share->newsArticle !== null)
+                    ->map(function ($share) {
+                        $article = $share->newsArticle;
+
+                        return [
+                            'id' => $article->id,
+                            'title' => $article->title,
+                            'slug' => $article->slug,
+                            'category' => $article->category,
+                            'excerpt' => $article->excerpt,
+                            'featured_image' => $article->featured_image,
+                            'shared_at' => $share->created_at?->diffForHumans(),
+                            'shared_date' => $share->created_at?->translatedFormat('d M, Y'),
+                        ];
+                    })
                     ->values()
                 : [],
         ];

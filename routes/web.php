@@ -14,6 +14,7 @@ use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
+use App\Http\Controllers\Public\SearchSuggestionController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('categoria/{category}', HomeController::class)->name('public.category');
 Route::get('tendencias', TrendingController::class)->name('public.trending');
+Route::get('buscar/sugerencias', SearchSuggestionController::class)->name('public.search.suggestions');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
@@ -39,8 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'updateSelf'])
         ->name('public.profile.settings.self.update');
     Route::get('perfil/{username}/ajustes', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
-    Route::patch('perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
-    Route::post('perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update.post');
+    Route::match(['patch', 'post'], 'perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
     Route::delete('perfil/{username}/ajustes', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
 });
 

@@ -4,6 +4,7 @@ namespace App\Concerns;
 
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 trait ProfileValidationRules
@@ -21,17 +22,37 @@ trait ProfileValidationRules
      *
      * @return array<string, array<int, ValidationRule|array<mixed>|string>>
      */
-    protected function profileRules(?int $userId = null, bool $usernameRequired = false): array
+    protected function profileRules(?int $userId = null, bool $usernameRequired = false, bool $includeEmail = true): array
     {
-        return [
+        $rules = [
             'name' => $this->nameRules(),
             'username' => $this->usernameRules($userId, $usernameRequired),
-            'email' => $this->emailRules($userId),
             'show_shares_on_profile' => ['sometimes', 'boolean'],
             'avatar_source' => ['sometimes', 'string', 'in:google,custom'],
             'custom_avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,webp,gif', 'max:2048'],
-            'banner' => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
+            'banner' => [
+                'sometimes',
+                'nullable',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value instanceof UploadedFile) {
+                        if (! in_array($value->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                            $fail('La imagen de portada debe ser un archivo JPG, PNG o WebP.');
+                        }
+                        if ($value->getSize() > 4096 * 1024) {
+                            $fail('La imagen de portada no debe superar los 4 MB.');
+                        }
+                    } elseif (! is_string($value)) {
+                        $fail('El formato de portada no es válido.');
+                    }
+                },
+            ],
         ];
+
+        if ($includeEmail) {
+            $rules['email'] = $this->emailRules($userId);
+        }
+
+        return $rules;
     }
 
     /**

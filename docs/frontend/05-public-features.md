@@ -89,7 +89,35 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
     - Botón interactivo de seguir/dejar de seguir (`POST perfil/{username}/seguir`).
     - Cuadrícula de artículos compartidos (solo visible si el usuario habilitó `show_shares_on_profile`).
 - **Ajustes de Cuenta para Lectores** (`/perfil/{username}/ajustes` y `/perfil/mi-cuenta/ajustes`):
-    - Vista `resources/js/pages/public/profile/settings/edit.tsx` con formulario para editar nombre, nombre de usuario público, correo y privacidad de compartidos.
+    - Vista `resources/js/pages/public/profile/settings/edit.tsx` con formulario para editar nombre, nombre de usuario público, foto de perfil, portada y privacidad de compartidos.
+    - **Inmutabilidad del Correo**: El campo de correo electrónico permanece de solo lectura / deshabilitado con mensaje explicativo, ya que proviene exclusivamente de la autenticación OAuth con Google y no puede modificarse manualmente.
+    - **Foto de Perfil (Avatar)**:
+        - Opción de alternar entre la foto original importada de Google (`avatar_source = 'google'`) o subir una personalizada (`avatar_source = 'custom'`).
+        - Tamaño recomendado mostrado en la interfaz: `400 x 400 px` (formato cuadrado).
+        - Límite de peso estricto: máximo `2 MB` (validación instantánea en cliente y validación en backend con `mimes:jpeg,png,webp,gif`).
+    - **Imagen de Portada (Banner)**:
+    - **Foto de Perfil (Avatar) y Portada (Banner) Optimizados**:
+        - **Avatar**: Uso directo y predeterminado de la foto de Google OAuth del usuario, sin requerir subidas locales forzadas al servidor.
+        - **Galería de Banners Anime Gratis (Sin Subida de Archivos)**:
+            - Catálogo interactivo de fondos temáticos en alta resolución (`ANIME_BANNER_PRESETS` en `profile-utils.ts`) perfectamente adaptados a la proporción 3:1 (`1200 x 400 px`).
+            - Asignación instantánea con un solo clic mediante URLs CDN gratuitas y optimizadas, sin consumir espacio de almacenamiento ni ancho de banda de subida en el servidor.
+            - El backend valida y admite tanto URLs externas directas como archivos locales opcionales.
+    - **Arquitectura Modular con Hooks, Utils y Componentes UI**:
+        - **Utilidades dedicadas (`resources/js/pages/public/profile/lib/profile-utils.ts`)**:
+            - Constantes `PROFILE_LIMITS` (dimensiones recomendadas de 1200x400 y 400x400, límites de 2MB y 4MB, y longitudes de usuario de 3 a 25 caracteres).
+            - Función de validación de archivos `validateImageFile(file, type)`.
+            - Extractor seguro de token CSRF `readCsrfToken()`.
+        - **Hooks personalizados (`resources/js/pages/public/profile/hooks/`)**:
+            - `useProfileSettingsForm`: Encapsula el formulario de Inertia, previews instantáneos con `FileReader`, validación de tamaño/tipo de archivo y control reactivo de la fuente del avatar (`google` vs `custom`).
+            - `useProfileFollow`: Encapsula la mutación asíncrona de seguimiento / unfollow y la actualización optimista del contador con rollback en error.
+        - **Componentes desacoplados (`resources/js/pages/public/profile/components/`)**:
+            - `SettingsHeader`: Barra de navegación con retorno y acceso a ver perfil público.
+            - `SettingsBanner` & `SettingsAvatar`: Renderizado limpio con botones *"Elegir fondo"* y *"Subir propia"*.
+            - `AnimeBannerModal`: Diálogo modal dedicado (`Dialog`) para explorar y elegir fondos temáticos sin saturar la pantalla principal, con filtros por categoría y previsualización cinematográfica.
+            - `SettingsFields`: Campos de texto para nombre, `@usuario` (con sanitizado y validación en vivo) y tarjeta armonizada de Google OAuth para correo no editable.
+            - `SettingsPrivacy`: Switch de noticias compartidas.
+            - `SettingsDangerZone`: Bloque aislado para confirmación y eliminación de cuenta.
+            - `ProfileHeader` & `ProfileSharedArticles`: Componentes de visualización pública en `show.tsx`.
     - Zona de peligro para eliminación permanente de cuenta con confirmación de contraseña.
     - Vista `choose-username.tsx` para usuarios nuevos sin nombre de usuario asignado con validación y sanitización en vivo (`resources/js/lib/username-rules.ts`).
     - Reglas de nombre de usuario: máximo 25 caracteres, minúsculas automáticas, sin espacios (conversión a guion bajo `_`), sin caracteres especiales ni puntos (`/^[a-zA-Z0-9_]+$/`).

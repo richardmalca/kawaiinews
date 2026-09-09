@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(RoleSeeder::class);
@@ -115,4 +117,82 @@ test('a username cannot exceed 25 characters or contain special characters', fun
         ->assertValid('username');
 
     expect($user->fresh()->username)->toBe('darkbot_dv');
+});
+
+test('a user can upload custom avatar and banner and choose avatar source', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create([
+        'username' => 'photouser',
+        'avatar' => 'https://lh3.googleusercontent.com/a/google-avatar.png',
+        'email' => 'original@example.com',
+    ]);
+
+    $avatarFile = UploadedFile::fake()->image('avatar.png', 400, 400)->size(1500);
+    $bannerFile = UploadedFile::fake()->image('banner.jpg', 1200, 400)->size(3000);
+
+    $this->actingAs($user)
+        ->post(route('public.profile.settings.update', 'photouser'), [
+            'name' => 'Photo User',
+            'username' => 'photouser',
+            'email' => 'hacked@example.com',
+            'avatar_source' => 'custom',
+            'custom_avatar' => $avatarFile,
+            'banner' => $bannerFile,
+        ])
+        ->assertRedirect(route('public.profile.settings.edit', 'photouser'));
+
+    $user->refresh();
+
+    expect($user->email)->toBe('original@example.com');
+    expect($user->avatar_source)->toBe('custom');
+    expect($user->custom_avatar)->not->toBeNull();
+    expect($user->banner)->not->toBeNull();
+    expect($user->active_avatar_url)->toBe($user->custom_avatar);
+
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->custom_avatar));
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->banner));
+});
+
+test('avatar and banner must respect file size limits', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create(['username' => 'heavyuser']);
+
+    $tooHeavyAvatar = UploadedFile::fake()->image('avatar.png', 400, 400)->size(2500);
+    $tooHeavyBanner = UploadedFile::fake()->image('banner.jpg', 1200, 400)->size(5000);
+
+    $this->actingAs($user)
+        ->post(route('public.profile.settings.update', 'heavyuser'), [
+            'name' => 'Heavy User',
+            'username' => 'heavyuser',
+            'custom_avatar' => $tooHeavyAvatar,
+            'banner' => $tooHeavyBanner,
+        ])
+        ->assertInvalid(['custom_avatar', 'banner']);
+});
+
+test('a user can set an external anime banner preset without uploading files', function () {
+    $user = User::factory()->create([
+        'username' => 'presetuser',
+        'avatar' => 'https://lh3.googleusercontent.com/a/google-avatar.png',
+        'banner' => null,
+    ]);
+
+    $externalUrl = 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1600&h=533&q=85';
+
+    $this->actingAs($user)
+        ->post(route('public.profile.settings.update', 'presetuser'), [
+            'name' => 'Preset User',
+            'username' => 'presetuser',
+            'avatar_source' => 'google',
+            'banner' => $externalUrl,
+        ])
+        ->assertRedirect(route('public.profile.settings.edit', 'presetuser'));
+
+    $user->refresh();
+
+    expect($user->banner)->toBe($externalUrl);
+    expect($user->avatar_source)->toBe('google');
+    expect($user->active_avatar_url)->toBe($user->avatar);
 });

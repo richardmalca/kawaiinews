@@ -79,12 +79,14 @@ class ProfileSettingsController extends Controller
         }
 
         if ($request->hasFile('banner')) {
-            if ($user->banner && Storage::disk('public')->exists(str_replace('/storage/', '', $user->banner))) {
+            if ($user->banner && str_starts_with($user->banner, '/storage/') && Storage::disk('public')->exists(str_replace('/storage/', '', $user->banner))) {
                 Storage::disk('public')->delete(str_replace('/storage/', '', $user->banner));
             }
 
             $path = $request->file('banner')->store('banners', 'public');
             $validated['banner'] = '/storage/'.$path;
+        } elseif ($request->filled('banner') && is_string($request->input('banner'))) {
+            $validated['banner'] = $request->input('banner');
         }
 
         if ($request->filled('avatar_source')) {

@@ -36,14 +36,14 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $this->userService->updateUser($user, $request->validated());
+        $this->userService->updateUser($request->user(), $user, $request->validated());
 
         return to_route('admin.users.index');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
-        $this->userService->deleteUser($user);
+        $this->userService->deleteUser($request->user(), $user);
 
         return to_route('admin.users.index');
     }

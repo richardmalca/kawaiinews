@@ -47,6 +47,10 @@ export type PublicUserProfile = {
         id: number;
         title: string;
         slug: string;
+        category?: string;
+        excerpt?: string | null;
         featured_image: string | null;
+        shared_at?: string;
+        shared_date?: string;
     }[];
 };

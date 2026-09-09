@@ -25,6 +25,11 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from './theme-toggle';
+import {
+    SearchSuggestionsDropdown,
+    type SearchArticleSuggestion,
+    type SearchUserSuggestion,
+} from './search-suggestions-dropdown';
 
 interface PublicNavbarProps {
     categories?: Record<string, PublicCategorySummary>;
@@ -43,7 +48,12 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [userSuggestions, setUserSuggestions] = useState<SearchUserSuggestion[]>([]);
+    const [articleSuggestions, setArticleSuggestions] = useState<SearchArticleSuggestion[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,16 +63,69 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
             }
         };
 
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                searchContainerRef.current &&
+                !searchContainerRef.current.contains(e.target as Node)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        };
+
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
+
+    useEffect(() => {
+        const trimmed = searchQuery.trim();
+        if (trimmed.length < 2) {
+            setUserSuggestions([]);
+            setArticleSuggestions([]);
+            setIsDropdownOpen(false);
+            return;
+        }
+
+        setIsLoadingSuggestions(true);
+        setIsDropdownOpen(true);
+
+        const timer = setTimeout(async () => {
+            try {
+                const response = await fetch(
+                    `/buscar/sugerencias?q=${encodeURIComponent(trimmed)}`,
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserSuggestions(data.users || []);
+                    setArticleSuggestions(data.articles || []);
+                }
+            } catch {
+                setUserSuggestions([]);
+                setArticleSuggestions([]);
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const categoryEntries = Object.entries(categories ?? {});
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmed = searchQuery.trim();
+        setIsDropdownOpen(false);
         if (trimmed) {
+            if (trimmed.startsWith('@') && trimmed.length > 1) {
+                const username = trimmed.slice(1);
+                router.get(`/perfil/${username}`);
+                return;
+            }
             router.get('/', { q: trimmed });
         } else {
             router.get('/');
@@ -125,23 +188,43 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <form
-                            onSubmit={handleSearchSubmit}
-                            className="relative hidden items-center sm:flex"
-                        >
-                            <input
-                                ref={searchInputRef}
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Buscar noticias..."
-                                className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-12 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
-                            />
-                            <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-neutral-400" />
-                            <kbd className="pointer-events-none absolute right-2.5 hidden rounded border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 font-mono text-[9px] font-medium text-neutral-400 select-none sm:inline-block dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400">
-                                ⌘K
-                            </kbd>
-                        </form>
+                        <div ref={searchContainerRef} className="relative hidden items-center sm:flex">
+                            <form
+                                onSubmit={handleSearchSubmit}
+                                className="relative flex items-center"
+                            >
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    value={searchQuery}
+                                    onFocus={() => {
+                                        if (searchQuery.trim().length >= 2) {
+                                            setIsDropdownOpen(true);
+                                        }
+                                    }}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Buscar..."
+                                    className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-12 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
+                                />
+                                <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-neutral-400" />
+                                <kbd className="pointer-events-none absolute right-2.5 hidden rounded border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 font-mono text-[9px] font-medium text-neutral-400 select-none sm:inline-block dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400">
+                                    ⌘K
+                                </kbd>
+                            </form>
+
+                            {isDropdownOpen && (
+                                <SearchSuggestionsDropdown
+                                    users={userSuggestions}
+                                    articles={articleSuggestions}
+                                    isLoading={isLoadingSuggestions}
+                                    query={searchQuery}
+                                    onSelect={() => {
+                                        setIsDropdownOpen(false);
+                                        setSearchQuery('');
+                                    }}
+                                />
+                            )}
+                        </div>
 
                         <button
                             type="button"
@@ -268,7 +351,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                 </div>
 
                 {isSearchOpen && (
-                    <div className="border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
+                    <div className="relative border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
                         <form
                             onSubmit={handleSearchSubmit}
                             className="relative"
@@ -276,13 +359,32 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                             <input
                                 type="text"
                                 value={searchQuery}
+                                onFocus={() => {
+                                    if (searchQuery.trim().length >= 2) {
+                                        setIsDropdownOpen(true);
+                                    }
+                                }}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Buscar noticias..."
+                                placeholder="Buscar..."
                                 className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-100/80 pr-4 pl-9 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:focus:border-rose-400"
                                 autoFocus
                             />
                             <Search className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-neutral-400" />
                         </form>
+
+                        {isDropdownOpen && (
+                            <SearchSuggestionsDropdown
+                                users={userSuggestions}
+                                articles={articleSuggestions}
+                                isLoading={isLoadingSuggestions}
+                                query={searchQuery}
+                                onSelect={() => {
+                                    setIsDropdownOpen(false);
+                                    setIsSearchOpen(false);
+                                    setSearchQuery('');
+                                }}
+                            />
+                        )}
                     </div>
                 )}
 
