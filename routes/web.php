@@ -40,11 +40,11 @@ Route::middleware(['auth'])->group(function () {
     // sidebar del panel admin. No confundir con /settings/* (routes/settings.php),
     // que es la configuración del panel admin y ahora está restringida a
     // superadmin/admin/editor.
-    Route::get('perfil/mi-cuenta/settings', [ProfileSettingsController::class, 'redirectToSelf'])
+    Route::get('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'redirectToSelf'])
         ->name('public.profile.settings.self');
-    Route::get('perfil/{username}/settings', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
-    Route::patch('perfil/{username}/settings', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
-    Route::delete('perfil/{username}/settings', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
+    Route::get('perfil/{username}/ajustes', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
+    Route::patch('perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
+    Route::delete('perfil/{username}/ajustes', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])

@@ -10,11 +10,11 @@ trait ProfileValidationRules
 {
     /**
      * Palabras que no pueden usarse como @usuario porque colisionan con
-     * segmentos de ruta reales (ej. `perfil/mi-cuenta/settings`).
+     * segmentos de ruta reales (ej. `perfil/mi-cuenta/ajustes`).
      *
      * @var array<int, string>
      */
-    private const RESERVED_USERNAMES = ['mi-cuenta', 'admin', 'settings', 'api', 'perfil'];
+    private const RESERVED_USERNAMES = ['mi-cuenta', 'admin', 'ajustes', 'settings', 'api', 'perfil'];
 
     /**
      * Get the validation rules used to validate user profiles.

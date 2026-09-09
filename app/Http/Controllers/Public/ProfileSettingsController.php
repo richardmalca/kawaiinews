@@ -14,18 +14,19 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Configuración de la propia cuenta pública, en /perfil/{username}/settings
- * (layout público, sin el sidebar del panel admin). Separado a propósito de
- * Settings\ProfileController, que vive en /settings y usa el layout del
- * panel admin (solo pensado para superadmin/admin/editor).
+ * Configuración de la propia cuenta pública, en /perfil/{username}/ajustes
+ * (layout público, sin el sidebar del panel admin, y URL en español como el
+ * resto del sitio público). Separado a propósito de Settings\ProfileController,
+ * que vive en /settings y usa el layout del panel admin (solo pensado para
+ * superadmin/admin/editor).
  */
 class ProfileSettingsController extends Controller
 {
     /**
-     * Alias estable (`perfil/mi-cuenta/settings`) para quien todavía no
+     * Alias estable (`perfil/mi-cuenta/ajustes`) para quien todavía no
      * eligió su @usuario: no hay segmento de URL "propio" al que mandarlo
      * todavía, así que lo llevamos a elegirlo antes de poder ver su
-     * configuración por la URL bonita `/perfil/{username}/settings`.
+     * configuración por la URL bonita `/perfil/{username}/ajustes`.
      */
     public function redirectToSelf(Request $request): RedirectResponse|Response
     {
