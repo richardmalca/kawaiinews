@@ -13,6 +13,7 @@ use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\ProfileController;
+use App\Http\Controllers\Public\ProfileSettingsController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])->name('public.profile.follow');
     Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])->name('public.articles.like');
     Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])->name('public.articles.favorite');
+
+    // Configuración de la propia cuenta pública: layout público, sin el
+    // sidebar del panel admin. No confundir con /settings/* (routes/settings.php),
+    // que es la configuración del panel admin y ahora está restringida a
+    // superadmin/admin/editor.
+    Route::get('perfil/mi-cuenta/settings', [ProfileSettingsController::class, 'redirectToSelf'])
+        ->name('public.profile.settings.self');
+    Route::get('perfil/{username}/settings', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
+    Route::patch('perfil/{username}/settings', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
+    Route::delete('perfil/{username}/settings', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])

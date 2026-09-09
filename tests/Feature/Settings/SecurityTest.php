@@ -1,9 +1,15 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
+
+// /settings/security también quedó reservado a superadmin/admin/editor.
+beforeEach(function () {
+    $this->seed(RoleSeeder::class);
+});
 
 test('security page is displayed', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
@@ -17,6 +23,7 @@ test('security page is displayed', function () {
     ]);
 
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -34,6 +41,7 @@ test('security page requires password confirmation when enabled', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     Features::twoFactorAuthentication([
         'confirm' => true,
@@ -52,6 +60,7 @@ test('security page renders without two factor when feature is disabled', functi
     config(['fortify.features' => []]);
 
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
@@ -69,6 +78,7 @@ test('security page renders without two factor when feature is disabled', functi
 
 test('password can be updated', function () {
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     $response = $this
         ->actingAs($user)
@@ -88,6 +98,7 @@ test('password can be updated', function () {
 
 test('correct password must be provided to update password', function () {
     $user = User::factory()->create();
+    $user->assignRole('editor');
 
     $response = $this
         ->actingAs($user)
@@ -101,4 +112,10 @@ test('correct password must be provided to update password', function () {
     $response
         ->assertSessionHasErrors('current_password')
         ->assertRedirect(route('security.edit'));
+});
+
+test('a public reader without a staff role cannot reach the admin settings panel', function () {
+    $reader = User::factory()->create();
+
+    $this->actingAs($reader)->get(route('security.edit'))->assertForbidden();
 });

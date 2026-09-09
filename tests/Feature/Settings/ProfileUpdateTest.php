@@ -1,9 +1,25 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
+
+// El panel /settings/* usa el layout del panel admin y ahora está
+// reservado a superadmin/admin/editor (los lectores públicos gestionan su
+// cuenta en /perfil/{username}/settings, ver tests/Feature/Public/ProfileSettingsTest.php).
+beforeEach(function () {
+    $this->seed(RoleSeeder::class);
+});
+
+function staffUser(): User
+{
+    $user = User::factory()->create();
+    $user->assignRole('editor');
+
+    return $user;
+}
 
 test('profile page is displayed', function () {
-    $user = User::factory()->create();
+    $user = staffUser();
 
     $response = $this
         ->actingAs($user)
@@ -13,7 +29,7 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $user = staffUser();
 
     $response = $this
         ->actingAs($user)
@@ -34,7 +50,7 @@ test('profile information can be updated', function () {
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
+    $user = staffUser();
 
     $response = $this
         ->actingAs($user)
@@ -51,7 +67,7 @@ test('email verification status is unchanged when the email address is unchanged
 });
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    $user = staffUser();
 
     $response = $this
         ->actingAs($user)
@@ -68,7 +84,7 @@ test('user can delete their account', function () {
 });
 
 test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+    $user = staffUser();
 
     $response = $this
         ->actingAs($user)
@@ -82,4 +98,10 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect(route('profile.edit'));
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('a public reader without a staff role cannot reach the admin settings panel', function () {
+    $reader = User::factory()->create();
+
+    $this->actingAs($reader)->get(route('profile.edit'))->assertForbidden();
 });
