@@ -15,6 +15,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { CHART_COLORS } from '@/pages/admin/dashboard/chart-colors';
 import type { DashboardTimelinePoint } from '@/types/admin';
 
 type Props = {
@@ -43,11 +44,11 @@ export default function DashboardTimelineChart({ data }: Props) {
                     y compartidos por día
                 </CardDescription>
             </CardHeader>
-            <CardContent className="h-80 w-full">
+            <CardContent className="h-72 w-full sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                         data={chartData}
-                        margin={{ top: 5, right: 12, left: 0, bottom: 0 }}
+                        margin={{ top: 5, right: 8, left: -20, bottom: 0 }}
                     >
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -55,15 +56,18 @@ export default function DashboardTimelineChart({ data }: Props) {
                         />
                         <XAxis
                             dataKey="label"
-                            fontSize={12}
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
+                            interval="preserveStartEnd"
+                            minTickGap={20}
                         />
                         <YAxis
-                            fontSize={12}
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
                             allowDecimals={false}
+                            width={36}
                         />
                         <Tooltip
                             contentStyle={{
@@ -73,12 +77,15 @@ export default function DashboardTimelineChart({ data }: Props) {
                                 fontSize: 12,
                             }}
                         />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Legend
+                            wrapperStyle={{ fontSize: 11 }}
+                            iconSize={10}
+                        />
                         <Line
                             type="monotone"
                             dataKey="views"
                             name="Vistas"
-                            stroke="var(--color-chart-1)"
+                            stroke={CHART_COLORS.views}
                             strokeWidth={2}
                             dot={false}
                         />
@@ -86,7 +93,7 @@ export default function DashboardTimelineChart({ data }: Props) {
                             type="monotone"
                             dataKey="reactions"
                             name="Reacciones"
-                            stroke="var(--color-chart-2)"
+                            stroke={CHART_COLORS.reactions}
                             strokeWidth={2}
                             dot={false}
                         />
@@ -94,7 +101,7 @@ export default function DashboardTimelineChart({ data }: Props) {
                             type="monotone"
                             dataKey="shares"
                             name="Compartidos"
-                            stroke="var(--color-chart-3)"
+                            stroke={CHART_COLORS.shares}
                             strokeWidth={2}
                             dot={false}
                         />
@@ -102,7 +109,7 @@ export default function DashboardTimelineChart({ data }: Props) {
                             type="monotone"
                             dataKey="users"
                             name="Usuarios nuevos"
-                            stroke="var(--color-chart-4)"
+                            stroke={CHART_COLORS.users}
                             strokeWidth={2}
                             dot={false}
                         />

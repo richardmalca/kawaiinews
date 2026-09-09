@@ -15,6 +15,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { CHART_COLORS } from '@/pages/admin/dashboard/chart-colors';
 import type { DashboardCategoryStat } from '@/types/admin';
 
 type Props = {
@@ -31,11 +32,11 @@ export default function DashboardCategoryChart({ data }: Props) {
                     los artículos publicados
                 </CardDescription>
             </CardHeader>
-            <CardContent className="h-80 w-full">
+            <CardContent className="h-72 w-full sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={data}
-                        margin={{ top: 5, right: 12, left: 0, bottom: 0 }}
+                        margin={{ top: 5, right: 8, left: -20, bottom: 0 }}
                     >
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -43,15 +44,16 @@ export default function DashboardCategoryChart({ data }: Props) {
                         />
                         <XAxis
                             dataKey="label"
-                            fontSize={12}
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
                         />
                         <YAxis
-                            fontSize={12}
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
                             allowDecimals={false}
+                            width={36}
                         />
                         <Tooltip
                             contentStyle={{
@@ -61,16 +63,21 @@ export default function DashboardCategoryChart({ data }: Props) {
                                 fontSize: 12,
                             }}
                         />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Legend
+                            wrapperStyle={{ fontSize: 11 }}
+                            iconSize={10}
+                        />
                         <Bar
                             dataKey="views"
                             name="Vistas"
-                            fill="var(--color-chart-1)"
+                            fill={CHART_COLORS.views}
+                            radius={[2, 2, 0, 0]}
                         />
                         <Bar
                             dataKey="likes"
                             name="Me gusta"
-                            fill="var(--color-chart-2)"
+                            fill={CHART_COLORS.likes}
+                            radius={[2, 2, 0, 0]}
                         />
                     </BarChart>
                 </ResponsiveContainer>
