@@ -27,6 +27,7 @@ class UserController extends Controller
         return Inertia::render('admin/users/index', [
             'users' => $users->map(fn (User $user) => (new UserResource($user))->resolve())->all(),
             'assignableRoles' => $this->userService->assignableRoles($request->user()),
+            'kpis' => $this->userService->kpisFrom($users),
         ]);
     }
 

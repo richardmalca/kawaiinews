@@ -9,6 +9,18 @@ export type AdminUser = {
     published_articles_count: number;
 };
 
+export type AdminUsersKpis = {
+    total: number;
+    by_role: {
+        superadmin: number;
+        admin: number;
+        editor: number;
+    };
+    google_accounts: number;
+    password_accounts: number;
+    published_articles: number;
+};
+
 export type AiProvider = {
     id: number;
     provider: string;
