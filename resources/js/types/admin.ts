@@ -120,6 +120,7 @@ export type NewsArticle = {
     audio_url?: string | null;
     views_count?: number;
     likers_count?: number;
+    favorites_count?: number;
     shares_count?: number;
     has_liked?: boolean;
     has_favorited?: boolean;

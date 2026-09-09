@@ -6,7 +6,7 @@ import {
 } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Calendar, Eye, Heart, Share2 } from 'lucide-react';
+import { BookOpen, Bookmark, Calendar, Eye, Heart, Share2 } from 'lucide-react';
 
 interface NewsCardProps {
     article: PublicArticle;
@@ -16,6 +16,7 @@ export function NewsCard({ article }: NewsCardProps) {
     const imageSrc = article.featured_image || FALLBACK_IMAGES.card;
     const readingMinutes = estimateReadingTime(article.body);
     const likersCount = article.likers_count ?? 0;
+    const favoritesCount = article.favorites_count ?? 0;
     const sharesCount = article.shares_count ?? 0;
 
     return (
@@ -97,6 +98,24 @@ export function NewsCard({ article }: NewsCardProps) {
                                     }`}
                                 />
                                 <span className="text-[11px] font-semibold">{likersCount}</span>
+                            </span>
+
+                            <span
+                                title="Guardado en favoritos"
+                                className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                    favoritesCount > 0
+                                        ? 'text-amber-600 dark:text-amber-400'
+                                        : 'text-neutral-400 dark:text-neutral-500'
+                                }`}
+                            >
+                                <Bookmark
+                                    className={`h-3.5 w-3.5 ${
+                                        favoritesCount > 0
+                                            ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400'
+                                            : ''
+                                    }`}
+                                />
+                                <span className="text-[11px] font-semibold">{favoritesCount}</span>
                             </span>
 
                             <span

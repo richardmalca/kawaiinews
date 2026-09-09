@@ -169,7 +169,7 @@ class NewsService
     {
         return NewsArticle::query()
             ->with('tags')
-            ->withCount(['likers', 'shares'])
+            ->withCount(['likers', 'shares', 'favoriters as favorites_count'])
             ->where('status', 'published')
             ->whereNotNull('published_at')
             ->when($category, fn ($query, $cat) => $query->where('category', $cat))
@@ -201,7 +201,7 @@ class NewsService
 
         $models = NewsArticle::query()
             ->with('tags')
-            ->withCount(['likers', 'shares'])
+            ->withCount(['likers', 'shares', 'favoriters as favorites_count'])
             ->whereIn('id', $ids)
             ->get()
             ->keyBy('id');
