@@ -23,19 +23,29 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('categoria/{category}', HomeController::class)->name('public.category');
 Route::get('tendencias', TrendingController::class)->name('public.trending');
-Route::get('buscar/sugerencias', SearchSuggestionController::class)->name('public.search.suggestions');
+Route::get('buscar/sugerencias', SearchSuggestionController::class)
+    ->middleware('throttle:60,1')
+    ->name('public.search.suggestions');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
 Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
 
-Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, 'share'])->name('public.articles.share');
+Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, 'share'])
+    ->middleware('throttle:30,1')
+    ->name('public.articles.share');
 
 Route::middleware(['auth'])->group(function () {
-    Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])->name('public.profile.follow');
-    Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])->name('public.articles.like');
-    Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])->name('public.articles.favorite');
+    Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])
+        ->middleware('throttle:30,1')
+        ->name('public.profile.follow');
+    Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])
+        ->middleware('throttle:45,1')
+        ->name('public.articles.like');
+    Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])
+        ->middleware('throttle:45,1')
+        ->name('public.articles.favorite');
 
     Route::get('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'redirectToSelf'])
         ->name('public.profile.settings.self');

@@ -9,14 +9,14 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('news:scrape')
-    ->everyThirtyMinutes()
+    ->everyThreeHours()
     ->withoutOverlapping()
     ->onOneServer();
 
-// 5 minutos después del scrape (":05"/":35") para darle tiempo a que termine
-// de agrupar los clusters nuevos antes de analizarlos.
+// 10 minutos después del scrape (":10", ":03:10", etc.) para darle tiempo a
+// que termine de agrupar los clusters nuevos antes de analizarlos.
 Schedule::command('news:auto-review')
-    ->cron('5,35 * * * *')
+    ->everyThreeHours(10)
     ->withoutOverlapping()
     ->onOneServer();
 

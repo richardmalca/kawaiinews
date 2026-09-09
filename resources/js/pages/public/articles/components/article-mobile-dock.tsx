@@ -56,8 +56,14 @@ export function ArticleMobileDock({
         window.dispatchEvent(new CustomEvent('kawaii:toggle-audio'));
     };
 
+    const isAudioActive = audioState.isPlaying || audioState.isPaused;
+
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-40 lg:hidden">
+        <div
+            className={`fixed left-4 right-4 z-40 transition-all duration-300 lg:hidden ${
+                isAudioActive ? 'bottom-20' : 'bottom-4'
+            }`}
+        >
             <div className="mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl border border-neutral-200/80 bg-white/90 px-2.5 py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
                 <button
                     type="button"
