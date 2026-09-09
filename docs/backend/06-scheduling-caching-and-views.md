@@ -8,10 +8,13 @@ Laravel 12 agenda tareas directamente en `routes/console.php` con la fachada `Sc
 
 ```php
 Schedule::command('news:scrape')->everyThirtyMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('news:auto-review')->cron('5,35 * * * *')->withoutOverlapping()->onOneServer();
 Schedule::command('views:flush')->everyMinute()->withoutOverlapping()->onOneServer();
 ```
 
 - `news:scrape` (`ScrapeNewsCommand`) — corre `NewsScraperService::run()` directo (sin pasar por cola: un comando de consola no tiene el límite de tiempo de un request HTTP, así que no hace falta). Antes el scraping era 100% manual vía el botón "Buscar noticias ahora"; ahora corre solo cada 30 minutos además de poder dispararse a mano.
+- `news:auto-review` (`AutoReviewNewsCommand`) — analiza con IA (`NewsClusterService::analyzeWithAi()`) todo cluster `pending` sin veredicto todavía, y **rechaza automáticamente** (`status = rejected`) los que la IA marcó `discard` (`NewsClusterService::autoRejectDiscarded()`). Los marcados `publish` **no** se tocan solos — siguen esperando que alguien los acepte a mano desde `/admin/news-review` (o el botón "Aceptar todo lo marcado Publicar"), a propósito: la IA filtra el ruido, pero la decisión de qué se convierte en noticia real la sigue tomando una persona. Corre 5 minutos después de cada scrape (`5,35 * * * *` en vez de `everyThirtyMinutes()`), para darle tiempo a terminar de agrupar los clusters nuevos antes de analizarlos. Si no hay proveedor de IA activo con API key, no rompe nada — `analyzeWithAi()` ya devolvía ese caso como `analyzed: 0` con un mensaje de error, y el comando lo loguea como warning y sigue.
+  - **Corre cada 30 minutos indefinidamente y le pega a un proveedor de IA real** — implica un costo recurrente, no es gratis dejarlo prendido. No tiene el rate limit `ai-costly` (ver [04-admin-news-sources.md](04-admin-news-sources.md)) porque ese limitador es por usuario HTTP y esto corre por cron, sin sesión.
 - `views:flush` (`FlushArticleViews`) — vuelca a la base los contadores de vistas acumulados en caché (ver más abajo), cada minuto.
 - `withoutOverlapping()` evita que una corrida larga se solape con la siguiente si el scraper tarda más de 30 minutos. `onOneServer()` usa un lock atómico (soportado por el driver de caché `database` que usa este proyecto) para que, si en producción hay más de un servidor corriendo el scheduler, la tarea no se dispare duplicada.
 
@@ -88,3 +91,4 @@ Ambos filtran siempre por `status = 'published'` — un borrador nunca aparece e
 - `tests/Feature/Public/ArticleViewServiceTest.php` — dedupe por visitante, que el flush no toque `updated_at`, visitantes distintos cuentan por separado.
 - `tests/Feature/Public/SitemapAndFeedTest.php` — ambos endpoints listan solo artículos publicados, y que el sitemap queda cacheado hasta que se hace `bump()`.
 - `tests/Feature/Admin/NewsReviewJobsTest.php` — scrape y aplicar-veredictos corren como job (con `QUEUE_CONNECTION=sync` en testing, así que se ejecutan en el mismo request) y el endpoint de estado (`run-status`) devuelve el resultado real.
+- `tests/Feature/Admin/AutoReviewNewsCommandTest.php` — `news:auto-review` analiza solo lo que no tiene veredicto todavía, rechaza automáticamente lo marcado `discard`, nunca toca lo marcado `publish`, y no rompe si no hay proveedor de IA activo o no hay nada pendiente.

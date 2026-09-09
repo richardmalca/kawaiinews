@@ -81,6 +81,18 @@ class NewsClusterService
         return ['applied' => count($articleIds), 'article_ids' => $articleIds];
     }
 
+    /**
+     * Rechaza automáticamente todo cluster `pending` que la IA marcó
+     * `discard` (llamar después de `analyzeWithAi()`). Los marcados
+     * `publish` NO se tocan acá — esos siguen esperando aceptación manual.
+     */
+    public function autoRejectDiscarded(): int
+    {
+        return NewsCluster::where('status', 'pending')
+            ->where('ai_verdict', 'discard')
+            ->update(['status' => 'rejected']);
+    }
+
     private const BATCH_SIZE = 100;
 
     /**

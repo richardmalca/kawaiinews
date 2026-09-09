@@ -13,6 +13,13 @@ Schedule::command('news:scrape')
     ->withoutOverlapping()
     ->onOneServer();
 
+// 5 minutos después del scrape (":05"/":35") para darle tiempo a que termine
+// de agrupar los clusters nuevos antes de analizarlos.
+Schedule::command('news:auto-review')
+    ->cron('5,35 * * * *')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 Schedule::command('views:flush')
     ->everyMinute()
     ->withoutOverlapping()
