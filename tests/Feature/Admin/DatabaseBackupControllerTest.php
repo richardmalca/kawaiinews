@@ -33,8 +33,8 @@ test('a non superadmin cannot download a backup', function () {
         ->assertForbidden();
 });
 
-test('restoring a backup requires the current password', function () {
-    $user = User::factory()->create(['password' => bcrypt('password')]);
+test('restoring a backup requires typing the exact same email as the logged in user, working for google-only accounts without a real password', function () {
+    $user = User::factory()->create(['email' => 'superadmin@example.com']);
     $user->assignRole('superadmin');
 
     $this->mock(DatabaseBackupService::class, function ($mock) {
@@ -45,14 +45,14 @@ test('restoring a backup requires the current password', function () {
         ->from(route('admin.backup.index'))
         ->post(route('admin.backup.restore'), [
             'backup' => UploadedFile::fake()->createWithContent('backup.sql.gz', gzencode('fake sql')),
-            'password' => 'wrong-password',
+            'confirm_email' => 'otro@example.com',
         ]);
 
-    $response->assertSessionHasErrors('password');
+    $response->assertSessionHasErrors('confirm_email');
 });
 
-test('a superadmin can restore a backup with the correct password', function () {
-    $user = User::factory()->create(['password' => bcrypt('password')]);
+test('a superadmin can restore a backup by typing their own email, with no password involved at all', function () {
+    $user = User::factory()->create(['email' => 'superadmin@example.com']);
     $user->assignRole('superadmin');
 
     $this->mock(DatabaseBackupService::class, function ($mock) {
@@ -61,7 +61,7 @@ test('a superadmin can restore a backup with the correct password', function () 
 
     $response = $this->actingAs($user)->post(route('admin.backup.restore'), [
         'backup' => UploadedFile::fake()->createWithContent('backup.sql.gz', gzencode('fake sql')),
-        'password' => 'password',
+        'confirm_email' => 'superadmin@example.com',
     ]);
 
     $response->assertRedirect(route('admin.backup.index'));

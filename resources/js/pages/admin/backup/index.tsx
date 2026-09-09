@@ -1,8 +1,7 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -24,9 +23,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DatabaseBackupController from '@/actions/App/Http/Controllers/Admin/DatabaseBackupController';
 import { download } from '@/routes/admin/backup';
+import type { Auth } from '@/types';
+
+type PageProps = {
+    auth: Auth;
+};
 
 export default function BackupIndex() {
-    const passwordInput = useRef<HTMLInputElement>(null);
+    const { auth } = usePage<PageProps>().props;
+    const confirmEmailInput = useRef<HTMLInputElement>(null);
 
     return (
         <>
@@ -79,14 +84,15 @@ export default function BackupIndex() {
                                 <DialogDescription>
                                     Todas las tablas actuales se van a
                                     reemplazar por las del archivo que subas.
-                                    Ingresá tu contraseña para confirmar.
+                                    Escribí tu correo ({auth.user.email}) para
+                                    confirmar.
                                 </DialogDescription>
 
                                 <Form
                                     {...DatabaseBackupController.restore.form()}
                                     encType="multipart/form-data"
                                     onError={() =>
-                                        passwordInput.current?.focus()
+                                        confirmEmailInput.current?.focus()
                                     }
                                     resetOnSuccess
                                     className="space-y-4"
@@ -114,18 +120,23 @@ export default function BackupIndex() {
                                             </div>
 
                                             <div className="grid gap-2">
-                                                <Label htmlFor="password">
-                                                    Contraseña
+                                                <Label htmlFor="confirm_email">
+                                                    Tu correo, para confirmar
                                                 </Label>
-                                                <PasswordInput
-                                                    id="password"
-                                                    name="password"
-                                                    ref={passwordInput}
-                                                    placeholder="Contraseña"
-                                                    autoComplete="current-password"
+                                                <Input
+                                                    id="confirm_email"
+                                                    name="confirm_email"
+                                                    type="email"
+                                                    ref={confirmEmailInput}
+                                                    placeholder={
+                                                        auth.user.email
+                                                    }
+                                                    autoComplete="off"
                                                 />
                                                 <InputError
-                                                    message={errors.password}
+                                                    message={
+                                                        errors.confirm_email
+                                                    }
                                                 />
                                             </div>
 

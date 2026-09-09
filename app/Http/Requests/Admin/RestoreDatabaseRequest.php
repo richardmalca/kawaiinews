@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class RestoreDatabaseRequest extends FormRequest
 {
@@ -18,7 +19,18 @@ class RestoreDatabaseRequest extends FormRequest
     {
         return [
             'backup' => ['required', 'file', 'max:51200', 'mimetypes:application/gzip,application/x-gzip,application/octet-stream'],
-            'password' => ['required', 'string', 'current_password'],
+            'confirm_email' => ['required', 'string'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $email = $this->string('confirm_email')->trim()->value();
+
+            if ($email !== $this->user()?->email) {
+                $validator->errors()->add('confirm_email', 'El correo no coincide con el de tu cuenta.');
+            }
+        });
     }
 }
