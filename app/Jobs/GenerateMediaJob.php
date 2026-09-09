@@ -19,6 +19,8 @@ class GenerateMediaJob implements ShouldQueue
 
     public int $timeout = 150;
 
+    public int $tries = 1;
+
     public function __construct(
         public readonly string $runId,
         public readonly string $prompt,
