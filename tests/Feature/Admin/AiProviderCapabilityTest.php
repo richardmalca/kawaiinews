@@ -55,3 +55,20 @@ test('the catalog exposes which providers support images and audio', function ()
         )
     );
 });
+
+test('a provider whose api_key cannot be decrypted (e.g. imported under a different APP_KEY) does not crash the index page', function () {
+    $provider = AiProvider::factory()->create(['provider' => 'openai']);
+
+    DB::table('ai_providers')->where('id', $provider->id)->update([
+        'api_key' => 'esto-no-es-un-valor-encriptado-valido',
+    ]);
+
+    $response = $this->get(route('admin.ai-providers.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('providers.0.has_api_key', false)
+    );
+
+    expect($provider->fresh()->hasApiKey())->toBeFalse();
+});

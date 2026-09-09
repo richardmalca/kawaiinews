@@ -115,6 +115,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('media/generate', [MediaLibraryController::class, 'generate'])
                 ->middleware('throttle:ai-costly')
                 ->name('media.generate');
+            Route::get('media/{media}/download', [MediaLibraryController::class, 'download'])->name('media.download');
             Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
 
             Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');

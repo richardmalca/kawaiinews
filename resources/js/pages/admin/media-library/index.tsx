@@ -1,8 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
-import { AudioLines, Images } from 'lucide-react';
+import { AudioLines, Download, Images } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import DeleteMediaButton from '@/components/delete-media-button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Table,
     TableBody,
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Heading from '@/components/heading';
-import { destroy } from '@/routes/admin/media';
+import { destroy, download } from '@/routes/admin/media';
 import { edit as editArticle } from '@/routes/admin/news-articles';
 import type { MediaItem } from '@/types/admin';
 
@@ -192,16 +193,33 @@ export default function MediaLibraryIndex({
                                             {item.created_at_formatted}
                                         </TableCell>
                                         <TableCell className="py-1.5 text-right">
-                                            <DeleteMediaButton
-                                                itemLabel={
-                                                    item.type === 'audio'
-                                                        ? 'este audio'
-                                                        : 'esta imagen'
-                                                }
-                                                onConfirm={() =>
-                                                    handleDelete(item)
-                                                }
-                                            />
+                                            <div className="flex justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    asChild
+                                                >
+                                                    <a
+                                                        href={
+                                                            download(item.id)
+                                                                .url
+                                                        }
+                                                        aria-label="Descargar"
+                                                    >
+                                                        <Download className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                                <DeleteMediaButton
+                                                    itemLabel={
+                                                        item.type === 'audio'
+                                                            ? 'este audio'
+                                                            : 'esta imagen'
+                                                    }
+                                                    onConfirm={() =>
+                                                        handleDelete(item)
+                                                    }
+                                                />
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}

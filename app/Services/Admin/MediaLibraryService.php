@@ -7,10 +7,13 @@ use App\Models\Media;
 use App\Models\NewsArticle;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaLibraryService
 {
@@ -205,6 +208,46 @@ class MediaLibraryService
             'type' => 'audio',
             'news_article_id' => $newsArticle->id,
         ]);
+    }
+
+    public function download(Media $media): BinaryFileResponse|StreamedResponse
+    {
+        $filename = $this->downloadFilename($media);
+
+        if (Str::startsWith($media->url, Storage::disk('public')->url(''))) {
+            $path = Str::after($media->url, Storage::disk('public')->url(''));
+
+            return Storage::disk('public')->download($path, $filename);
+        }
+
+        $response = Http::timeout(30)->get($media->url);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('No se pudo descargar el archivo original.');
+        }
+
+        return new StreamedResponse(
+            function () use ($response) {
+                echo $response->body();
+            },
+            200,
+            [
+                'Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ],
+        );
+    }
+
+    private function downloadFilename(Media $media): string
+    {
+        $extension = pathinfo(parse_url($media->url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION)
+            ?: ($media->type === 'audio' ? 'mp3' : 'png');
+
+        $base = $media->original_name
+            ? Str::slug(Str::limit($media->original_name, 60, ''))
+            : $media->type.'-'.$media->id;
+
+        return "{$base}.{$extension}";
     }
 
     public function delete(Media $media): void

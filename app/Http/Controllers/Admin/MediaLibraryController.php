@@ -17,6 +17,8 @@ use App\Support\JobRunStatus;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaLibraryController extends Controller
 {
@@ -90,6 +92,11 @@ class MediaLibraryController extends Controller
         GenerateAudioJob::dispatch($runId, $newsArticle);
 
         return response()->json(['run_id' => $runId]);
+    }
+
+    public function download(Media $media): BinaryFileResponse|StreamedResponse
+    {
+        return $this->mediaLibraryService->download($media);
     }
 
     public function destroy(Media $media): JsonResponse
