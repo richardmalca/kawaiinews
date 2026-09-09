@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { SeoHead } from '@/components/common/seo-head';
 import PublicLayout from '@/layouts/public-layout';
 import type {
     PublicArticle,
@@ -38,15 +38,23 @@ export default function Home({
         : articleList;
 
     let pageTitle = 'KawaiiNews - Noticias de Anime, Manga y Gaming';
+    let pageDescription =
+        'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
     if (search) {
         pageTitle = `Búsqueda: "${search}" - KawaiiNews`;
+        pageDescription = `Resultados de búsqueda para "${search}" en KawaiiNews.`;
     } else if (selectedCategory && categories[selectedCategory]) {
         pageTitle = `${categories[selectedCategory].label} - KawaiiNews`;
+        pageDescription = `Las mejores noticias y novedades de ${categories[selectedCategory].label} en KawaiiNews.`;
     }
 
     return (
         <PublicLayout categories={categories}>
-            <Head title={pageTitle} />
+            <SeoHead
+                title={pageTitle}
+                description={pageDescription}
+                ogImage={featuredArticle?.featured_image}
+            />
 
             {featuredArticle && !isFiltered && (
                 <section className="mb-10">

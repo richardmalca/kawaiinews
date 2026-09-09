@@ -2,6 +2,7 @@ import { useSpeechNarrator } from '@/hooks/use-speech-narrator';
 import {
     AlertCircle,
     ArrowUp,
+    Clock,
     Headphones,
     Loader2,
     Mic,
@@ -10,6 +11,7 @@ import {
     RotateCcw,
     Sparkles,
     Volume2,
+    X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -97,6 +99,16 @@ export function ArticleAudioPlayer({
         speech.play();
     };
 
+    const handleClosePlayer = () => {
+        if (isAiAudio && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setIsPlaying(false);
+            setIsPaused(false);
+        }
+        speech.stop();
+    };
+
     const handleCycleSpeed = () => {
         const nextIndex = (speedIndex + 1) % PLAYBACK_SPEEDS.length;
         setSpeedIndex(nextIndex);
@@ -138,10 +150,11 @@ export function ArticleAudioPlayer({
                     isPlaying: activePlaying,
                     isPaused: activePaused,
                     isInteracting,
+                    totalSeconds,
                 },
             }),
         );
-    }, [progressPercent, activePlaying, activePaused, isInteracting, onProgressChange]);
+    }, [progressPercent, activePlaying, activePaused, isInteracting, totalSeconds, onProgressChange]);
 
     useEffect(() => {
         const handleCustomToggle = () => {
@@ -230,6 +243,11 @@ export function ArticleAudioPlayer({
                                   ? 'Reanudar'
                                   : 'Escuchar'}
                         </span>
+                        {!isInteracting && totalSeconds > 0 && (
+                            <span className="ml-0.5 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                                ({Math.max(1, Math.ceil(totalSeconds / 60))} min)
+                            </span>
+                        )}
                     </span>
 
                     {isAiAudio ? (
@@ -344,6 +362,16 @@ export function ArticleAudioPlayer({
                                 title="Subir al inicio del artículo"
                             >
                                 <ArrowUp className="h-4 w-4" />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleClosePlayer}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-400 transition-colors hover:bg-neutral-200/70 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                title="Cerrar reproductor"
+                                aria-label="Cerrar reproductor de audio"
+                            >
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
                     </div>

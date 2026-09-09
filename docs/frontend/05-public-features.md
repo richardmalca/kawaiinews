@@ -18,15 +18,21 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
     - **Telegram**: Formato para compartir canal/chat.
     - **Copiar enlace**: Utiliza `navigator.clipboard` con feedback dinámico instantáneo ("¡Copiado!").
 
-## 3. Buscador Global en Tiempo Real
+## 3. Buscador Universal con Sugerencias en Vivo y Prevención de Zoom
 
-- **Ubicación UI**: `resources/js/components/public/navbar.tsx`
-- **Desktop**: Campo de búsqueda estilizado con icono `Search` que expande su ancho al enfocar.
-- **Mobile**: Botón dedicado que despliega un drawer de búsqueda superior accesible.
+- **Ubicación UI**: `resources/js/components/public/navbar.tsx` y `resources/js/components/public/search-suggestions-dropdown.tsx`.
+- **Desktop**: Campo de búsqueda estilizado con placeholder *"Buscar..."*, atajo `⌘K` e ícono `Search` que expande su ancho al enfocar.
+- **Mobile**:
+    - Input ajustado a `text-base` (16px) y `maximum-scale=1` en el viewport para prevenir el zoom automático indeseado en iOS Safari y Android Chrome.
+    - Botón dedicado que despliega el cajón de búsqueda superior responsivo.
+- **Sugerencias en Tiempo Real**:
+    - Muestra usuarios con `@usuario`, avatar y badges de redactor/autor.
+    - Muestra artículos coincidentes con miniatura y categoría.
+    - Debounce de 250ms y protección con limitador de tasa `throttle:60,1` en backend.
 - **Backend**:
-    - `PublicNewsService::getPaginatedArticles`: Aplica filtro `like` sobre `title` y `excerpt` de noticias publicadas.
-    - `HomeController`: Recibe el parámetro `?q=...` y lo inyecta a la vista Inertia.
-    - `news-section-header.tsx`: Muestra el texto de resultados encontrados y un botón directo para limpiar la búsqueda.
+    - `SearchSuggestionController`: Búsqueda paralela sobre usuarios y artículos publicados.
+    - `HomeController`: Recibe el parámetro `?q=...` y renderiza los resultados.
+    - `news-section-header.tsx`: Muestra el contador de coincidencias y botón para limpiar la búsqueda.
 
 ## 4. Rutas Semánticas por Categoría (`/categoria/{slug}`)
 
@@ -39,16 +45,19 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
 
 - **Hook**: `resources/js/hooks/use-speech-narrator.ts`
 - **Componente**: `resources/js/pages/public/articles/components/article-audio-player.tsx`
-- **Ubicación**: Debajo del encabezado en `resources/js/pages/public/articles/show.tsx`.
+- **Ubicación**: Debajo del encabezado y sincronizado en el sidebar de lectura en `resources/js/pages/public/articles/show.tsx`.
 - **Diseño**:
-    - **Botón sutil tipo pastilla de locutor**: Reemplaza el card grande anterior por una cápsula compacta y elegante con ícono de micrófono/locutor (`Mic`), botón de Play con acento rosa y badge de origen ("Audio IA" o "Voz navegador").
+    - **Botón sutil con estimación de duración**: Muestra *"Escuchar (X min)"* antes de iniciar la reproducción, calculando la duración estimada exacta tanto para audio generado como para síntesis de voz.
     - Elemento nativo `<audio preload="metadata">` para reproducción instantánea y precisa del MP3 en local/servidor.
-    - Indicador de estado claro: carga con spinner (`Loader2`), reproducción con onda/pulso animado o pausa.
+    - Indicador de estado claro: carga con spinner (`Loader2`), reproducción con pulso animado o pausa.
 - **Reproductor Fijo Inferior estilo Spotify**:
     - Al reproducir o pausar la narración (tanto con **Audio IA** como con **Voz del navegador**), se activa la **barra inferior flotante de ancho completo** (`fixed inset-x-0 bottom-0 z-50`):
-        - Barra de progreso superior continua con gradiente de marca (`from-rose-500 via-pink-500 to-amber-500`) vinculada al avance real tanto de audio HTML5 como de Web Speech.
-        - Lado izquierdo: ícono de audífonos temático, título de la noticia, indicador de origen ("Audio IA" o "Voz navegador") con ícono de locutor y tiempo transcurrido / total estimado en tiempo real.
-        - Lado derecho: controles de velocidad (para audio IA), reinicio, Play/Pausa accesible y botón directo de retorno al inicio del artículo.
+        - Barra de progreso superior continua con gradiente de marca (`from-rose-500 via-pink-500 to-amber-500`) vinculada al avance real.
+        - Lado izquierdo: ícono de audífonos temático, título de la noticia, indicador de origen ("Audio IA" o "Voz navegador") con ícono de locutor y tiempo transcurrido / total en tiempo real.
+        - Lado derecho: controles de velocidad (para audio IA), reinicio, Play/Pausa accesible, botón directo de retorno al inicio del artículo y botón de **Cerrar (X)** para descartar el reproductor.
+    - **Coordinación de Componentes Flotantes**:
+        - `BackToTop`: Al activarse el reproductor, se desplaza automáticamente hacia arriba (`bottom-20`) para no solaparse con los controles del audio.
+        - `ArticleMobileDock`: En móviles se eleva de forma reactiva (`bottom-20`) para mantener visibles y usables todas las acciones de lectura.
 - Fallback automático e inteligente a síntesis de voz en español (`Web Speech API`) con cálculo dinámico de tiempo transcurrido y duración estimada basada en el contenido del artículo.
 
 ## 6. Soporte de Trailers de YouTube en Artículos
@@ -149,3 +158,22 @@ Implementación de mejoras de experiencia para visitantes en el portal de notici
     - Acceso al detalle por slug con `whereNotNull('published_at')`.
     - Página `/tendencias` con paginación y ordenamiento por popularidad de visitas.
     - Follow/unfollow, likes, favoritos, registro de compartidos y privacidad de perfiles.
+
+## 13. Sidebar de Lectura Reactivo, Dock Móvil y Métricas en Portada
+
+- **Sidebar de Acciones de Lectura** (`ArticleActionsPanel.tsx`):
+    - Colapsable de forma inteligente: permanece oculto (`max-h-0 opacity-0`) en la parte superior del artículo permitiendo que el widget de *Tendencias* se sitúe arriba.
+    - Al desplazarse pasando los 260px, se expande suavemente (`max-h-96 opacity-100`) para ofrecer:
+        - Control de narración con duración estimada ("Escuchar (X min)", "Pausar", "Reanudar").
+        - Botones de Me gusta y Guardar con contadores en tiempo real.
+        - Selector de tamaño de letra (`sm`, `base`, `lg`).
+        - Copiado rápido de texto plano formateado.
+- **Dock Flotante Móvil** (`ArticleMobileDock.tsx`):
+    - Menú inferior responsivo con acceso a las acciones principales de lectura.
+    - Ajuste reactivo de altura: se traslada a `bottom-20` al abrirse el minirreproductor de audio flotante.
+- **Métricas de Interacción en Portada** (`NewsCard.tsx` y `HeroFeatured.tsx`):
+    - Cada card de noticias exhibe los tres contadores clave con carga optimizada (`withCount` sin N+1):
+        - ❤️ **Me gusta** (`likers_count`).
+        - 🔖 **Guardados** (`favorites_count`).
+        - 🔗 **Compartidos** (`shares_count`).
+

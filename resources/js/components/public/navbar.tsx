@@ -204,7 +204,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                     }}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Buscar..."
-                                    className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-12 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
+                                    className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-12 pl-8 text-base sm:text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
                                 />
                                 <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-neutral-400" />
                                 <kbd className="pointer-events-none absolute right-2.5 hidden rounded border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 font-mono text-[9px] font-medium text-neutral-400 select-none sm:inline-block dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-400">
@@ -366,7 +366,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 }}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Buscar..."
-                                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-100/80 pr-4 pl-9 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:focus:border-rose-400"
+                                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-100/80 pr-4 pl-9 text-base text-neutral-800 placeholder:text-neutral-400 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:focus:border-rose-400"
                                 autoFocus
                             />
                             <Search className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-neutral-400" />

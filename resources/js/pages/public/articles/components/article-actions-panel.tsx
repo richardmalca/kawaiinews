@@ -37,6 +37,7 @@ export function ArticleActionsPanel({
         isPlaying: false,
         isPaused: false,
         isInteracting: false,
+        totalSeconds: 0,
     });
 
     useEffect(() => {
@@ -45,9 +46,15 @@ export function ArticleActionsPanel({
                 isPlaying: boolean;
                 isPaused: boolean;
                 isInteracting: boolean;
+                totalSeconds?: number;
             }>;
             if (customEvent.detail) {
-                setAudioState(customEvent.detail);
+                setAudioState({
+                    isPlaying: customEvent.detail.isPlaying,
+                    isPaused: customEvent.detail.isPaused,
+                    isInteracting: customEvent.detail.isInteracting,
+                    totalSeconds: customEvent.detail.totalSeconds ?? 0,
+                });
             }
         };
 
@@ -109,7 +116,9 @@ export function ArticleActionsPanel({
                                 ? 'Pausar audio'
                                 : audioState.isPaused
                                   ? 'Reanudar audio'
-                                  : 'Escuchar artículo'}
+                                  : audioState.totalSeconds > 0
+                                    ? `Escuchar (${Math.max(1, Math.ceil(audioState.totalSeconds / 60))} min)`
+                                    : 'Escuchar artículo'}
                         </span>
                     </span>
 

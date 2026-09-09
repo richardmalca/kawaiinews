@@ -25,7 +25,10 @@ class NewsArticleResource extends JsonResource
             'published_at' => $this->published_at?->diffForHumans(),
             'published_at_formatted' => $this->published_at?->translatedFormat('d \d\e F, Y'),
             'published_at_time' => $this->published_at?->format('H:i'),
+            'published_at_iso' => $this->published_at?->toIso8601String(),
+            'updated_at_iso' => $this->updated_at?->toIso8601String(),
             'created_at' => $this->created_at?->diffForHumans(),
+            'canonical_url' => url("/noticias/{$this->slug}"),
             'audio_url' => $this->audio_url,
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')->values()),
             'author' => $this->whenLoaded('author', fn () => $this->author ? [

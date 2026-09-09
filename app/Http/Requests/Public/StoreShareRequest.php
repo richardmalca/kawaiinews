@@ -18,7 +18,7 @@ class StoreShareRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'channel' => ['nullable', 'string', Rule::in(['whatsapp', 'twitter', 'facebook', 'telegram', 'link'])],
+            'channel' => ['nullable', 'string', Rule::in(['whatsapp', 'twitter', 'facebook', 'telegram', 'native', 'link'])],
         ];
     }
 }

@@ -128,7 +128,7 @@ export function useArticleInteractions({ article, onRequireAuth }: UseArticleInt
     }, [isAuthenticated, hasUsername, onRequireAuth, isFavoriting, favorited, article.slug]);
 
     const recordShare = useCallback(
-        async (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'link') => {
+        async (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'native' | 'link') => {
             setSharesCount((prev) => prev + 1);
 
             try {

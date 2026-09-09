@@ -1,40 +1,39 @@
-import { Check, Copy, MessageCircle, Send, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useShare } from '@/hooks/use-share';
+import { Check, Copy, MessageCircle, Send, Share2, Smartphone } from 'lucide-react';
 
 interface ShareButtonsProps {
     title: string;
+    text?: string | null;
+    category?: string;
     url?: string;
     sharesCount?: number;
-    onShare?: (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'link') => void;
+    onShare?: (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'native' | 'link') => void;
 }
 
-export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsProps) {
-    const [copied, setCopied] = useState(false);
-    const shareUrl =
-        url || (typeof window !== 'undefined' ? window.location.href : '');
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(shareUrl);
-            setCopied(true);
-            onShare?.('link');
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            setCopied(false);
-        }
-    };
-
-    const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+export function ShareButtons({
+    title,
+    text,
+    category,
+    url,
+    sharesCount,
+    onShare,
+}: ShareButtonsProps) {
+    const {
+        copied,
+        whatsappUrl,
+        twitterUrl,
+        telegramUrl,
+        facebookUrl,
+        canNativeShare,
+        handleNativeShare,
+        handleCopyLink,
+    } = useShare({
         title,
-    )}&url=${encodeURIComponent(shareUrl)}`;
-
-    const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-        `${title} ${shareUrl}`,
-    )}`;
-
-    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
-        shareUrl,
-    )}&text=${encodeURIComponent(title)}`;
+        text,
+        url,
+        category,
+        onShare,
+    });
 
     return (
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -49,8 +48,20 @@ export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsP
                 :
             </span>
 
+            {canNativeShare && (
+                <button
+                    type="button"
+                    onClick={handleNativeShare}
+                    title="Compartir desde tu dispositivo"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white text-xs font-bold text-rose-500 transition-colors hover:border-rose-300 hover:bg-rose-50 sm:hidden dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-rose-950/40"
+                    aria-label="Compartir nativo"
+                >
+                    <Smartphone className="h-4 w-4" />
+                </button>
+            )}
+
             <a
-                href={twitterShareUrl}
+                href={twitterUrl}
                 onClick={() => onShare?.('twitter')}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -62,7 +73,7 @@ export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsP
             </a>
 
             <a
-                href={whatsappShareUrl}
+                href={whatsappUrl}
                 onClick={() => onShare?.('whatsapp')}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -74,7 +85,7 @@ export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsP
             </a>
 
             <a
-                href={telegramShareUrl}
+                href={telegramUrl}
                 onClick={() => onShare?.('telegram')}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -85,9 +96,21 @@ export function ShareButtons({ title, url, sharesCount, onShare }: ShareButtonsP
                 <Send className="h-4 w-4" />
             </a>
 
+            <a
+                href={facebookUrl}
+                onClick={() => onShare?.('facebook')}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Compartir en Facebook"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400"
+                aria-label="Compartir en Facebook"
+            >
+                f
+            </a>
+
             <button
                 type="button"
-                onClick={handleCopy}
+                onClick={handleCopyLink}
                 title="Copiar enlace del artículo"
                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 text-xs font-medium text-neutral-700 transition-colors hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
             >

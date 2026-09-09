@@ -1,9 +1,10 @@
+import { SeoHead } from '@/components/common/seo-head';
 import { useReadingProgress } from '@/hooks/use-reading-progress';
 import PublicLayout from '@/layouts/public-layout';
 import { formatArticleAsPlainText } from '@/lib/utils';
 import { TrendingSidebar } from '@/pages/public/home/components/trending-sidebar';
 import type { PublicArticle, PublicCategorySummary } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
     ArrowLeft,
     Bookmark,
@@ -86,7 +87,7 @@ export default function ShowArticle({
 
     return (
         <PublicLayout categories={categories} progress={progress}>
-            <Head title={`${item.title} - KawaiiNews`} />
+            <SeoHead article={item} />
 
             <div className="mb-8 flex items-center justify-between">
                 <Link

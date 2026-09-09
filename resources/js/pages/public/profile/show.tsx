@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { SeoHead } from '@/components/common/seo-head';
 import PublicLayout from '@/layouts/public-layout';
 import type { PublicCategorySummary, PublicUserProfile } from '@/types';
+import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useProfileFollow } from './hooks/use-profile-follow';
 import { ProfileHeader } from './components/profile-header';
@@ -16,7 +17,10 @@ export default function ProfileShow({ profile, categories }: ProfileShowProps) {
 
     return (
         <PublicLayout categories={categories}>
-            <Head title={`@${profile.username} - KawaiiNews`} />
+            <SeoHead
+                profile={profile}
+                description={`Perfil de ${profile.name} (@${profile.username}) en KawaiiNews.`}
+            />
 
             <div className="mb-6 flex items-center justify-between">
                 <Link
