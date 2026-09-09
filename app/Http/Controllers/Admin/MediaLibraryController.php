@@ -71,7 +71,7 @@ class MediaLibraryController extends Controller
 
             return response()->json((new MediaResource($media))->resolve());
         } catch (Throwable $exception) {
-            return response()->json(['message' => $exception->getMessage()], 422);
+            return response()->json(['message' => $this->friendlyGenerationError($exception)], 422);
         }
     }
 
@@ -82,8 +82,26 @@ class MediaLibraryController extends Controller
 
             return response()->json((new MediaResource($media))->resolve());
         } catch (Throwable $exception) {
-            return response()->json(['message' => $exception->getMessage()], 422);
+            return response()->json(['message' => $this->friendlyGenerationError($exception)], 422);
         }
+    }
+
+    /**
+     * Algunos errores de los proveedores de IA vienen en inglés y con
+     * jerga técnica de su API — acá se traducen los casos más comunes a
+     * algo que tenga sentido para quien está usando el editor. El resto
+     * de errores (API key inválida, red caída, etc.) se muestran tal cual
+     * los devuelve el proveedor.
+     */
+    private function friendlyGenerationError(Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+
+        if (str_contains($message, 'rejected by the safety system')) {
+            return 'OpenAI rechazó generar esta imagen por su filtro de seguridad de contenido (puede pasar con ciertos nombres o descripciones, sin previo aviso). Probá de nuevo — a veces con el mismo texto funciona en el segundo intento — o ajustá el resumen/contenido de la noticia y volvé a intentar.';
+        }
+
+        return $message;
     }
 
     public function destroy(Media $media): JsonResponse
