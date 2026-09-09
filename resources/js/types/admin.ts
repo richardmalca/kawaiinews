@@ -167,6 +167,26 @@ export type DashboardSummary = {
     };
 };
 
+export type DashboardGrowthEntry = {
+    current: number;
+    previous: number;
+    change_percent: number | null;
+};
+
+export type DashboardGrowth = {
+    views: DashboardGrowthEntry;
+    users: DashboardGrowthEntry;
+    reactions: DashboardGrowthEntry;
+};
+
+export type DashboardHealthStatus = 'ok' | 'warning' | 'critical';
+
+export type DashboardHealthCheck = {
+    status: DashboardHealthStatus;
+    label: string;
+    detail: string;
+};
+
 export type DashboardTimelinePoint = {
     date: string;
     views: number;

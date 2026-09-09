@@ -9,11 +9,14 @@ import {
 } from 'lucide-react';
 import Heading from '@/components/heading';
 import DashboardCategoryChart from '@/pages/admin/dashboard/components/dashboard-category-chart';
+import DashboardHealthPanel from '@/pages/admin/dashboard/components/dashboard-health-panel';
 import DashboardTimelineChart from '@/pages/admin/dashboard/components/dashboard-timeline-chart';
 import DashboardTopArticles from '@/pages/admin/dashboard/components/dashboard-top-articles';
 import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import type {
     DashboardCategoryStat,
+    DashboardGrowth,
+    DashboardHealthCheck,
     DashboardSummary,
     DashboardTimelinePoint,
     DashboardTopArticle,
@@ -21,6 +24,8 @@ import type {
 
 type Props = {
     summary: DashboardSummary;
+    growth: DashboardGrowth;
+    health: DashboardHealthCheck[];
     timeline: DashboardTimelinePoint[];
     topArticles: DashboardTopArticle[];
     categories: DashboardCategoryStat[];
@@ -28,6 +33,8 @@ type Props = {
 
 export default function AdminDashboard({
     summary,
+    growth,
+    health,
     timeline,
     topArticles,
     categories,
@@ -48,6 +55,7 @@ export default function AdminDashboard({
                         label="Usuarios totales"
                         value={summary.users.total}
                         sublabel={`+${summary.users.new_today} hoy`}
+                        changePercent={growth.users.change_percent}
                     />
                     <KpiCard
                         icon={UserPlus}
@@ -59,6 +67,7 @@ export default function AdminDashboard({
                         label="Vistas hoy"
                         value={summary.views.today}
                         sublabel={`${summary.views.this_week} esta semana`}
+                        changePercent={growth.views.change_percent}
                     />
                     <KpiCard
                         icon={Eye}
@@ -70,6 +79,7 @@ export default function AdminDashboard({
                         label="Reacciones hoy"
                         value={summary.reactions_today}
                         sublabel="Me gusta + favoritos"
+                        changePercent={growth.reactions.change_percent}
                     />
                     <KpiCard
                         icon={Share2}
@@ -90,6 +100,8 @@ export default function AdminDashboard({
                     <DashboardCategoryChart data={categories} />
                     <DashboardTopArticles articles={topArticles} />
                 </div>
+
+                <DashboardHealthPanel checks={health} />
             </div>
         </>
     );

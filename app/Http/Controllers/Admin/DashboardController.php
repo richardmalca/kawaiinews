@@ -15,6 +15,8 @@ class DashboardController extends Controller
     {
         return Inertia::render('admin/dashboard', [
             'summary' => $this->dashboardService->summary(),
+            'growth' => $this->dashboardService->growth(),
+            'health' => $this->dashboardService->healthChecks(),
             'timeline' => $this->dashboardService->timeline(),
             'topArticles' => $this->dashboardService->topArticles(),
             'categories' => $this->dashboardService->categoryBreakdown(),

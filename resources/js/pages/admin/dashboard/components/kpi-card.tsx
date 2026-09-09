@@ -1,3 +1,4 @@
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -6,9 +7,42 @@ type Props = {
     label: string;
     value: string | number;
     sublabel?: string;
+    changePercent?: number | null;
 };
 
-export default function KpiCard({ icon: Icon, label, value, sublabel }: Props) {
+function ChangeBadge({ changePercent }: { changePercent: number }) {
+    if (changePercent === 0) {
+        return (
+            <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
+                <Minus className="h-3 w-3" />
+                sin cambios
+            </span>
+        );
+    }
+
+    const isUp = changePercent > 0;
+
+    return (
+        <span
+            className={`flex items-center gap-0.5 text-xs ${isUp ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}
+        >
+            {isUp ? (
+                <TrendingUp className="h-3 w-3" />
+            ) : (
+                <TrendingDown className="h-3 w-3" />
+            )}
+            {Math.abs(changePercent)}% vs. semana anterior
+        </span>
+    );
+}
+
+export default function KpiCard({
+    icon: Icon,
+    label,
+    value,
+    sublabel,
+    changePercent,
+}: Props) {
     return (
         <Card>
             <CardContent className="flex items-center gap-3">
@@ -22,6 +56,9 @@ export default function KpiCard({ icon: Icon, label, value, sublabel }: Props) {
                         <p className="text-muted-foreground text-xs">
                             {sublabel}
                         </p>
+                    )}
+                    {changePercent !== undefined && changePercent !== null && (
+                        <ChangeBadge changePercent={changePercent} />
                     )}
                 </div>
             </CardContent>

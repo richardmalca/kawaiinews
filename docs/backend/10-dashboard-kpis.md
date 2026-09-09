@@ -24,6 +24,23 @@ Nueva tabla `article_view_daily` (`news_article_id`, `date`, `views`, único por
 
 Los colores de los gráficos usan las variables `--color-chart-1..5` que ya existían en `resources/css/app.css` (tema oscuro/claro se resuelve solo, sin lógica extra).
 
+## Comparativas (`growth()`)
+
+Para cada métrica clave (vistas, usuarios nuevos, reacciones) compara los últimos 7 días contra los 7 días anteriores a esos, y calcula `change_percent` (`null` si el período anterior fue 0, para no dividir por cero). Se muestra como flecha ↑/↓ verde/roja en las tarjetas KPI correspondientes (`KpiCard` con prop `changePercent`).
+
+## Panel "Estado del sistema" (`healthChecks()`)
+
+Lista de chequeos, cada uno con `status` (`ok` | `warning` | `critical`), pensada para responder de un vistazo "qué está bien, qué está mal, qué falta":
+
+- **Proveedor de IA** — `critical` si no hay ningún `AiProvider` activo con API key (sin esto no se pueden redactar borradores ni analizar la cola).
+- **Fuentes de noticias** — `critical` si no hay ninguna fuente activa con RSS.
+- **Bandeja de revisión** — `warning` si hay más de 100 clusters `pending` (se está acumulando).
+- **Último scraping** — `warning` si pasaron más de 6hs desde el `last_scraped_at` más reciente (el cron corre cada 3hs, ver [06-scheduling-caching-and-views.md](06-scheduling-caching-and-views.md)).
+- **Worker de cola** — `critical` si hay jobs en la tabla `jobs` esperando hace más de 5 minutos. Este chequeo existe directamente por el incidente real que lo motivó: en producción no había ningún worker de cola corriendo para este sitio (solo para otro), así que los borradores/imágenes/audios nunca se generaban y no había ninguna señal visible de por qué. Ahora el panel lo va a marcar en rojo apenas pase.
+- **Imágenes destacadas** — `warning` si hay artículos publicados sin `featured_image`.
+
+**Bug real de Carbon 3 encontrado armando esto:** `diffInHours()`/`diffInMinutes()` en Carbon 3 (a diferencia de Carbon 2) devuelven un valor **negativo** por defecto cuando la fecha comparada es pasada y se llama como `$masReciente->diffInX($masVieja)` — antes siempre era positivo. `queueWorkerCheck()` y `scrapingFreshnessCheck()` llaman en ese orden (`now()->diffInHours($fechaVieja)`), así que había que pasar el segundo argumento `true` (`$absolute`) explícitamente, si no la condición `> 5`/`> 6` nunca se cumplía. El resto del código del proyecto que ya usaba `diffInX()` (`NewsClusterService`, `NewsScraperService`) llama en el orden inverso (`$fechaVieja->diffInX(now())`), que da positivo en ambas versiones de Carbon — no tenían el bug.
+
 ## Tests
 
 - `tests/Feature/Admin/DashboardServiceTest.php` — conteos de `summary()`, agrupado correcto de `timeline()`, orden y datos de `topArticles()`, que `categoryBreakdown()` cubra todas las categorías del catálogo aunque tengan 0 artículos.

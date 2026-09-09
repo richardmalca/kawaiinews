@@ -14,6 +14,8 @@ test('an authenticated staff member sees the dashboard with kpi data', function 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->has('summary')
+            ->has('growth')
+            ->has('health')
             ->has('timeline', 14)
             ->has('topArticles')
             ->has('categories')
