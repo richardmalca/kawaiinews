@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Check, ExternalLink, Pencil, X } from 'lucide-react';
+import { Check, ExternalLink, Pencil, Youtube, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -22,7 +22,16 @@ export default function NewsClusterRow({ cluster }: Props) {
     return (
         <TableRow>
             <TableCell className="max-w-xs">
-                <p className="truncate font-medium" title={cluster.title}>
+                <p
+                    className="flex items-center gap-1.5 truncate font-medium"
+                    title={cluster.title}
+                >
+                    {cluster.has_video && (
+                        <Youtube
+                            className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+                            aria-label="Trae trailer de YouTube"
+                        />
+                    )}
                     {cluster.title}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-2">

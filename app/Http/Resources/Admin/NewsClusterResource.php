@@ -20,6 +20,7 @@ class NewsClusterResource extends JsonResource
             'category' => $this->category,
             'summary' => $this->summary,
             'image_url' => $this->image_url,
+            'has_video' => filled($this->video_url),
             'sources_count' => $this->sources_count,
             'relevance_score' => $this->relevance_score,
             'status' => $this->status,

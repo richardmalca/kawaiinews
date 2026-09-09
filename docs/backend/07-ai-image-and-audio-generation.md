@@ -49,9 +49,13 @@ Fix en dos partes:
    ```
 2. **El prompt dejó de citar el título** y agregó una instrucción explícita de "no incluyas ningún texto, letra, título, cartel ni palabra escrita" (ver arriba). Verificado en vivo: la segunda generación quedó panorámica (1536×1024 real) y sin oraciones/carteles dibujados (solo quedó un "10" decorativo suelto, ligado al "diez años" del contexto — no texto de título).
 
-### Costo real: por qué `quality: low`
+### Costo real: `quality: medium` (se probó `low` primero)
 
-Generar 3 imágenes sin fijar `quality` costó **$1.14 en la cuenta real** de OpenAI — `gpt-image-1` usa `high` por defecto si no se especifica, que sale entre 6 y 8 veces más caro por imagen que `low` (aprox. $0.17–0.19 vs $0.02–0.03 en tamaño panorámico). Se agregó `'quality' => 'low'` a `IMAGE_ASPECT_OPTIONS['openai']` para que cada generación futura sea barata por defecto — es un trade-off consciente de menos nitidez a cambio de costo, decidido explícitamente por el usuario al ver el gasto real (no un default de la librería). Si en algún momento se necesita más calidad para una noticia puntual, cambiar `low` por `medium` ahí mismo.
+Generar 3 imágenes sin fijar `quality` costó **$1.14 en la cuenta real** de OpenAI — `gpt-image-1` usa `high` por defecto si no se especifica (~$0.17–0.19 por imagen panorámica). Primero se fijó `'quality' => 'low'` (~$0.02–0.03) para minimizar costo, pero se notaba con poco detalle en las pruebas reales; se subió a **`medium`** (~$0.06–0.07, todavía 2-3 veces más barato que `high`) como el balance elegido entre nitidez y costo. Vive en `IMAGE_ASPECT_OPTIONS['openai']`, cambiarlo ahí si hace falta ajustar de nuevo.
+
+### El prompt referencia el estilo visual real de la franquicia
+
+El prompt (armado en `edit.tsx`) le pide al modelo identificar de qué anime/videojuego/franquicia trata el título de la noticia y usar su ambientación, paleta y estilo general como **referencia de inspiración** — explícitamente "sin copiar personajes ni logos reales, con tu propio estilo artístico". Es una referencia por texto (no una imagen real de la obra como input), así que el resultado no reproduce personajes reconocibles con exactitud — sigue siendo una ilustración genérica "al estilo de", más cercana a la temática real que antes de este ajuste, pero no una representación fiel de personajes con copyright (ver la sección de abajo sobre esa limitación, que sigue aplicando).
 
 ## Generar audio (narración)
 

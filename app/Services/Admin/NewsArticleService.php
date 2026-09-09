@@ -16,6 +16,7 @@ class NewsArticleService
     public function createFromCluster(NewsCluster $newsCluster): NewsArticle
     {
         $draft = $this->generateDraft($newsCluster);
+        $body = $this->appendVideoEmbed($draft['body'], $newsCluster->video_url);
 
         return NewsArticle::create([
             'news_cluster_id' => $newsCluster->id,
@@ -23,11 +24,44 @@ class NewsArticleService
             'slug' => $this->uniqueSlug($draft['title']),
             'category' => $newsCluster->category,
             'excerpt' => $draft['excerpt'],
-            'body' => $draft['body'],
+            'body' => $body,
             'featured_image' => $newsCluster->image_url,
             'status' => 'draft',
             'published_at' => $newsCluster->earliestPublishedAt(),
         ]);
+    }
+
+    /**
+     * Si el cluster trae un link de YouTube tomado directo de la fuente
+     * (ver `NewsScraperService::extractYoutubeUrl()`), lo agrega como
+     * embed real al final del cuerpo — no se le pide a la IA que lo
+     * incluya ella misma, para no arriesgar que arme mal la URL o
+     * invente un video que no es el que trajo la fuente.
+     */
+    private function appendVideoEmbed(?string $body, ?string $videoUrl): ?string
+    {
+        if (! $videoUrl) {
+            return $body;
+        }
+
+        $videoId = $this->extractYoutubeId($videoUrl);
+
+        if (! $videoId) {
+            return $body;
+        }
+
+        $embed = '<div class="aspect-video"><iframe src="https://www.youtube.com/embed/'.$videoId.'" title="Video de YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+
+        return trim(($body ?? '')."\n\n".$embed);
+    }
+
+    private function extractYoutubeId(string $url): ?string
+    {
+        if (preg_match('#(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})#i', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 
     /**

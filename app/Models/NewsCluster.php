@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string $category
  * @property string|null $summary
  * @property string|null $image_url
+ * @property string|null $video_url
  * @property int $sources_count
  * @property float $relevance_score
  * @property string $status
@@ -24,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $first_seen_at
  * @property Carbon $last_seen_at
  */
-#[Fillable(['title', 'category', 'summary', 'image_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'first_seen_at', 'last_seen_at'])]
+#[Fillable(['title', 'category', 'summary', 'image_url', 'video_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'first_seen_at', 'last_seen_at'])]
 class NewsCluster extends Model
 {
     /** @use HasFactory<NewsClusterFactory> */

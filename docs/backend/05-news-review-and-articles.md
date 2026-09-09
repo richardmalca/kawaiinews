@@ -10,8 +10,8 @@ Scrapear y publicar directo generaría ruido: la misma noticia repetida por cada
 
 ### Modelos y tablas
 
-- `scraped_items` — una fila por noticia cruda leída del RSS de una fuente: `news_source_id`, `title`, `url` (única), `summary`, `image_url`, `published_at`, `news_cluster_id` (a qué tema quedó asignada).
-- `news_clusters` — un tema agrupado: `title`, `category`, `summary`, `image_url`, `sources_count` (cuántas fuentes distintas lo cubrieron), `relevance_score`, `status` (`pending` / `accepted` / `rejected`), `first_seen_at`, `last_seen_at`.
+- `scraped_items` — una fila por noticia cruda leída del RSS de una fuente: `news_source_id`, `title`, `url` (única), `summary`, `image_url`, `video_url`, `published_at`, `news_cluster_id` (a qué tema quedó asignada).
+- `news_clusters` — un tema agrupado: `title`, `category`, `summary`, `image_url`, `video_url`, `sources_count` (cuántas fuentes distintas lo cubrieron), `relevance_score`, `status` (`pending` / `accepted` / `rejected`), `first_seen_at`, `last_seen_at`.
 
 ### `app/Services/NewsScraperService.php`
 
@@ -26,6 +26,8 @@ Scrapear y publicar directo generaría ruido: la misma noticia repetida por cada
 La comparación de clusters candidatos **no filtra por status** — un tema ya rechazado sigue absorbiendo noticias similares (así no reaparece en la bandeja como si fuera nuevo).
 
 **Nota de idioma:** el título/resumen del cluster se guarda tal cual viene de la fuente original (inglés, portugués, español, según la fuente) — no se traduce en esta etapa a propósito, para no gastar una llamada a la IA por cada tema nuevo encontrado en cada corrida del scraper. La traducción ocurre recién en la Etapa B, al aceptar.
+
+**Trailers oficiales de YouTube.** `extractYoutubeUrl()` busca un link de `youtube.com`/`youtu.be` ya presente en la `<description>` o `<content:encoded>` del item — no se busca en YouTube por fuera del feed, solo se toma lo que la fuente ya trajo (evita traer el video incorrecto). Se propaga a `NewsCluster::video_url` con el mismo criterio que `image_url` (el primero que llega gana, `attachToCluster()` no lo pisa). Al aceptar el cluster, `NewsArticleService::appendVideoEmbed()` agrega un `<iframe>` real de YouTube al final del `body` — la URL/ID del video **no pasa por la IA**, se arma directo con regex desde `video_url`, para no arriesgar que el modelo invente o rompa el link. La bandeja de revisión muestra un ícono de YouTube junto al título cuando `has_video` es `true` (`NewsClusterResource`).
 
 Disparo: botón manual "Buscar noticias ahora" en `/admin/news-review`, **y** un cron cada 30 minutos (`news:scrape`, ver [06-scheduling-caching-and-views.md](06-scheduling-caching-and-views.md)). El botón valida que haya al menos una fuente activa con `rss_url` antes de habilitarse — si no hay ninguna, la página muestra una alerta (`Alert` destructiva) con link directo a Fuentes de noticias y el botón queda deshabilitado; el endpoint `POST news-review/scrape` también valida esto server-side (devuelve `sources_scraped: 0` y un mensaje en `errors`, sin correr el scraper).
 

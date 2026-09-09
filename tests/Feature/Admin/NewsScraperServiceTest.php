@@ -51,3 +51,33 @@ test('a valid feed is scraped into a new cluster', function () {
 
     expect(ScrapedItem::where('url', 'https://good-feed.test/noticia-1')->exists())->toBeTrue();
 });
+
+test('a youtube trailer link in the description is captured and propagated to the cluster', function () {
+    NewsSource::factory()->create([
+        'rss_url' => 'https://trailer-feed.test/feed',
+        'category' => 'anime',
+    ]);
+
+    Http::fake([
+        'trailer-feed.test/*' => Http::response(<<<'XML'
+            <?xml version="1.0"?>
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <title>Anime revela su trailer oficial</title>
+                        <link>https://trailer-feed.test/noticia-1</link>
+                        <description>Mira el trailer acá: &lt;a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"&gt;link&lt;/a&gt;</description>
+                        <pubDate>Mon, 08 Sep 2026 10:00:00 +0000</pubDate>
+                    </item>
+                </channel>
+            </rss>
+            XML, 200),
+    ]);
+
+    app(NewsScraperService::class)->run();
+
+    $scrapedItem = ScrapedItem::where('url', 'https://trailer-feed.test/noticia-1')->firstOrFail();
+
+    expect($scrapedItem->video_url)->toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        ->and($scrapedItem->newsCluster->video_url)->toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+});

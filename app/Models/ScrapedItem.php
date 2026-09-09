@@ -17,9 +17,10 @@ use Illuminate\Support\Carbon;
  * @property string $url
  * @property string|null $summary
  * @property string|null $image_url
+ * @property string|null $video_url
  * @property Carbon|null $published_at
  */
-#[Fillable(['news_cluster_id', 'news_source_id', 'title', 'url', 'summary', 'image_url', 'published_at'])]
+#[Fillable(['news_cluster_id', 'news_source_id', 'title', 'url', 'summary', 'image_url', 'video_url', 'published_at'])]
 class ScrapedItem extends Model
 {
     /** @use HasFactory<ScrapedItemFactory> */

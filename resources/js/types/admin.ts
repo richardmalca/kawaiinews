@@ -90,6 +90,7 @@ export type NewsCluster = {
     category: string;
     summary: string | null;
     image_url: string | null;
+    has_video: boolean;
     sources_count: number;
     relevance_score: number;
     status: 'pending' | 'accepted' | 'rejected';

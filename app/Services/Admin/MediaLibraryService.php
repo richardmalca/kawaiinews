@@ -101,15 +101,17 @@ class MediaLibraryService
      * fijos, el más ancho es `1536x1024` (3:2, no hay 16:9 exacto); Gemini
      * (`imagen-4`) sí acepta `aspect_ratio` libre.
      *
-     * `quality: low` en OpenAI es explícito a propósito: sin este parámetro
-     * `gpt-image-1` usa `high` por defecto, que sale ~6-8 veces más caro por
-     * imagen (~$0.17-0.19 vs ~$0.02-0.03). Verificado en la cuenta real: 3
-     * imágenes sin este parámetro costaron $1.14 en total.
+     * `quality: medium` en OpenAI es explícito a propósito: sin este
+     * parámetro `gpt-image-1` usa `high` por defecto, que sale ~2-3 veces
+     * más caro que `medium` (~$0.17-0.19 vs ~$0.06-0.07) sin necesidad real
+     * para una imagen destacada. `low` (~$0.02-0.03) se probó primero por
+     * costo pero se notaba con poco detalle — `medium` es el balance que se
+     * decidió tras comparar ambas en la cuenta real.
      *
      * @var array<string, array<string, mixed>>
      */
     private const IMAGE_ASPECT_OPTIONS = [
-        'openai' => ['size' => '1536x1024', 'quality' => 'low'],
+        'openai' => ['size' => '1536x1024', 'quality' => 'medium'],
         'gemini' => ['aspect_ratio' => '16:9'],
     ];
 

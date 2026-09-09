@@ -47,6 +47,7 @@ class NewsScraperService
                         'url' => $feedItem['url'],
                         'summary' => $feedItem['summary'],
                         'image_url' => $feedItem['image_url'],
+                        'video_url' => $feedItem['video_url'],
                         'published_at' => $feedItem['published_at'],
                     ]);
 
@@ -69,7 +70,7 @@ class NewsScraperService
     }
 
     /**
-     * @return array<int, array{title: string, url: string, summary: string|null, image_url: string|null, published_at: Carbon|null}>
+     * @return array<int, array{title: string, url: string, summary: string|null, image_url: string|null, video_url: string|null, published_at: Carbon|null}>
      */
     private function fetchFeed(string $rssUrl): array
     {
@@ -92,6 +93,7 @@ class NewsScraperService
                 'url' => $link,
                 'summary' => $this->extractSummary($entry),
                 'image_url' => $this->extractImage($entry),
+                'video_url' => $this->extractYoutubeUrl($entry),
                 'published_at' => $this->parseDate((string) $entry->pubDate),
             ];
         }
@@ -151,6 +153,28 @@ class NewsScraperService
         return null;
     }
 
+    /**
+     * Busca un link de YouTube ya presente en la noticia original (en la
+     * descripción o en `content:encoded`, donde suelen venir los trailers
+     * embebidos como <iframe>/<a>) — no se busca en YouTube por fuera del
+     * feed, solo se toma lo que la fuente ya trae.
+     */
+    private function extractYoutubeUrl(SimpleXMLElement $entry): ?string
+    {
+        $description = (string) $entry->description;
+
+        $contentNamespace = $entry->children('content', true);
+        $contentEncoded = isset($contentNamespace->encoded) ? (string) $contentNamespace->encoded : '';
+
+        $haystack = $description.' '.$contentEncoded;
+
+        if (preg_match('#https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|embed/|shorts/)[\w-]+|youtu\.be/[\w-]+)[^\s"\'<>]*#i', $haystack, $matches)) {
+            return $matches[0];
+        }
+
+        return null;
+    }
+
     private function parseDate(string $date): ?CarbonInterface
     {
         if ($date === '') {
@@ -187,6 +211,7 @@ class NewsScraperService
             'category' => $category,
             'summary' => $scrapedItem->summary,
             'image_url' => $scrapedItem->image_url,
+            'video_url' => $scrapedItem->video_url,
             'sources_count' => 1,
             'relevance_score' => $this->calculateRelevance(1, now()),
             'status' => 'pending',
@@ -207,6 +232,7 @@ class NewsScraperService
             'sources_count' => $sourcesCount,
             'summary' => $cluster->summary ?? $scrapedItem->summary,
             'image_url' => $cluster->image_url ?? $scrapedItem->image_url,
+            'video_url' => $cluster->video_url ?? $scrapedItem->video_url,
             'relevance_score' => $this->calculateRelevance($sourcesCount, $cluster->first_seen_at),
             'last_seen_at' => now(),
         ]);

@@ -55,7 +55,7 @@ export default function NewsArticleEdit({
         title.trim() && excerpt.trim() && plainBody,
     );
     const aiImagePrompt = isContentComplete
-        ? `Ilustración editorial en formato panorámico (16:9) para una noticia sobre: ${excerpt}. Contexto adicional: ${plainBody.slice(0, 500)}. Estilo prolijo y atractivo, colores vibrantes, buena composición. No incluyas ningún texto, letra, título, cartel ni palabra escrita dentro de la imagen — solo la ilustración.`
+        ? `Ilustración editorial en formato panorámico (16:9) para una noticia sobre "${title}". Primero identificá de qué anime, videojuego o franquicia trata este título y usá su ambientación, paleta de colores y estilo visual general como referencia de inspiración — sin copiar personajes ni logos reales, con tu propio estilo artístico. Resumen: ${excerpt}. Contexto adicional: ${plainBody.slice(0, 500)}. Buen nivel de detalle, colores vibrantes, buena composición. No incluyas ningún texto, letra, título, cartel ni palabra escrita dentro de la imagen — solo la ilustración.`
         : null;
     const canGenerateAudio = Boolean(
         article.title.trim() &&
