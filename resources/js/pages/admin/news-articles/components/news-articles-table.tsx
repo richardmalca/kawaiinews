@@ -51,7 +51,7 @@ export default function NewsArticlesTable({ articles }: Props) {
                                     className="border-input h-8 w-8 border object-cover"
                                 />
                             ) : (
-                                <div className="bg-muted text-muted-foreground flex h-8 w-8 items-center justify-center border border-input">
+                                <div className="bg-muted text-muted-foreground border-input flex h-8 w-8 items-center justify-center border">
                                     <ImageOff className="h-3.5 w-3.5" />
                                 </div>
                             )}

@@ -34,9 +34,7 @@ export default function AddAiProviderDialog({ entry }: Props) {
     const [open, setOpen] = useState(false);
     const [defaultModel, setDefaultModel] = useState(entry.models[0] ?? '');
 
-    const { addProvider, processing } = useAddAiProvider(() =>
-        setOpen(false),
-    );
+    const { addProvider, processing } = useAddAiProvider(() => setOpen(false));
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();

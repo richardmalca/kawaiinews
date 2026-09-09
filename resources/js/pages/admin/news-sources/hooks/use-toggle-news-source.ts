@@ -23,7 +23,9 @@ export function useToggleNewsSource() {
         });
 
         toast.promise(promise, {
-            loading: willActivate ? 'Activando fuente...' : 'Desactivando fuente...',
+            loading: willActivate
+                ? 'Activando fuente...'
+                : 'Desactivando fuente...',
             success: willActivate ? 'Fuente activada' : 'Fuente desactivada',
             error: 'No se pudo actualizar la fuente',
         });

@@ -102,7 +102,7 @@ export default function NewsArticleEdit({
                                             name="title"
                                             required
                                             placeholder="Título de la noticia"
-                                            className="border-input placeholder:text-muted-foreground w-full border-0 border-b bg-transparent px-0 py-2 text-2xl font-semibold outline-none focus-visible:border-primary"
+                                            className="border-input placeholder:text-muted-foreground focus-visible:border-primary w-full border-0 border-b bg-transparent px-0 py-2 text-2xl font-semibold outline-none"
                                             value={title}
                                             onChange={(event) => {
                                                 setTitle(event.target.value);

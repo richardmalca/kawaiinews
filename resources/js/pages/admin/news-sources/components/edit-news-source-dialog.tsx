@@ -26,9 +26,7 @@ export default function EditNewsSourceDialog({ source }: Props) {
     const { errors } = usePage().props;
     const [open, setOpen] = useState(false);
 
-    const { saveSource, processing } = useSaveNewsSource(() =>
-        setOpen(false),
-    );
+    const { saveSource, processing } = useSaveNewsSource(() => setOpen(false));
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();

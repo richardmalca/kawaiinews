@@ -7,9 +7,13 @@ use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\HomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', HomeController::class)->name('home');
+Route::get('categoria/{category}', HomeController::class)->name('public.category');
+Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
     ->prefix('admin')

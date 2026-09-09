@@ -24,7 +24,7 @@ export default function AiProviderCatalogCard({ entry, provider }: Props) {
     const isActive = provider?.is_active ?? false;
 
     return (
-        <Card className={cn(isActive && 'ring-2 ring-primary')}>
+        <Card className={cn(isActive && 'ring-primary ring-2')}>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
                     {entry.label}

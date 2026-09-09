@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\MediaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -14,5 +16,6 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['url', 'original_name', 'source'])]
 class Media extends Model
 {
-    //
+    /** @use HasFactory<MediaFactory> */
+    use HasFactory;
 }

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\NewsSourceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -21,6 +23,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['source_key', 'category', 'label', 'url', 'rss_url', 'is_active', 'last_scraped_at'])]
 class NewsSource extends Model
 {
+    /** @use HasFactory<NewsSourceFactory> */
+    use HasFactory;
+
     /**
      * Get the attributes that should be cast.
      *

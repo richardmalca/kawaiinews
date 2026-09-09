@@ -31,9 +31,7 @@ export default function NewsSourceRow({ source }: Props) {
                 />
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <p className="truncate font-medium">
-                            {source.label}
-                        </p>
+                        <p className="truncate font-medium">{source.label}</p>
                         {source.is_active && (
                             <Badge variant="default">Activa</Badge>
                         )}

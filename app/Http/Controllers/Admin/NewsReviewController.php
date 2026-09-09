@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\NewsClusterResource;
+use App\Http\Resources\Admin\NewsClusterResource;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
-use App\Services\NewsArticleService;
-use App\Services\NewsClusterService;
-use App\Services\NewsScraperService;
+use App\Services\Admin\NewsArticleService;
+use App\Services\Admin\NewsClusterService;
+use App\Services\Admin\NewsScraperService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,14 +23,29 @@ class NewsReviewController extends Controller
         private readonly NewsArticleService $newsArticleService,
     ) {}
 
+    private const PER_PAGE = 20;
+
     public function index(Request $request): Response
     {
         $sort = $request->string('sort', 'relevance')->value();
+        $category = $request->string('category')->value() ?: null;
+        $page = max(1, $request->integer('page', 1));
+
+        $clusters = $this->newsClusterService->reviewQueue($sort, $category);
+        $total = $clusters->count();
+        $items = $clusters->forPage($page, self::PER_PAGE)->values();
 
         return Inertia::render('admin/news-review/index', [
-            'clusters' => NewsClusterResource::collection($this->newsClusterService->reviewQueue($sort))->resolve(),
+            'clusters' => NewsClusterResource::collection($items)->resolve(),
             'hasActiveSources' => $this->hasScrapableSources(),
             'sort' => $sort,
+            'category' => $category,
+            'categories' => array_keys(config('news_sources_catalog')),
+            'meta' => [
+                'current_page' => $page,
+                'last_page' => max(1, (int) ceil($total / self::PER_PAGE)),
+                'total' => $total,
+            ],
         ]);
     }
 

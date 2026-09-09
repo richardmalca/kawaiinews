@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuthRedirectService;
-use App\Services\GoogleAuthService;
+use App\Services\Auth\AuthRedirectService;
+use App\Services\Auth\GoogleAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;

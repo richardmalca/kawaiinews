@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Services\UserService;
+use App\Services\Admin\UserService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;

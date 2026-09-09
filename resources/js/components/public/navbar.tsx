@@ -1,0 +1,202 @@
+import type { PublicCategorySummary } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
+import { login } from '@/routes';
+import { dashboard } from '@/routes/admin';
+import { Search, Shield, Sparkles, User, X } from 'lucide-react';
+import { useState } from 'react';
+import { ThemeToggle } from './theme-toggle';
+
+interface PublicNavbarProps {
+    categories?: Record<string, PublicCategorySummary>;
+    progress?: number;
+}
+
+const privilegedRoles = ['superadmin', 'admin', 'editor'];
+
+export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
+    const { auth } = usePage().props;
+    const url = usePage().url;
+    const isPrivileged = auth.user?.roles.some((role) =>
+        privilegedRoles.includes(role),
+    );
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+    const categoryEntries = Object.entries(categories ?? {});
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmed = searchQuery.trim();
+        if (trimmed) {
+            router.get('/', { q: trimmed });
+        } else {
+            router.get('/');
+        }
+    };
+
+    return (
+        <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/90 backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-950/90">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex h-16 items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link
+                            href="/"
+                            className="group flex items-center gap-2 shrink-0"
+                        >
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
+                                <Sparkles className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-xl font-black tracking-tight text-transparent dark:from-white dark:via-neutral-200 dark:to-neutral-400">
+                                Kawaii
+                                <span className="text-rose-500">News</span>
+                            </span>
+                        </Link>
+
+                        <nav className="hidden items-center gap-1 md:flex">
+                            <Link
+                                href="/"
+                                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                    url === '/'
+                                        ? 'bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-white'
+                                        : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white'
+                                }`}
+                            >
+                                Portada
+                            </Link>
+                            {categoryEntries.slice(0, 5).map(([slug, data]) => {
+                                const isActive =
+                                    url.startsWith(`/categoria/${slug}`) ||
+                                    url.includes(`categoria=${slug}`);
+                                return (
+                                    <Link
+                                        key={slug}
+                                        href={`/categoria/${slug}`}
+                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                            isActive
+                                                ? 'bg-neutral-100 text-rose-600 dark:bg-neutral-900 dark:text-rose-400'
+                                                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        {data.label}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <form
+                            onSubmit={handleSearchSubmit}
+                            className="relative hidden items-center sm:flex"
+                        >
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar noticias..."
+                                className="h-9 w-44 rounded-xl border border-neutral-200 bg-neutral-100/70 pr-3 pl-8 text-xs text-neutral-800 transition-all placeholder:text-neutral-400 focus:w-64 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-200 dark:focus:border-rose-400 dark:focus:bg-neutral-900"
+                            />
+                            <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-neutral-400" />
+                        </form>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 sm:hidden dark:border-neutral-800 dark:text-neutral-400"
+                        >
+                            {isSearchOpen ? (
+                                <X className="h-4 w-4" />
+                            ) : (
+                                <Search className="h-4 w-4" />
+                            )}
+                        </button>
+
+                        <ThemeToggle />
+
+                        {auth.user ? (
+                            isPrivileged ? (
+                                <Link
+                                    href={dashboard()}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-rose-600/20 transition-all hover:bg-rose-500"
+                                >
+                                    <Shield className="h-4 w-4" />
+                                    <span>Panel Admin</span>
+                                </Link>
+                            ) : (
+                                <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-1.5 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
+                                    <User className="h-4 w-4 text-rose-500" />
+                                    <span>{auth.user.name}</span>
+                                </div>
+                            )
+                        ) : (
+                            <Link
+                                href={login()}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-neutral-100 px-3.5 py-1.5 text-sm font-medium text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 dark:hover:text-white"
+                            >
+                                <User className="h-4 w-4" />
+                                <span>Iniciar sesión</span>
+                            </Link>
+                        )}
+                    </div>
+                </div>
+
+                {isSearchOpen && (
+                    <div className="border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
+                        <form onSubmit={handleSearchSubmit} className="relative">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar noticias..."
+                                className="h-10 w-full rounded-xl border border-neutral-200 bg-neutral-100/80 pr-4 pl-9 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-rose-500 focus:bg-white focus:outline-none dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:focus:border-rose-400"
+                                autoFocus
+                            />
+                            <Search className="pointer-events-none absolute top-3 left-3 h-4 w-4 text-neutral-400" />
+                        </form>
+                    </div>
+                )}
+
+                {categoryEntries.length > 0 && (
+                    <div className="no-scrollbar flex items-center gap-2 overflow-x-auto border-t border-neutral-200/60 py-2.5 text-xs text-neutral-500 dark:border-neutral-900 dark:text-neutral-400">
+                        <span className="pl-1 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
+                            Categorías:
+                        </span>
+                        {categoryEntries.map(([slug, data]) => {
+                            const isActive =
+                                url.startsWith(`/categoria/${slug}`) ||
+                                url.includes(`categoria=${slug}`);
+                            return (
+                                <Link
+                                    key={slug}
+                                    href={`/categoria/${slug}`}
+                                    className={`flex items-center rounded-md border px-2.5 py-1 whitespace-nowrap transition-colors ${
+                                        isActive
+                                            ? 'border-rose-500/40 bg-rose-500/10 text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400'
+                                            : 'border-neutral-200 bg-neutral-100/70 text-neutral-700 hover:bg-neutral-200 hover:text-neutral-950 dark:border-neutral-800/60 dark:bg-neutral-900/60 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white'
+                                    }`}
+                                >
+                                    {data.label}
+                                    {data.count > 0 && (
+                                        <span className="ml-1.5 rounded-full bg-neutral-200 px-1.5 py-0.5 font-mono text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                                            {data.count}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {typeof progress === 'number' && (
+                <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-transparent overflow-hidden">
+                    <div
+                        className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 transition-[width] duration-150 ease-out shadow-xs"
+                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                    />
+                </div>
+            )}
+        </header>
+    );
+}

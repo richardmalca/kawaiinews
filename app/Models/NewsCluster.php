@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\NewsClusterFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -25,6 +27,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['title', 'category', 'summary', 'image_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'first_seen_at', 'last_seen_at'])]
 class NewsCluster extends Model
 {
+    /** @use HasFactory<NewsClusterFactory> */
+    use HasFactory;
+
     /**
      * @return array<string, string>
      */

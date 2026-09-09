@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\ScrapedItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -20,6 +22,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['news_cluster_id', 'news_source_id', 'title', 'url', 'summary', 'image_url', 'published_at'])]
 class ScrapedItem extends Model
 {
+    /** @use HasFactory<ScrapedItemFactory> */
+    use HasFactory;
+
     /**
      * @return array<string, string>
      */

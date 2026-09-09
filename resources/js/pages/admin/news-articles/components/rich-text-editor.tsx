@@ -14,28 +14,26 @@ export default function RichTextEditor({ value, onChange }: Props) {
     const isLoadingInitialContent = useRef(true);
 
     useEffect(() => {
-        (async () => {
-            if (value) {
-                const blocks = await editor.tryParseHTMLToBlocks(value);
-                editor.replaceBlocks(editor.document, blocks);
-            }
+        if (value) {
+            const blocks = editor.tryParseHTMLToBlocks(value);
+            editor.replaceBlocks(editor.document, blocks);
+        }
 
-            isLoadingInitialContent.current = false;
-        })();
+        isLoadingInitialContent.current = false;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleChange = async () => {
+    const handleChange = () => {
         if (isLoadingInitialContent.current) {
             return;
         }
 
-        const html = await editor.blocksToFullHTML(editor.document);
+        const html = editor.blocksToFullHTML(editor.document);
         onChange(html);
     };
 
     return (
-        <div className="border border-input">
+        <div className="border-input border">
             <BlockNoteView
                 editor={editor}
                 theme="dark"

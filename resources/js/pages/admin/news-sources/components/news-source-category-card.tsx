@@ -1,12 +1,7 @@
 import { PowerOff, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import NewsSourceRow from '@/pages/admin/news-sources/components/news-source-row';
 import { useToggleCategoryNewsSources } from '@/pages/admin/news-sources/hooks/use-toggle-category-news-sources';
 import type { NewsSourceGroup } from '@/types/admin';

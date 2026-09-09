@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { generate, index, store, storeFromUrl } from '@/routes/admin/media';
+import {
+    destroy,
+    generate,
+    index,
+    store,
+    storeFromUrl,
+} from '@/routes/admin/media';
 import type { MediaItem } from '@/types/admin';
 
 function readCsrfToken(): string {
@@ -135,6 +141,30 @@ export function useMediaLibrary() {
         }
     };
 
+    const deleteItem = async (media: MediaItem) => {
+        try {
+            const response = await fetch(destroy(media.id).url, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': readCsrfToken(),
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('delete failed');
+            }
+
+            setItems((current) =>
+                current.filter((item) => item.id !== media.id),
+            );
+            toast.success('Imagen eliminada de la biblioteca');
+        } catch {
+            toast.error('No se pudo eliminar la imagen');
+        }
+    };
+
     return {
         items,
         loading,
@@ -143,5 +173,6 @@ export function useMediaLibrary() {
         uploadFile,
         addFromUrl,
         generateWithAi,
+        deleteItem,
     };
 }

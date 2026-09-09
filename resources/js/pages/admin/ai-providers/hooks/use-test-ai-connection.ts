@@ -15,7 +15,9 @@ export function useTestAiConnection() {
     const testConnection = (providerId: number) => {
         setProcessing(true);
 
-        const promise = (submit(test(providerId)) as Promise<TestConnectionResult>)
+        const promise = (
+            submit(test(providerId)) as Promise<TestConnectionResult>
+        )
             .then((result) => {
                 if (!result.success) {
                     throw new Error(result.message);

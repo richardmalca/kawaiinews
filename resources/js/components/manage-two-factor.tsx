@@ -54,9 +54,9 @@ export default function ManageTwoFactor(props: Props) {
             {twoFactorEnabled ? (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-muted-foreground text-sm">
-                        Se te pedirá un pin seguro y aleatorio durante el
-                        inicio de sesión, el cual puedes obtener de la
-                        aplicación compatible con TOTP en tu teléfono.
+                        Se te pedirá un pin seguro y aleatorio durante el inicio
+                        de sesión, el cual puedes obtener de la aplicación
+                        compatible con TOTP en tu teléfono.
                     </p>
 
                     <div className="relative inline">

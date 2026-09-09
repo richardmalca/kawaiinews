@@ -1,0 +1,26 @@
+import type { ReactNode } from 'react';
+import type { PublicCategorySummary } from '@/types';
+import { PublicFooter } from '@/components/public/footer';
+import { PublicNavbar } from '@/components/public/navbar';
+
+interface PublicLayoutProps {
+    children: ReactNode;
+    categories?: Record<string, PublicCategorySummary>;
+    progress?: number;
+}
+
+export default function PublicLayout({
+    children,
+    categories,
+    progress,
+}: PublicLayoutProps) {
+    return (
+        <div className="flex min-h-screen flex-col bg-neutral-50 font-sans text-neutral-900 transition-colors duration-200 selection:bg-rose-500 selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
+            <PublicNavbar categories={categories} progress={progress} />
+            <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+                {children}
+            </main>
+            <PublicFooter />
+        </div>
+    );
+}

@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateNewsArticleRequest;
-use App\Http\Resources\NewsArticleResource;
+use App\Http\Resources\Shared\NewsArticleResource;
 use App\Models\NewsArticle;
 use App\Models\Tag;
-use App\Services\NewsArticleService;
+use App\Services\Admin\NewsArticleService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,12 +17,25 @@ class NewsArticleController extends Controller
 {
     public function __construct(private readonly NewsArticleService $newsArticleService) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $category = $request->string('category')->value() ?: null;
+
+        $articles = NewsArticle::with('tags')
+            ->when($category, fn ($query) => $query->where('category', $category))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
         return Inertia::render('admin/news-articles/index', [
-            'articles' => NewsArticleResource::collection(
-                NewsArticle::with('tags')->latest()->get()
-            )->resolve(),
+            'articles' => NewsArticleResource::collection($articles)->resolve(),
+            'meta' => [
+                'current_page' => $articles->currentPage(),
+                'last_page' => $articles->lastPage(),
+                'total' => $articles->total(),
+            ],
+            'category' => $category,
+            'categories' => array_keys(config('news_sources_catalog')),
         ]);
     }
 

@@ -30,10 +30,18 @@ export function useBulkToggleNewsSources() {
     };
 
     const activateAllSources = () =>
-        run(activateAll().url, 'Activando todas las fuentes...', 'Todas las fuentes activadas');
+        run(
+            activateAll().url,
+            'Activando todas las fuentes...',
+            'Todas las fuentes activadas',
+        );
 
     const deactivateAllSources = () =>
-        run(deactivateAll().url, 'Desactivando todas las fuentes...', 'Todas las fuentes desactivadas');
+        run(
+            deactivateAll().url,
+            'Desactivando todas las fuentes...',
+            'Todas las fuentes desactivadas',
+        );
 
     return { activateAllSources, deactivateAllSources, processing };
 }

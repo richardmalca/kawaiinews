@@ -1,4 +1,4 @@
-import { ImagePlus, Link2, Sparkles, Upload } from 'lucide-react';
+import { ImagePlus, Link2, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,13 +36,14 @@ export default function MediaLibraryDialog({
         uploadFile,
         addFromUrl,
         generateWithAi,
+        deleteItem,
     } = useMediaLibrary();
 
     const handleOpenChange = (nextOpen: boolean) => {
         setOpen(nextOpen);
 
         if (nextOpen) {
-            loadItems();
+            void loadItems();
         }
     };
 
@@ -80,6 +81,19 @@ export default function MediaLibraryDialog({
             setUrlInput('');
             handlePick(media.url);
         }
+    };
+
+    const handleDelete = async (
+        event: React.MouseEvent<HTMLButtonElement>,
+        item: (typeof items)[number],
+    ) => {
+        event.stopPropagation();
+
+        if (!window.confirm('¿Eliminar esta imagen de la biblioteca?')) {
+            return;
+        }
+
+        await deleteItem(item);
     };
 
     const handleGenerate = async () => {
@@ -186,21 +200,37 @@ export default function MediaLibraryDialog({
                     {!loading && items.length > 0 && (
                         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
                             {items.map((item) => (
-                                <button
+                                <div
                                     key={item.id}
-                                    type="button"
-                                    onClick={() => handlePick(item.url)}
-                                    className={cn(
-                                        'group border-input relative aspect-square overflow-hidden border',
-                                        'hover:ring-primary hover:ring-2',
-                                    )}
+                                    className="group relative aspect-square"
                                 >
-                                    <img
-                                        src={item.url}
-                                        alt={item.original_name ?? ''}
-                                        className="h-full w-full object-cover"
-                                    />
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePick(item.url)}
+                                        className={cn(
+                                            'border-input relative h-full w-full overflow-hidden border',
+                                            'hover:ring-primary hover:ring-2',
+                                        )}
+                                    >
+                                        <img
+                                            src={item.url}
+                                            alt={item.original_name ?? ''}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(event) =>
+                                            handleDelete(event, item)
+                                        }
+                                        className="bg-destructive text-destructive-foreground absolute top-1 right-1 hidden h-6 w-6 items-center justify-center opacity-90 group-hover:flex"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <span className="sr-only">
+                                            Eliminar
+                                        </span>
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     )}

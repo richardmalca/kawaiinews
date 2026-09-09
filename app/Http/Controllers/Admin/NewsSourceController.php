@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateNewsSourceRequest;
-use App\Http\Resources\NewsSourceResource;
+use App\Http\Resources\Admin\NewsSourceResource;
 use App\Models\NewsSource;
-use App\Services\NewsSourceService;
+use App\Services\Admin\NewsSourceService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;

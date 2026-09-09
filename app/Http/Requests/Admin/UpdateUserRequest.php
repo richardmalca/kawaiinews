@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\User;
-use App\Services\UserService;
+use App\Services\Admin\UserService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

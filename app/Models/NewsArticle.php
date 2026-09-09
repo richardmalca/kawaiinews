@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\NewsArticleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +25,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['news_cluster_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'status', 'published_at'])]
 class NewsArticle extends Model
 {
+    /** @use HasFactory<NewsArticleFactory> */
+    use HasFactory;
+
     /**
      * @return array<string, string>
      */

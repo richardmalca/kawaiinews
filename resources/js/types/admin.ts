@@ -96,6 +96,8 @@ export type NewsArticle = {
     featured_image: string | null;
     status: 'draft' | 'published';
     published_at: string | null;
+    published_at_formatted?: string | null;
+    published_at_time?: string | null;
     created_at: string | null;
     tags: string[];
 };
