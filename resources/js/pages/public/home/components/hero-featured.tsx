@@ -6,7 +6,7 @@ import {
 } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, BookOpen, Calendar, Eye, Flame } from 'lucide-react';
+import { ArrowRight, BookOpen, Calendar, Eye, Flame, Heart, Share2 } from 'lucide-react';
 
 interface HeroFeaturedProps {
     article: PublicArticle;
@@ -15,6 +15,8 @@ interface HeroFeaturedProps {
 export function HeroFeatured({ article }: HeroFeaturedProps) {
     const imageSrc = article.featured_image || FALLBACK_IMAGES.hero;
     const readingMinutes = estimateReadingTime(article.body);
+    const likersCount = article.likers_count ?? 0;
+    const sharesCount = article.shares_count ?? 0;
 
     return (
         <Link
@@ -84,12 +86,41 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                         </div>
 
                         <div className="flex items-center justify-between border-t border-neutral-100 pt-4 dark:border-neutral-800/80">
+                            <div className="flex items-center gap-3">
+                                <span
+                                    title="Me gusta"
+                                    className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                        likersCount > 0
+                                            ? 'text-rose-600 dark:text-rose-400'
+                                            : 'text-neutral-400 dark:text-neutral-500'
+                                    }`}
+                                >
+                                    <Heart
+                                        className={`h-3.5 w-3.5 ${
+                                            likersCount > 0
+                                                ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400'
+                                                : ''
+                                        }`}
+                                    />
+                                    <span className="text-xs font-semibold">{likersCount}</span>
+                                </span>
+
+                                <span
+                                    title="Veces compartido"
+                                    className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                        sharesCount > 0
+                                            ? 'text-sky-600 dark:text-sky-400'
+                                            : 'text-neutral-400 dark:text-neutral-500'
+                                    }`}
+                                >
+                                    <Share2 className="h-3.5 w-3.5" />
+                                    <span className="text-xs font-semibold">{sharesCount}</span>
+                                </span>
+                            </div>
+
                             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 transition-colors group-hover:text-rose-500 dark:text-rose-400 dark:group-hover:text-rose-300">
                                 Leer noticia completa
                                 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                            </span>
-                            <span className="font-mono text-[11px] tracking-wider text-neutral-400 uppercase dark:text-neutral-500">
-                                Destacado
                             </span>
                         </div>
                     </div>

@@ -66,6 +66,7 @@ class ProfileService
             'favorites' => ($viewer?->is($profileUser) ?? false)
                 ? $profileUser->getFavoriteItems(NewsArticle::class)
                     ->take(20)
+                    ->get()
                     ->map(function (NewsArticle $article) {
                         return [
                             'id' => $article->id,

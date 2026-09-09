@@ -169,6 +169,7 @@ class NewsService
     {
         return NewsArticle::query()
             ->with('tags')
+            ->withCount(['likers', 'shares'])
             ->where('status', 'published')
             ->whereNotNull('published_at')
             ->when($category, fn ($query, $cat) => $query->where('category', $cat))
@@ -198,7 +199,12 @@ class NewsService
             return new Collection;
         }
 
-        $models = NewsArticle::query()->with('tags')->whereIn('id', $ids)->get()->keyBy('id');
+        $models = NewsArticle::query()
+            ->with('tags')
+            ->withCount(['likers', 'shares'])
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
 
         return new Collection(
             collect($ids)->map(fn (int $id) => $models->get($id))->filter()->values()->all()

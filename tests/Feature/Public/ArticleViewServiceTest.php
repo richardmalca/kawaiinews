@@ -52,6 +52,32 @@ test('flushing pending views does not touch updated_at', function () {
         ->and($article->updated_at->eq($originalUpdatedAt))->toBeTrue();
 });
 
+test('views for many different articles all make it into the same flush, none lost', function () {
+    // markPending() usa un Cache::lock() para el read-modify-write de la
+    // lista de IDs pendientes justamente porque, sin lock, dos artículos
+    // distintos "pisándose" ahí perdían uno de los dos para siempre (el
+    // contador quedaba huérfano en caché y nunca se volcaba a la base).
+    // Este test no puede simular la carrera real (todo corre secuencial en
+    // el mismo proceso), pero sí que la lista termina con los 10 IDs.
+    $articles = NewsArticle::factory()->count(10)->create(['views_count' => 0]);
+    $service = app(ArticleViewService::class);
+
+    foreach ($articles as $index => $article) {
+        $service->record($article, Request::create('/', 'GET', server: [
+            'REMOTE_ADDR' => "10.0.1.{$index}",
+            'HTTP_USER_AGENT' => "viewer-{$index}",
+        ]));
+    }
+
+    $flushed = $service->flushPending();
+
+    expect($flushed)->toBe(10);
+
+    foreach ($articles as $article) {
+        expect($article->fresh()->views_count)->toBe(1);
+    }
+});
+
 test('different viewers each count as a separate view', function () {
     $article = NewsArticle::factory()->create(['views_count' => 0]);
     $service = app(ArticleViewService::class);

@@ -6,7 +6,7 @@ import {
 } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Calendar, Eye } from 'lucide-react';
+import { BookOpen, Calendar, Eye, Heart, Share2 } from 'lucide-react';
 
 interface NewsCardProps {
     article: PublicArticle;
@@ -15,6 +15,8 @@ interface NewsCardProps {
 export function NewsCard({ article }: NewsCardProps) {
     const imageSrc = article.featured_image || FALLBACK_IMAGES.card;
     const readingMinutes = estimateReadingTime(article.body);
+    const likersCount = article.likers_count ?? 0;
+    const sharesCount = article.shares_count ?? 0;
 
     return (
         <Link
@@ -78,6 +80,38 @@ export function NewsCard({ article }: NewsCardProps) {
                     </div>
 
                     <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs dark:border-neutral-800/60">
+                        <div className="flex items-center gap-3">
+                            <span
+                                title="Me gusta"
+                                className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                    likersCount > 0
+                                        ? 'text-rose-600 dark:text-rose-400'
+                                        : 'text-neutral-400 dark:text-neutral-500'
+                                }`}
+                            >
+                                <Heart
+                                    className={`h-3.5 w-3.5 ${
+                                        likersCount > 0
+                                            ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400'
+                                            : ''
+                                    }`}
+                                />
+                                <span className="text-[11px] font-semibold">{likersCount}</span>
+                            </span>
+
+                            <span
+                                title="Veces compartido"
+                                className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                    sharesCount > 0
+                                        ? 'text-sky-600 dark:text-sky-400'
+                                        : 'text-neutral-400 dark:text-neutral-500'
+                                }`}
+                            >
+                                <Share2 className="h-3.5 w-3.5" />
+                                <span className="text-[11px] font-semibold">{sharesCount}</span>
+                            </span>
+                        </div>
+
                         <span className="font-medium text-rose-600 group-hover:underline dark:text-rose-400">
                             Ver detalles
                         </span>
