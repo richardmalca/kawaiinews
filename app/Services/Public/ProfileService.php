@@ -2,6 +2,7 @@
 
 namespace App\Services\Public;
 
+use App\Models\NewsArticle;
 use App\Models\User;
 
 class ProfileService
@@ -58,6 +59,21 @@ class ProfileService
                             'featured_image' => $article->featured_image,
                             'shared_at' => $share->created_at?->diffForHumans(),
                             'shared_date' => $share->created_at?->translatedFormat('d M, Y'),
+                        ];
+                    })
+                    ->values()
+                : [],
+            'favorites' => ($viewer?->is($profileUser) ?? false)
+                ? $profileUser->getFavoriteItems(NewsArticle::class)
+                    ->take(20)
+                    ->map(function (NewsArticle $article) {
+                        return [
+                            'id' => $article->id,
+                            'title' => $article->title,
+                            'slug' => $article->slug,
+                            'category' => $article->category,
+                            'excerpt' => $article->excerpt,
+                            'featured_image' => $article->featured_image,
                         ];
                     })
                     ->values()

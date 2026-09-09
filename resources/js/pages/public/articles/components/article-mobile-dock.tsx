@@ -1,4 +1,5 @@
-import { Bookmark, Check, FileText, Heart, Minus, Plus, Share2 } from 'lucide-react';
+import { Bookmark, Check, FileText, Headphones, Heart, Minus, Pause, Play, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface ArticleMobileDockProps {
@@ -28,9 +29,59 @@ export function ArticleMobileDock({
     onCopyPlainText,
     setFontSize,
 }: ArticleMobileDockProps) {
+    const [audioState, setAudioState] = useState({
+        isPlaying: false,
+        isPaused: false,
+    });
+
+    useEffect(() => {
+        const handleStatus = (e: Event) => {
+            const customEvent = e as CustomEvent<{
+                isPlaying: boolean;
+                isPaused: boolean;
+            }>;
+            if (customEvent.detail) {
+                setAudioState({
+                    isPlaying: customEvent.detail.isPlaying,
+                    isPaused: customEvent.detail.isPaused,
+                });
+            }
+        };
+
+        window.addEventListener('kawaii:audio-status-change', handleStatus);
+        return () => window.removeEventListener('kawaii:audio-status-change', handleStatus);
+    }, []);
+
+    const handleToggleAudio = () => {
+        window.dispatchEvent(new CustomEvent('kawaii:toggle-audio'));
+    };
+
     return (
         <div className="fixed bottom-4 left-4 right-4 z-40 lg:hidden">
-            <div className="mx-auto flex max-w-md items-center justify-between gap-1.5 rounded-2xl border border-neutral-200/80 bg-white/90 px-3 py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
+            <div className="mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl border border-neutral-200/80 bg-white/90 px-2.5 py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
+                <button
+                    type="button"
+                    onClick={handleToggleAudio}
+                    aria-label="Escuchar artículo"
+                    className={`flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs font-bold transition-all active:scale-95 ${
+                        audioState.isPlaying
+                            ? 'bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400 animate-pulse'
+                            : audioState.isPaused
+                              ? 'bg-amber-500/15 text-amber-700 dark:bg-amber-500/25 dark:text-amber-400'
+                              : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                    }`}
+                >
+                    {audioState.isPlaying ? (
+                        <Pause className="h-4 w-4 fill-current text-rose-500" />
+                    ) : audioState.isPaused ? (
+                        <Play className="h-4 w-4 fill-current text-amber-500" />
+                    ) : (
+                        <Headphones className="h-4 w-4 text-rose-500" />
+                    )}
+                </button>
+
+                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+
                 <button
                     type="button"
                     onClick={onToggleLike}

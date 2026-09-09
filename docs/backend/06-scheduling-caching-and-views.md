@@ -81,8 +81,10 @@ Dos endpoints públicos sin página de React (XML puro, generado con vistas Blad
 
 Ambos filtran siempre por `status = 'published'` — un borrador nunca aparece en ninguno de los dos, aunque tenga `published_at` seteado.
 
+**Cacheados con el mismo patrón `PublicNewsCacheVersion` que `NewsService`** (a diferencia de las demás consultas públicas, acá se cachea el XML ya renderizado, no solo IDs): el sitemap traía **todos** los artículos publicados en cada visita sin límite ni caché — con buscadores rastreándolo seguido y el sitio creciendo, era trabajo repetido innecesario. Sitemap 30 min de TTL, feed 15 min (más corto porque un lector de RSS espera ver contenido nuevo más rápido). `PublicNewsCacheVersion::bump()` (llamado por `NewsArticleService` en cada save/toggle/delete) invalida ambos igual que al resto de la caché pública.
+
 ## Tests nuevos
 
 - `tests/Feature/Public/ArticleViewServiceTest.php` — dedupe por visitante, que el flush no toque `updated_at`, visitantes distintos cuentan por separado.
-- `tests/Feature/Public/SitemapAndFeedTest.php` — ambos endpoints listan solo artículos publicados.
+- `tests/Feature/Public/SitemapAndFeedTest.php` — ambos endpoints listan solo artículos publicados, y que el sitemap queda cacheado hasta que se hace `bump()`.
 - `tests/Feature/Admin/NewsReviewJobsTest.php` — scrape y aplicar-veredictos corren como job (con `QUEUE_CONNECTION=sync` en testing, así que se ejecutan en el mismo request) y el endpoint de estado (`run-status`) devuelve el resultado real.

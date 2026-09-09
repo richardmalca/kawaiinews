@@ -15,7 +15,7 @@ import {
     Minus,
     Plus,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArticleActionsPanel } from './components/article-actions-panel';
 import { ArticleMobileDock } from './components/article-mobile-dock';
 import { ArticleContent } from './components/article-content';
@@ -42,6 +42,19 @@ export default function ShowArticle({
     const item = article.data;
     const progress = useReadingProgress();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const current = window.scrollY || document.documentElement.scrollTop || 0;
+            setIsScrolled(current > 260);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
     const {
         liked,
         likersCount,
@@ -244,7 +257,7 @@ export default function ShowArticle({
                 {!focusMode && (
                     <aside
                         id="tendencias"
-                        className="scroll-mt-24 space-y-6 transition-all duration-300 lg:sticky lg:top-24 lg:col-span-4"
+                        className="scroll-mt-32 transition-all duration-300 lg:sticky lg:top-32 lg:col-span-4"
                     >
                         <ArticleActionsPanel
                             liked={liked}
@@ -255,6 +268,7 @@ export default function ShowArticle({
                             fontSize={fontSize}
                             copiedText={copiedText}
                             sharesCount={sharesCount}
+                            visible={isScrolled}
                             onToggleLike={toggleLike}
                             onToggleFavorite={toggleFavorite}
                             onCopyPlainText={handleCopyPlainText}

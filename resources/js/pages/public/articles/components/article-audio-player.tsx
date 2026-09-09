@@ -132,7 +132,25 @@ export function ArticleAudioPlayer({
         if (onProgressChange) {
             onProgressChange(progressPercent, activePlaying);
         }
-    }, [progressPercent, activePlaying, onProgressChange]);
+        window.dispatchEvent(
+            new CustomEvent('kawaii:audio-status-change', {
+                detail: {
+                    isPlaying: activePlaying,
+                    isPaused: activePaused,
+                    isInteracting,
+                },
+            }),
+        );
+    }, [progressPercent, activePlaying, activePaused, isInteracting, onProgressChange]);
+
+    useEffect(() => {
+        const handleCustomToggle = () => {
+            handlePlayPause();
+        };
+
+        window.addEventListener('kawaii:toggle-audio', handleCustomToggle);
+        return () => window.removeEventListener('kawaii:toggle-audio', handleCustomToggle);
+    }, [handlePlayPause]);
 
     if (!audioUrl && !speech.isSupported) {
         return null;
@@ -182,6 +200,7 @@ export function ArticleAudioPlayer({
 
             <div className="flex flex-wrap items-center gap-3">
                 <button
+                    id="article-audio-trigger"
                     type="button"
                     onClick={handlePlayPause}
                     disabled={isLoading}

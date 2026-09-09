@@ -1,4 +1,5 @@
-import { Bookmark, Check, FileText, Heart, Minus, Plus, Share2 } from 'lucide-react';
+import { Bookmark, Check, FileText, Headphones, Heart, Minus, Pause, Play, Plus, Share2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface ArticleActionsPanelProps {
@@ -10,6 +11,7 @@ interface ArticleActionsPanelProps {
     fontSize: 'sm' | 'base' | 'lg';
     copiedText: boolean;
     sharesCount: number;
+    visible?: boolean;
     onToggleLike: () => void;
     onToggleFavorite: () => void;
     onCopyPlainText: () => void;
@@ -25,13 +27,47 @@ export function ArticleActionsPanel({
     fontSize,
     copiedText,
     sharesCount,
+    visible = true,
     onToggleLike,
     onToggleFavorite,
     onCopyPlainText,
     setFontSize,
 }: ArticleActionsPanelProps) {
+    const [audioState, setAudioState] = useState({
+        isPlaying: false,
+        isPaused: false,
+        isInteracting: false,
+    });
+
+    useEffect(() => {
+        const handleStatus = (e: Event) => {
+            const customEvent = e as CustomEvent<{
+                isPlaying: boolean;
+                isPaused: boolean;
+                isInteracting: boolean;
+            }>;
+            if (customEvent.detail) {
+                setAudioState(customEvent.detail);
+            }
+        };
+
+        window.addEventListener('kawaii:audio-status-change', handleStatus);
+        return () => window.removeEventListener('kawaii:audio-status-change', handleStatus);
+    }, []);
+
+    const handleToggleAudio = () => {
+        window.dispatchEvent(new CustomEvent('kawaii:toggle-audio'));
+    };
+
     return (
-        <div className="rounded-3xl border border-neutral-200/80 bg-white/80 p-4 shadow-xs backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:shadow-none">
+        <div
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                visible
+                    ? 'max-h-96 opacity-100 mb-6 translate-y-0'
+                    : 'max-h-0 opacity-0 mb-0 -translate-y-2 pointer-events-none'
+            }`}
+        >
+            <div className="rounded-3xl border border-neutral-200/80 bg-white/80 p-4 shadow-xs backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:shadow-none">
             <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2.5 dark:border-neutral-800">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     Acciones de lectura
@@ -42,6 +78,43 @@ export function ArticleActionsPanel({
                         <span>{sharesCount} compartidos</span>
                     </span>
                 )}
+            </div>
+
+            <div className="mb-2">
+                <button
+                    type="button"
+                    onClick={handleToggleAudio}
+                    className={`flex w-full items-center justify-between rounded-2xl border p-2.5 px-3 text-xs font-semibold transition-all active:scale-[0.98] ${
+                        audioState.isPlaying
+                            ? 'border-rose-500/50 bg-rose-500/10 text-rose-600 shadow-xs dark:border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-400'
+                            : audioState.isPaused
+                              ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400'
+                              : 'border-neutral-200 bg-neutral-100/70 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-200/60 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800'
+                    }`}
+                >
+                    <span className="inline-flex items-center gap-2">
+                        <span className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                            audioState.isPlaying
+                                ? 'bg-rose-500 text-white animate-pulse'
+                                : 'bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400'
+                        }`}>
+                            {audioState.isPlaying ? (
+                                <Pause className="h-3 w-3 fill-current" />
+                            ) : (
+                                <Play className="h-3 w-3 translate-x-0.5 fill-current" />
+                            )}
+                        </span>
+                        <span>
+                            {audioState.isPlaying
+                                ? 'Pausar audio'
+                                : audioState.isPaused
+                                  ? 'Reanudar audio'
+                                  : 'Escuchar artículo'}
+                        </span>
+                    </span>
+
+                    <Headphones className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                </button>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -136,5 +209,6 @@ export function ArticleActionsPanel({
                 </button>
             </div>
         </div>
+    </div>
     );
 }

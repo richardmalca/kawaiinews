@@ -4,7 +4,7 @@ import type { PublicCategorySummary, PublicUserProfile } from '@/types';
 import { ArrowLeft } from 'lucide-react';
 import { useProfileFollow } from './hooks/use-profile-follow';
 import { ProfileHeader } from './components/profile-header';
-import { ProfileSharedArticles } from './components/profile-shared-articles';
+import { ProfileTabsSection } from './components/profile-tabs-section';
 
 interface ProfileShowProps {
     profile: PublicUserProfile;
@@ -36,9 +36,7 @@ export default function ProfileShow({ profile, categories }: ProfileShowProps) {
                 onToggleFollow={toggleFollow}
             />
 
-            {profile.shares_visible && (
-                <ProfileSharedArticles shares={profile.shares} />
-            )}
+            <ProfileTabsSection profile={profile} />
         </PublicLayout>
     );
 }

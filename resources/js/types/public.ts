@@ -53,4 +53,12 @@ export type PublicUserProfile = {
         shared_at?: string;
         shared_date?: string;
     }[];
+    favorites?: {
+        id: number;
+        title: string;
+        slug: string;
+        category?: string;
+        excerpt?: string | null;
+        featured_image: string | null;
+    }[];
 };

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\NewsArticle;
+use App\Support\PublicNewsCacheVersion;
 
 test('sitemap lists published articles and excludes drafts', function () {
     $published = NewsArticle::factory()->create([
@@ -39,4 +40,26 @@ test('rss feed lists published articles and excludes drafts', function () {
     $response->assertOk();
     $response->assertSeeText($published->title, false);
     $response->assertDontSeeText('Noticia Borrador RSS', false);
+});
+
+test('the sitemap is cached until the public news cache version bumps', function () {
+    NewsArticle::factory()->create([
+        'slug' => 'primera-noticia',
+        'status' => 'published',
+        'published_at' => now(),
+    ]);
+
+    $this->get(route('sitemap'))->assertSeeText('primera-noticia', false);
+
+    NewsArticle::factory()->create([
+        'slug' => 'segunda-noticia-sin-bump',
+        'status' => 'published',
+        'published_at' => now(),
+    ]);
+
+    $this->get(route('sitemap'))->assertDontSeeText('segunda-noticia-sin-bump', false);
+
+    PublicNewsCacheVersion::bump();
+
+    $this->get(route('sitemap'))->assertSeeText('segunda-noticia-sin-bump', false);
 });
