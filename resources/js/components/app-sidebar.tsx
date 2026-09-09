@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BrainCircuit,
+    DatabaseBackup,
     LayoutGrid,
     Library,
     Newspaper,
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/admin';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
+import { index as backupIndex } from '@/routes/admin/backup';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
@@ -86,7 +88,15 @@ export function AppSidebar() {
           ]
         : [];
 
-    const maintenanceNavItems: NavItem[] = [];
+    const maintenanceNavItems: NavItem[] = isSuperadmin
+        ? [
+              {
+                  title: 'Backups',
+                  href: backupIndex(),
+                  icon: DatabaseBackup,
+              },
+          ]
+        : [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

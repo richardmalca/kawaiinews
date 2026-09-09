@@ -14,18 +14,8 @@ class NewsClusterService
 {
     public function __construct(private readonly NewsArticleService $newsArticleService) {}
 
-    /**
-     * Subquery correlacionada (no un JOIN + GROUP BY) para que funcione
-     * igual en SQLite/MySQL/Postgres sin depender de reglas de GROUP BY
-     * distintas por motor.
-     */
     private const EARLIEST_PUBLISHED_AT_SQL = '(select min(published_at) from scraped_items where scraped_items.news_cluster_id = news_clusters.id)';
 
-    /**
-     * Antes traía TODOS los clusters pending/accepted a memoria y paginaba
-     * con Collection::forPage() en PHP — sin límite en la base, así que
-     * crecía sin parar con cada scraping. Ahora pagina en SQL.
-     */
     public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1): LengthAwarePaginator
     {
         $query = NewsCluster::query()
@@ -81,11 +71,6 @@ class NewsClusterService
         return ['applied' => count($articleIds), 'article_ids' => $articleIds];
     }
 
-    /**
-     * Rechaza automáticamente todo cluster `pending` que la IA marcó
-     * `discard` (llamar después de `analyzeWithAi()`). Los marcados
-     * `publish` NO se tocan acá — esos siguen esperando aceptación manual.
-     */
     public function autoRejectDiscarded(): int
     {
         return NewsCluster::where('status', 'pending')

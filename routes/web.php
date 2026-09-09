@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\DatabaseBackupController;
 use App\Http\Controllers\Admin\JobRunController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NewsArticleController;
@@ -124,6 +125,14 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('news-articles.audio.generate');
 
             Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
+
+            Route::get('backup', [DatabaseBackupController::class, 'index'])->name('backup.index');
+            Route::get('backup/download', [DatabaseBackupController::class, 'download'])
+                ->middleware('throttle:6,1')
+                ->name('backup.download');
+            Route::post('backup/restore', [DatabaseBackupController::class, 'restore'])
+                ->middleware('throttle:6,1')
+                ->name('backup.restore');
         });
     });
 

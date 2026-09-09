@@ -52,12 +52,6 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
-    /**
-     * Cada llamada de este limitador cuesta dinero real (proveedores de IA
-     * de texto/imagen/audio), así que se limita aparte del throttle global
-     * de rutas para que nadie pueda vaciar el crédito del proveedor a
-     * fuerza de clicks.
-     */
     protected function configureRateLimiting(): void
     {
         RateLimiter::for('ai-costly', function (Request $request) {

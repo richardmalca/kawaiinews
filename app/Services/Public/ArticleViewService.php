@@ -51,10 +51,6 @@ class ArticleViewService
      */
     public function flushPending(): int
     {
-        // Mismo lock que markPending(): sin él, un record() que llega justo
-        // entre el Cache::get() y el Cache::forget() de acá podría agregar
-        // un ID a una lista que este forget() borra un instante después,
-        // perdiendo esa vista.
         $pendingIds = Cache::lock('article-views:pending-ids-lock', 5)->block(5, function () {
             $ids = Cache::get(self::PENDING_IDS_KEY, []);
             Cache::forget(self::PENDING_IDS_KEY);
@@ -71,8 +67,6 @@ class ArticleViewService
         foreach ($pendingIds as $articleId) {
             $key = 'article-views:pending:'.$articleId;
 
-            // Mismo motivo: leer y borrar el contador sin lock puede pisar
-            // un Cache::increment() que llegue justo en el medio.
             $count = Cache::lock($key.':lock', 5)->block(5, function () use ($key) {
                 $value = Cache::get($key, 0);
                 Cache::forget($key);
@@ -94,15 +88,6 @@ class ArticleViewService
         return $flushed;
     }
 
-    /**
-     * Lee-modifica-escribe la lista de IDs pendientes: sin un lock, dos
-     * requests para artículos distintos casi al mismo tiempo pueden leer la
-     * misma lista vieja y pisarse el `Cache::put()` uno al otro, perdiendo
-     * el ID que no ganó la carrera. Esa vista queda en caché
-     * (`article-views:pending:{id}`) pero nunca llega a `flushPending()`
-     * porque su ID nunca entró a la lista — expira sola a las 2hs sin
-     * volcarse nunca a la base. `Cache::lock()` evita esto.
-     */
     private function markPending(int $articleId): void
     {
         Cache::lock('article-views:pending-ids-lock', 5)->block(5, function () use ($articleId) {
