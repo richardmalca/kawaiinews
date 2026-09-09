@@ -8,6 +8,7 @@ use App\Models\NewsCluster;
 use App\Models\NewsSource;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -15,9 +16,26 @@ class DashboardService
     private const TIMELINE_DAYS = 14;
 
     /**
+     * El panel se puede refrescar seguido; estas consultas (varios
+     * agregados sobre likes/favorites/shares/article_view_daily) no
+     * necesitan ser 100% al segundo, así que se cachean un rato corto.
+     * healthChecks() queda afuera a propósito: ese sí tiene que reflejar
+     * el estado real en el momento (ver el incidente del worker de cola).
+     */
+    private const CACHE_TTL_MINUTES = 2;
+
+    /**
      * @return array<string, mixed>
      */
     public function summary(): array
+    {
+        return $this->rememberSafely('admin-dashboard:summary', fn () => $this->buildSummary());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildSummary(): array
     {
         $today = now()->toDateString();
         $weekAgo = now()->subDays(6)->toDateString();
@@ -50,6 +68,14 @@ class DashboardService
      * @return array<string, array{current: int, previous: int, change_percent: float|null}>
      */
     public function growth(): array
+    {
+        return $this->rememberSafely('admin-dashboard:growth', fn () => $this->buildGrowth());
+    }
+
+    /**
+     * @return array<string, array{current: int, previous: int, change_percent: float|null}>
+     */
+    private function buildGrowth(): array
     {
         $currentStart = now()->subDays(6)->toDateString();
         $previousStart = now()->subDays(13)->toDateString();
@@ -86,6 +112,7 @@ class DashboardService
     {
         $checks = [];
 
+        $checks[] = $this->cacheDriverCheck();
         $checks[] = $this->aiProviderCheck();
         $checks[] = $this->newsSourcesCheck();
         $checks[] = $this->reviewQueueCheck();
@@ -94,6 +121,33 @@ class DashboardService
         $checks[] = $this->articlesWithoutImageCheck();
 
         return $checks;
+    }
+
+    /**
+     * Escribe y lee una clave real en el driver de caché configurado
+     * (CACHE_STORE). Existe por el incidente real de hoy: CACHE_STORE=redis
+     * sin el cliente Redis instalado/corriendo tumbaba toda la app con
+     * "Class Redis not found", sin ninguna señal previa de que algo andaba
+     * mal con la config de caché hasta que un usuario real chocaba con eso.
+     *
+     * @return array{status: 'ok'|'warning'|'critical', label: string, detail: string}
+     */
+    private function cacheDriverCheck(): array
+    {
+        $driver = config('cache.default');
+
+        try {
+            $key = 'admin-dashboard:cache-check';
+            Cache::put($key, true, 10);
+
+            if (! Cache::get($key)) {
+                throw new \RuntimeException('El valor escrito no se pudo leer de vuelta.');
+            }
+
+            return ['status' => 'ok', 'label' => 'Caché', 'detail' => "Driver \"{$driver}\" funcionando."];
+        } catch (\Throwable $exception) {
+            return ['status' => 'critical', 'label' => 'Caché', 'detail' => "Driver \"{$driver}\" configurado pero falla: {$exception->getMessage()}"];
+        }
     }
 
     /**
@@ -233,6 +287,14 @@ class DashboardService
      */
     public function timeline(int $days = self::TIMELINE_DAYS): array
     {
+        return $this->rememberSafely("admin-dashboard:timeline:{$days}", fn () => $this->buildTimeline($days));
+    }
+
+    /**
+     * @return array<int, array{date: string, views: int, users: int, reactions: int, shares: int}>
+     */
+    private function buildTimeline(int $days): array
+    {
         $start = now()->subDays($days - 1)->startOfDay();
 
         $viewsByDate = DB::table('article_view_daily')
@@ -288,6 +350,14 @@ class DashboardService
      */
     public function topArticles(int $limit = 8): array
     {
+        return $this->rememberSafely("admin-dashboard:top-articles:{$limit}", fn () => $this->buildTopArticles($limit));
+    }
+
+    /**
+     * @return array<int, array{id: int, title: string, slug: string, category: string, views: int, likes: int, favorites: int, shares: int}>
+     */
+    private function buildTopArticles(int $limit): array
+    {
         $likes = DB::table('likes')
             ->where('likeable_type', NewsArticle::class)
             ->selectRaw('likeable_id, count(*) as total')
@@ -326,6 +396,14 @@ class DashboardService
      * @return array<int, array{category: string, label: string, articles: int, views: int, likes: int}>
      */
     public function categoryBreakdown(): array
+    {
+        return $this->rememberSafely('admin-dashboard:category-breakdown', fn () => $this->buildCategoryBreakdown());
+    }
+
+    /**
+     * @return array<int, array{category: string, label: string, articles: int, views: int, likes: int}>
+     */
+    private function buildCategoryBreakdown(): array
     {
         $catalog = config('news_sources_catalog', []);
 
@@ -381,5 +459,20 @@ class DashboardService
     private function dateGroupExpression(string $column): string
     {
         return "date({$column})";
+    }
+
+    /**
+     * Como Cache::remember(), pero si el driver de caché configurado falla
+     * (ej. CACHE_STORE=redis sin cliente Redis disponible) calcula el valor
+     * sin caché en vez de tirar abajo todo el panel — la caché acá es una
+     * optimización, no algo de lo que dependa que la página cargue.
+     */
+    private function rememberSafely(string $key, \Closure $callback): mixed
+    {
+        try {
+            return Cache::remember($key, now()->addMinutes(self::CACHE_TTL_MINUTES), $callback);
+        } catch (\Throwable) {
+            return $callback();
+        }
     }
 }

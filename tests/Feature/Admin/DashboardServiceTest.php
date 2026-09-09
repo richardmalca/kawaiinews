@@ -170,3 +170,17 @@ test('health checks flag a stuck queue as critical', function () {
 
     expect($checks['Worker de cola']['status'])->toBe('critical');
 });
+
+test('cache driver check reports ok when the configured cache works', function () {
+    $checks = collect(app(DashboardService::class)->healthChecks())->keyBy('label');
+
+    expect($checks['Caché']['status'])->toBe('ok');
+});
+
+test('dashboard queries still work even if the cache driver is broken', function () {
+    config(['cache.default' => 'this-driver-does-not-exist']);
+
+    $summary = app(DashboardService::class)->summary();
+
+    expect($summary['users']['total'])->toBeInt();
+});
