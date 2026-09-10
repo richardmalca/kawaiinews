@@ -94,7 +94,18 @@ export function NotificationBell() {
 
         if (url) {
             setIsOpen(false);
-            router.visit(url);
+            const currentUrl = window.location.pathname + window.location.search;
+            const targetUrl = url.split('#')[0];
+            const hash = url.includes('#') ? url.split('#')[1] : '';
+
+            if (targetUrl === currentUrl || targetUrl === window.location.pathname) {
+                if (hash) {
+                    window.location.hash = hash;
+                    window.dispatchEvent(new HashChangeEvent('hashchange'));
+                }
+            } else {
+                router.visit(url);
+            }
         }
     };
 

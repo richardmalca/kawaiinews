@@ -29,7 +29,7 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
     const [replyingTo, setReplyingTo] = useState<PublicComment | null>(null);
 
     const fetchComments = useCallback(
-        async (targetPage = 1, append = false) => {
+        async (targetPage = 1, append = false): Promise<PublicComment[]> => {
             if (append) {
                 setIsLoadingMore(true);
             } else {
@@ -45,7 +45,7 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 });
 
                 if (!response.ok) {
-                    return;
+                    return [];
                 }
 
                 const json = (await response.json()) as PublicCommentsResponse;
@@ -58,8 +58,9 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 setTotalComments(json.meta.total);
                 setPage(json.meta.current_page);
                 setHasMore(json.meta.current_page < json.meta.last_page);
+                return json.data;
             } catch {
-                // Ignore network errors
+                return [];
             } finally {
                 setIsLoading(false);
                 setIsLoadingMore(false);
@@ -72,12 +73,103 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
         fetchComments(1, false);
     }, [fetchComments]);
 
-    const loadMore = useCallback(() => {
+    const loadMore = useCallback(async () => {
         if (!hasMore || isLoadingMore) {
-            return;
+            return [];
         }
-        fetchComments(page + 1, true);
+        return await fetchComments(page + 1, true);
     }, [fetchComments, hasMore, isLoadingMore, page]);
+
+    // Manejo automático de navegación directa a un comentario (ej: #comentario-123 de una notificación)
+    useEffect(() => {
+        const scrollToAndHighlight = (commentId: string): boolean => {
+            const el = document.getElementById(`comentario-${commentId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add(
+                    'ring-2',
+                    'ring-rose-500',
+                    'ring-offset-2',
+                    'bg-rose-50/70',
+                    'dark:bg-rose-950/40',
+                    'dark:ring-offset-neutral-950',
+                );
+                setTimeout(() => {
+                    el.classList.remove(
+                        'ring-2',
+                        'ring-rose-500',
+                        'ring-offset-2',
+                        'bg-rose-50/70',
+                        'dark:bg-rose-950/40',
+                        'dark:ring-offset-neutral-950',
+                    );
+                }, 3500);
+                return true;
+            }
+            return false;
+        };
+
+        const checkAndNavigateToHash = async () => {
+            const hash = window.location.hash;
+            if (!hash || !hash.startsWith('#comentario-')) {
+                return;
+            }
+
+            const targetId = hash.replace('#comentario-', '');
+            if (!targetId) {
+                return;
+            }
+
+            // Si ya está en el DOM, hacer scroll directo
+            if (scrollToAndHighlight(targetId)) {
+                return;
+            }
+
+            // Si aún no está cargado y hay más comentarios por cargar, cargar recursivamente hasta encontrarlo o agotar
+            let currentPage = page;
+            let currentHasMore = hasMore;
+            let found = false;
+
+            while (currentHasMore && !found) {
+                const nextPage = currentPage + 1;
+                const newComments = await fetchComments(nextPage, true);
+                currentPage = nextPage;
+
+                // Verificar si el comentario o alguna de sus respuestas está en el lote recién obtenido
+                const inNewBatch = newComments.some(
+                    (c) =>
+                        String(c.id) === targetId ||
+                        c.replies?.some((r) => String(r.id) === targetId),
+                );
+
+                if (inNewBatch) {
+                    found = true;
+                    // Pequeño timeout para dar tiempo a React a renderizar el nuevo lote en el DOM
+                    setTimeout(() => {
+                        scrollToAndHighlight(targetId);
+                    }, 150);
+                    break;
+                }
+
+                // Si no se obtuvo nada o ya no hay más páginas, detener el bucle
+                if (newComments.length === 0) {
+                    break;
+                }
+            }
+        };
+
+        // Escuchar cambios de hash (cuando se hace clic en una notificación estando ya en la página)
+        window.addEventListener('hashchange', checkAndNavigateToHash);
+
+        // Si la página recién cargó los primeros comentarios, verificar el hash inicial
+        if (!isLoading && comments.length > 0) {
+            checkAndNavigateToHash();
+        }
+
+        return () => {
+            window.removeEventListener('hashchange', checkAndNavigateToHash);
+        };
+    }, [comments, fetchComments, hasMore, isLoading, page]);
 
     const checkAuthAndUsername = useCallback((): boolean => {
         if (!isAuthenticated) {
