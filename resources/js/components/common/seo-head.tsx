@@ -153,7 +153,15 @@ export function SeoHead({
             <meta property="og:title" content={computedTitle} />
             <meta property="og:description" content={computedDescription} />
             {computedUrl && <meta property="og:url" content={computedUrl} />}
-            {computedImage && <meta property="og:image" content={computedImage} />}
+            {computedImage && (
+                <>
+                    <meta property="og:image" content={computedImage} />
+                    <meta property="og:image:secure_url" content={computedImage} />
+                    <meta property="og:image:alt" content={computedTitle} />
+                    <meta property="og:image:width" content="1200" />
+                    <meta property="og:image:height" content="630" />
+                </>
+            )}
             <meta property="og:locale" content="es_LA" />
 
             {/* Article Specific Open Graph */}
@@ -175,7 +183,12 @@ export function SeoHead({
             <meta name="twitter:site" content="@KawaiiNews" />
             <meta name="twitter:title" content={computedTitle} />
             <meta name="twitter:description" content={computedDescription} />
-            {computedImage && <meta name="twitter:image" content={computedImage} />}
+            {computedImage && (
+                <>
+                    <meta name="twitter:image" content={computedImage} />
+                    <meta name="twitter:image:alt" content={computedTitle} />
+                </>
+            )}
         </Head>
     );
 }
