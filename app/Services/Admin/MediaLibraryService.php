@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
@@ -128,6 +129,13 @@ class MediaLibraryService
 
         $image = $response->firstImage();
         $model = config("ai_catalog.{$provider->provider}.image_model");
+
+        Log::info('ai_usage.image', [
+            'news_article_id' => $newsArticleId,
+            'provider' => $provider->provider,
+            'model' => $model,
+            'usage' => $response->usage->toArray(),
+        ]);
 
         if ($image->hasBase64()) {
             $path = 'media/'.uniqid('ai-', true).'.png';

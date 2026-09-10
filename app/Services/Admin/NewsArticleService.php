@@ -7,6 +7,7 @@ use App\Models\NewsArticle;
 use App\Models\NewsCluster;
 use App\Models\Tag;
 use App\Support\PublicNewsCacheVersion;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -270,6 +271,13 @@ class NewsArticleService
                 ])
                 ->withPrompt($prompt)
                 ->asText();
+
+            Log::info('ai_usage.draft', [
+                'news_cluster_id' => $newsCluster->id,
+                'provider' => $activeProvider->provider,
+                'model' => $activeProvider->default_model,
+                'usage' => $response->usage->toArray(),
+            ]);
 
             return $this->parseDraft($response->text, $newsCluster);
         } catch (Throwable) {
