@@ -12,9 +12,16 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import {
     Flame,
     Headphones,
     LogOut,
+    Menu,
     Newspaper,
     Search,
     Settings,
@@ -49,6 +56,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     const [tagSuggestions, setTagSuggestions] = useState<SearchTagSuggestion[]>([]);
@@ -241,6 +249,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                             type="button"
                             onClick={() => setIsSearchOpen(!isSearchOpen)}
                             className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 sm:hidden dark:border-neutral-800 dark:text-neutral-400"
+                            aria-label="Buscar"
                         >
                             {isSearchOpen ? (
                                 <X className="h-4 w-4" />
@@ -251,99 +260,110 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                         <ThemeToggle />
 
-                        {auth.user ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className="flex items-center gap-2 rounded-xl border border-neutral-200/80 bg-neutral-100/80 px-2.5 py-1.5 text-xs font-medium text-neutral-800 transition-all hover:border-neutral-300 hover:bg-neutral-200/60 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80"
+                        {/* Menú hamburguesa solo en pantallas móviles (md:hidden) */}
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-950 md:hidden dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:text-white"
+                            aria-label="Abrir menú"
+                        >
+                            <Menu className="h-4 w-4" />
+                        </button>
+
+                        {/* En pantallas de escritorio (md:flex), mostrar el botón de perfil o iniciar sesión */}
+                        <div className="hidden md:flex items-center">
+                            {auth.user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            type="button"
+                                            className="flex items-center gap-2 rounded-xl border border-neutral-200/80 bg-neutral-100/80 px-2.5 py-1.5 text-xs font-medium text-neutral-800 transition-all hover:border-neutral-300 hover:bg-neutral-200/60 dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80"
+                                        >
+                                            <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-rose-500/10 font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                                                {(auth.user.active_avatar || auth.user.avatar) ? (
+                                                    <img
+                                                        src={(auth.user.active_avatar || auth.user.avatar) as string}
+                                                        alt={auth.user.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    auth.user.name.charAt(0).toUpperCase()
+                                                )}
+                                            </div>
+                                            <span className="hidden max-w-[120px] truncate sm:inline-block">
+                                                {auth.user.name}
+                                            </span>
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="w-52 rounded-2xl p-1.5"
                                     >
-                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-rose-500/10 font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                                            {(auth.user.active_avatar || auth.user.avatar) ? (
-                                                <img
-                                                    src={(auth.user.active_avatar || auth.user.avatar) as string}
-                                                    alt={auth.user.name}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                auth.user.name.charAt(0).toUpperCase()
-                                            )}
+                                        <div className="px-2 py-1.5">
+                                            <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                                                {auth.user.name}
+                                            </p>
+                                            <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+                                                {auth.user.email}
+                                            </p>
                                         </div>
-                                        <span className="hidden max-w-[120px] truncate sm:inline-block">
-                                            {auth.user.name}
-                                        </span>
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    className="w-52 rounded-2xl p-1.5"
-                                >
-                                    <div className="px-2 py-1.5">
-                                        <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                                            {auth.user.name}
-                                        </p>
-                                        <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
-                                            {auth.user.email}
-                                        </p>
-                                    </div>
-                                    <DropdownMenuSeparator />
-                                    {auth.user.username ? (
+                                        <DropdownMenuSeparator />
+                                        {auth.user.username ? (
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={`/perfil/${auth.user.username}`}
+                                                    className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                                >
+                                                    <User className="h-3.5 w-3.5 text-rose-500" />
+                                                    <span>Mi perfil público</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        ) : (
+                                            <DropdownMenuItem asChild>
+                                                <button
+                                                    type="button"
+                                                    onClick={openChooseUsernameModal}
+                                                    className="flex w-full cursor-pointer items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400"
+                                                >
+                                                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                                                    <span>Elige tu @usuario</span>
+                                                </button>
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem asChild>
                                             <Link
-                                                href={`/perfil/${auth.user.username}`}
+                                                href="/perfil/mi-cuenta/ajustes"
                                                 className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
                                             >
-                                                <User className="h-3.5 w-3.5 text-rose-500" />
-                                                <span>Mi perfil público</span>
+                                                <Settings className="h-3.5 w-3.5 text-neutral-500" />
+                                                <span>Ajustes de cuenta</span>
                                             </Link>
                                         </DropdownMenuItem>
-                                    ) : (
-                                        <DropdownMenuItem asChild>
-                                            <button
-                                                type="button"
-                                                onClick={openChooseUsernameModal}
-                                                className="flex w-full cursor-pointer items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400"
-                                            >
-                                                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                                                <span>Elige tu @usuario</span>
-                                            </button>
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href="/perfil/mi-cuenta/ajustes"
-                                            className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
-                                        >
-                                            <Settings className="h-3.5 w-3.5 text-neutral-500" />
-                                            <span>Ajustes de cuenta</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    {isPrivileged && (
+                                        {isPrivileged && (
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={dashboard()}
+                                                    className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                                >
+                                                    <Shield className="h-3.5 w-3.5 text-rose-500" />
+                                                    <span>Panel de Control</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem asChild>
                                             <Link
-                                                href={dashboard()}
-                                                className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
+                                                href={logout()}
+                                                method="post"
+                                                as="button"
+                                                className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                             >
-                                                <Shield className="h-3.5 w-3.5 text-rose-500" />
-                                                <span>Panel de Control</span>
+                                                <LogOut className="h-3.5 w-3.5" />
+                                                <span>Cerrar sesión</span>
                                             </Link>
                                         </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem asChild>
-                                        <Link
-                                            href={logout()}
-                                            method="post"
-                                            as="button"
-                                            className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
-                                        >
-                                            <LogOut className="h-3.5 w-3.5" />
-                                            <span>Cerrar sesión</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
                                 <button
                                     type="button"
                                     onClick={() => setIsLoginOpen(true)}
@@ -352,12 +372,170 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                     <User className="h-3.5 w-3.5" />
                                     <span>Iniciar sesión</span>
                                 </button>
-                                <LoginDialog
-                                    open={isLoginOpen}
-                                    onOpenChange={setIsLoginOpen}
-                                />
-                            </>
-                        )}
+                            )}
+                        </div>
+
+                        <LoginDialog
+                            open={isLoginOpen}
+                            onOpenChange={setIsLoginOpen}
+                        />
+
+                        {/* Sheet del menú móvil lateral */}
+                        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                            <SheetContent side="right" className="w-80 p-0 flex flex-col justify-between">
+                                <div className="p-6">
+                                    <SheetHeader className="text-left pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-md text-white">
+                                                <Sparkles className="h-4 w-4" />
+                                            </div>
+                                            <SheetTitle className="text-lg font-black tracking-tight">
+                                                Kawaii<span className="text-rose-500">News</span>
+                                            </SheetTitle>
+                                        </div>
+                                    </SheetHeader>
+
+                                    {/* Navegación móvil */}
+                                    <div className="mt-6 space-y-1">
+                                        <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-2">
+                                            Navegación
+                                        </p>
+                                        <Link
+                                            href="/"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                                                url === '/'
+                                                    ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
+                                                    : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900'
+                                            }`}
+                                        >
+                                            <Newspaper className="h-4 w-4 text-rose-500" />
+                                            <span>Portada</span>
+                                        </Link>
+
+                                        <Link
+                                            href="/tendencias"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                                                url.startsWith('/tendencias')
+                                                    ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
+                                                    : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900'
+                                            }`}
+                                        >
+                                            <Flame className="h-4 w-4 text-amber-500" />
+                                            <span>Tendencias</span>
+                                        </Link>
+
+                                        <Link
+                                            href="/feed"
+                                            target="_blank"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900"
+                                        >
+                                            <Headphones className="h-4 w-4 text-rose-500" />
+                                            <span>Canal RSS</span>
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                {/* Sección de usuario / inicio de sesión en el menú móvil */}
+                                <div className="border-t border-neutral-200 p-6 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/40">
+                                    {auth.user ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200 bg-rose-500/10 font-bold text-rose-600 dark:border-neutral-800 dark:bg-rose-500/20 dark:text-rose-400">
+                                                    {(auth.user.active_avatar || auth.user.avatar) ? (
+                                                        <img
+                                                            src={(auth.user.active_avatar || auth.user.avatar) as string}
+                                                            alt={auth.user.name}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        auth.user.name.charAt(0).toUpperCase()
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                                                        {auth.user.name}
+                                                    </p>
+                                                    <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                                                        {auth.user.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1 pt-2">
+                                                {auth.user.username ? (
+                                                    <Link
+                                                        href={`/perfil/${auth.user.username}`}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
+                                                    >
+                                                        <User className="h-4 w-4 text-rose-500" />
+                                                        <span>Mi perfil público</span>
+                                                    </Link>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsMobileMenuOpen(false);
+                                                            openChooseUsernameModal();
+                                                        }}
+                                                        className="flex w-full items-center gap-2.5 rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400"
+                                                    >
+                                                        <Sparkles className="h-4 w-4 text-amber-500" />
+                                                        <span>Elige tu @usuario</span>
+                                                    </button>
+                                                )}
+
+                                                <Link
+                                                    href="/perfil/mi-cuenta/ajustes"
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
+                                                >
+                                                    <Settings className="h-4 w-4 text-neutral-500" />
+                                                    <span>Ajustes de cuenta</span>
+                                                </Link>
+
+                                                {isPrivileged && (
+                                                    <Link
+                                                        href={dashboard()}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-700 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
+                                                    >
+                                                        <Shield className="h-4 w-4 text-rose-500" />
+                                                        <span>Panel de Control</span>
+                                                    </Link>
+                                                )}
+
+                                                <Link
+                                                    href={logout()}
+                                                    method="post"
+                                                    as="button"
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                                                >
+                                                    <LogOut className="h-4 w-4" />
+                                                    <span>Cerrar sesión</span>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false);
+                                                setIsLoginOpen(true);
+                                            }}
+                                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                                        >
+                                            <User className="h-4 w-4" />
+                                            <span>Iniciar sesión</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </div>
 
