@@ -90,7 +90,7 @@ class NewsArticleService
     public function save(NewsArticle $newsArticle, array $data, array $tags = []): NewsArticle
     {
         $slug = filled($data['slug'] ?? null)
-            ? Str::slug($data['slug'])
+            ? $this->slugify($data['slug'])
             : $newsArticle->slug;
 
         if ($slug !== $newsArticle->slug) {
@@ -152,7 +152,7 @@ class NewsArticleService
             ->filter(fn (string $name) => filled($name))
             ->map(function (string $name) {
                 $tag = Tag::firstOrCreate(
-                    ['slug' => Str::slug($name)],
+                    ['slug' => $this->slugify($name)],
                     ['name' => trim($name)],
                 );
 
@@ -162,9 +162,21 @@ class NewsArticleService
             ->all();
     }
 
+    /**
+     * `Str::slug()` transliteran la "ñ" a "n" (ej. "años" -> "anos"), lo
+     * que cambia el significado de la palabra en español. Reemplazamos
+     * "ñ"/"Ñ" por "ni"/"Ni" ANTES de pasarlo por Str::slug() (que hace su
+     * propia transliteración ASCII internamente y ya no distingue la ñ) —
+     * así "años" queda "anios" en vez de "anos".
+     */
+    private function slugify(string $value): string
+    {
+        return Str::slug(str_replace(['ñ', 'Ñ'], ['ni', 'Ni'], $value));
+    }
+
     private function uniqueSlug(string $title, ?int $ignoreId = null): string
     {
-        $base = Str::slug($title);
+        $base = $this->slugify($title);
         $slug = $base;
         $suffix = 1;
 

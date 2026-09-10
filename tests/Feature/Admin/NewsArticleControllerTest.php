@@ -89,3 +89,31 @@ test('creating an article requires a title and a valid category', function () {
         'status' => 'draft',
     ])->assertInvalid(['title', 'category']);
 });
+
+test('slugs replace "ñ" with "ni" instead of dropping it into "n" (regression: "años" must not become "anos")', function () {
+    $this->post(route('admin.news-articles.store'), [
+        'title' => 'Los mejores años del anime',
+        'category' => 'anime',
+        'status' => 'draft',
+        'tags' => ['año nuevo'],
+    ])->assertRedirect();
+
+    $article = NewsArticle::where('title', 'Los mejores años del anime')->firstOrFail();
+
+    expect($article->slug)->toBe('los-mejores-anios-del-anime')
+        ->and($article->slug)->not->toContain('anos')
+        ->and($article->tags->first()->slug)->toBe('anio-nuevo');
+});
+
+test('an explicit slug typed by the admin also gets the "ñ" fix', function () {
+    $article = NewsArticle::factory()->create();
+
+    $this->put(route('admin.news-articles.update', $article), [
+        'title' => $article->title,
+        'category' => $article->category,
+        'status' => $article->status,
+        'slug' => 'edición-años-90',
+    ])->assertRedirect();
+
+    expect($article->fresh()->slug)->toBe('edicion-anios-90');
+});
