@@ -96,7 +96,7 @@ export default function CommentsIndex({
                     description="Modera los comentarios de los usuarios en las noticias"
                 />
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <KpiCard
                         icon={MessagesSquare}
                         label="Comentarios totales"
@@ -121,8 +121,8 @@ export default function CommentsIndex({
                     />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative max-w-xs flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <div className="relative w-full sm:max-w-xs sm:flex-1">
                         <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                         <Input
                             value={search}
@@ -141,7 +141,7 @@ export default function CommentsIndex({
                             })
                         }
                     >
-                        <SelectTrigger className="w-56">
+                        <SelectTrigger className="w-full sm:w-56">
                             <SelectValue placeholder="Todas las noticias" />
                         </SelectTrigger>
                         <SelectContent>
@@ -178,12 +178,10 @@ export default function CommentsIndex({
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <CommentsTable comments={comments} />
-                </div>
+                <CommentsTable comments={comments} />
 
                 {meta.last_page > 1 && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
                         <p className="text-muted-foreground text-sm">
                             Página {meta.current_page} de {meta.last_page} (
                             {meta.total} en total)
