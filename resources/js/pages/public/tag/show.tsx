@@ -42,26 +42,24 @@ export default function TagShow({
                 </Link>
             </div>
 
-            <div className="mb-8 rounded-3xl border border-neutral-200/80 bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-transparent p-6 sm:p-8 dark:border-neutral-800/80 dark:from-rose-500/15 dark:via-pink-500/10">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/20">
-                            <TagIcon className="h-6 w-6" />
+            <div className="mb-8 overflow-hidden rounded-3xl border border-rose-500/20 bg-gradient-to-br from-rose-500/10 via-pink-500/5 to-transparent p-4 sm:p-7 dark:border-rose-500/20 dark:from-rose-500/15 dark:via-pink-500/10">
+                <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white shadow-md shadow-rose-500/25">
+                        <TagIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="text-xl font-black tracking-tight text-neutral-950 sm:text-2xl md:text-3xl dark:text-white">
+                                #{tag.name}
+                            </h1>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] sm:text-xs font-semibold text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/20 dark:text-rose-300">
+                                <Newspaper className="h-3 w-3" />
+                                {totalCount} {totalCount === 1 ? 'noticia' : 'noticias'}
+                            </span>
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl dark:text-white">
-                                    #{tag.name}
-                                </h1>
-                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:border-rose-400/30 dark:bg-rose-500/20 dark:text-rose-300">
-                                    <Newspaper className="h-3 w-3" />
-                                    {totalCount} {totalCount === 1 ? 'noticia' : 'noticias'}
-                                </span>
-                            </div>
-                            <p className="mt-1 text-xs text-neutral-600 sm:text-sm dark:text-neutral-400">
-                                Todas las noticias y publicaciones relacionadas con #{tag.name} organizadas cronológicamente.
-                            </p>
-                        </div>
+                        <p className="mt-1 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                            Todas las noticias y publicaciones relacionadas con #{tag.name} organizadas cronológicamente.
+                        </p>
                     </div>
                 </div>
             </div>
