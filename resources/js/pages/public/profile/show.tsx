@@ -28,7 +28,10 @@ export default function ProfileShow({ profile, categories }: ProfileShowProps) {
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 transition-colors hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400"
                 >
                     <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Volver a la portada</span>
+                    <span>
+                        <span className="sm:hidden">Volver</span>
+                        <span className="hidden sm:inline">Volver a la portada</span>
+                    </span>
                 </Link>
             </div>
 
