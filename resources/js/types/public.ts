@@ -69,3 +69,42 @@ export type PublicUserProfile = {
         featured_image: string | null;
     }[];
 };
+
+export type PublicCommentAuthor = {
+    id: number;
+    name: string;
+    username: string;
+    avatar?: string | null;
+};
+
+export type PublicCommentReplyTo = {
+    comment_id: number;
+    user_id: number;
+    name: string;
+    username: string;
+};
+
+export type PublicComment = {
+    id: number;
+    body: string;
+    is_spoiler: boolean;
+    created_at?: string;
+    created_at_iso?: string;
+    is_edited: boolean;
+    user: PublicCommentAuthor | null;
+    reply_to: PublicCommentReplyTo | null;
+    likes_count: number;
+    has_liked: boolean;
+    can_update: boolean;
+    can_delete: boolean;
+    replies?: PublicComment[];
+};
+
+export type PublicCommentsResponse = {
+    data: PublicComment[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        total: number;
+    };
+};

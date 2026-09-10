@@ -23,6 +23,7 @@ import { ArticleContent } from './components/article-content';
 import { ArticleHeader } from './components/article-header';
 import { ArticleMetaFooter } from './components/article-meta-footer';
 import { ArticleTags } from './components/article-tags';
+import { ArticleCommentsSection } from './components/comments/article-comments-section';
 import { RelatedArticles } from './components/related-articles';
 import { useArticleInteractions } from './hooks/use-article-interactions';
 import { LoginDialog } from '@/components/public/login-dialog';
@@ -258,6 +259,11 @@ export default function ShowArticle({
                         article={item}
                         sharesCount={sharesCount}
                         onShare={recordShare}
+                    />
+
+                    <ArticleCommentsSection
+                        articleSlug={item.slug}
+                        onRequireAuth={() => setIsLoginOpen(true)}
                     />
                 </article>
 
