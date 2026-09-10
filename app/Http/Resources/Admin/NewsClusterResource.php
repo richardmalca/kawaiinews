@@ -26,6 +26,8 @@ class NewsClusterResource extends JsonResource
             'status' => $this->status,
             'ai_verdict' => $this->ai_verdict,
             'ai_reason' => $this->ai_reason,
+            'ai_is_rumor' => $this->ai_is_rumor,
+            'ai_credibility' => $this->ai_credibility,
             'first_seen_at' => $this->first_seen_at?->diffForHumans(),
             'published_at' => $earliestPublishedAt?->diffForHumans(),
             'article_id' => $this->whenLoaded('article', fn () => $this->article?->id),

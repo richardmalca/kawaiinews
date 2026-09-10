@@ -109,6 +109,8 @@ export type NewsCluster = {
     status: 'pending' | 'accepted' | 'rejected';
     ai_verdict: 'publish' | 'discard' | null;
     ai_reason: string | null;
+    ai_is_rumor: boolean | null;
+    ai_credibility: 'alta' | 'media' | 'baja' | null;
     article_id: number | null;
     first_seen_at: string | null;
     published_at: string | null;

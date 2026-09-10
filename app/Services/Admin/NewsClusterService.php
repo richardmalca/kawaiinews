@@ -163,12 +163,18 @@ class NewsClusterService
         $prompt = <<<PROMPT
             Sos un editor de noticias de anime/geek/gaming. Evaluá cada uno de estos temas y decidí si vale la pena publicarlos como noticia hoy o descartarlos (por ser viejos, poco relevantes, muy de nicho o triviales). Más fuentes cubriendo el mismo tema y menor antigüedad es mejor señal.
 
+            Además, para cada uno indicá si se presenta como un RUMOR o reporte sin confirmar (a diferencia de un anuncio oficial ya confirmado por el estudio/desarrollador/editorial) y, si es rumor, tu estimación de qué tan creíble parece SOLO en base a la cantidad y calidad de las fuentes que lo cubren acá (no tenés acceso a internet en vivo, no estás verificando el hecho en sí — es una estimación por cobertura y consistencia entre fuentes, no una confirmación real).
+
             {$lines}
 
             Devuelve EXACTAMENTE una línea por cada ID, en este formato, sin texto adicional:
-            ID:VEREDICTO:MOTIVO
+            ID:VEREDICTO:MOTIVO:RUMOR:CREDIBILIDAD
 
-            Donde VEREDICTO es PUBLICAR o DESCARTAR, y MOTIVO es una razón de máximo 4 palabras en español (ej: "muy viejo", "poco relevante", "buena cobertura").
+            Donde:
+            - VEREDICTO es PUBLICAR o DESCARTAR.
+            - MOTIVO es una razón de máximo 4 palabras en español (ej: "muy viejo", "poco relevante", "buena cobertura").
+            - RUMOR es SI o NO.
+            - CREDIBILIDAD es ALTA, MEDIA o BAJA si RUMOR es SI (según cuántas fuentes independientes lo cubren y qué tan consistentes son entre sí), o NA si RUMOR es NO.
             PROMPT;
 
         $response = Prism::text()
@@ -187,7 +193,10 @@ class NewsClusterService
         $clustersById = $clusters->keyBy('id');
         $analyzed = 0;
 
-        preg_match_all('/ID:\s*(\d+)\s*:\s*(PUBLICAR|DESCARTAR)\s*:\s*(.+)/i', $text, $matches, PREG_SET_ORDER);
+        // RUMOR:CREDIBILIDAD son opcionales al final por si el modelo
+        // devuelve el formato viejo (ID:VEREDICTO:MOTIVO) sin esos campos
+        // — mejor guardar lo que sí vino que descartar la línea entera.
+        preg_match_all('/ID:\s*(\d+)\s*:\s*(PUBLICAR|DESCARTAR)\s*:\s*([^:\n]+?)(?:\s*:\s*(SI|NO)\s*:\s*(ALTA|MEDIA|BAJA|NA))?\s*$/im', $text, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
             $cluster = $clustersById->get((int) $match[1]);
@@ -196,9 +205,16 @@ class NewsClusterService
                 continue;
             }
 
+            $isRumor = isset($match[4]) ? strtoupper($match[4]) === 'SI' : null;
+            $credibility = isset($match[5]) && strtoupper($match[5]) !== 'NA'
+                ? strtolower($match[5])
+                : null;
+
             $cluster->update([
                 'ai_verdict' => strtoupper($match[2]) === 'PUBLICAR' ? 'publish' : 'discard',
                 'ai_reason' => trim($match[3]),
+                'ai_is_rumor' => $isRumor,
+                'ai_credibility' => $isRumor ? $credibility : null,
             ]);
 
             $analyzed++;

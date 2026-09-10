@@ -1,5 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { Check, ExternalLink, Pencil, Youtube, X } from 'lucide-react';
+import {
+    Check,
+    ExternalLink,
+    HelpCircle,
+    Pencil,
+    Youtube,
+    X,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -12,6 +19,47 @@ import type { NewsCluster } from '@/types/admin';
 type Props = {
     cluster: NewsCluster;
 };
+
+const credibilityVariant: Record<
+    NonNullable<NewsCluster['ai_credibility']>,
+    'default' | 'secondary' | 'destructive'
+> = {
+    alta: 'default',
+    media: 'secondary',
+    baja: 'destructive',
+};
+
+const credibilityLabel: Record<
+    NonNullable<NewsCluster['ai_credibility']>,
+    string
+> = {
+    alta: 'Credibilidad alta',
+    media: 'Credibilidad media',
+    baja: 'Credibilidad baja',
+};
+
+function RumorBadge({ cluster }: { cluster: NewsCluster }) {
+    if (!cluster.ai_is_rumor) {
+        return null;
+    }
+
+    return (
+        <Badge
+            variant={
+                cluster.ai_credibility
+                    ? credibilityVariant[cluster.ai_credibility]
+                    : 'secondary'
+            }
+            className="gap-1"
+            title="La IA estimó esto según cantidad/consistencia de fuentes, no es una verificación real de que el hecho sea cierto"
+        >
+            <HelpCircle className="h-3 w-3" />
+            Rumor
+            {cluster.ai_credibility &&
+                ` · ${credibilityLabel[cluster.ai_credibility].replace('Credibilidad ', '')}`}
+        </Badge>
+    );
+}
 
 export default function NewsClusterRow({ cluster }: Props) {
     const { acceptCluster, processing: accepting } = useAcceptNewsCluster();
@@ -79,21 +127,26 @@ export default function NewsClusterRow({ cluster }: Props) {
                 {cluster.published_at ?? cluster.first_seen_at}
             </TableCell>
             <TableCell>
-                {isAccepted && <Badge variant="outline">Ya en la página</Badge>}
-                {!isAccepted && cluster.ai_verdict && (
-                    <Badge
-                        variant={
-                            cluster.ai_verdict === 'publish'
-                                ? 'default'
-                                : 'secondary'
-                        }
-                        title={cluster.ai_reason ?? undefined}
-                    >
-                        {cluster.ai_verdict === 'publish'
-                            ? 'IA: Publicar'
-                            : `IA: ${cluster.ai_reason ?? 'Descartar'}`}
-                    </Badge>
-                )}
+                <div className="flex flex-wrap gap-1">
+                    {isAccepted && (
+                        <Badge variant="outline">Ya en la página</Badge>
+                    )}
+                    {!isAccepted && cluster.ai_verdict && (
+                        <Badge
+                            variant={
+                                cluster.ai_verdict === 'publish'
+                                    ? 'default'
+                                    : 'secondary'
+                            }
+                            title={cluster.ai_reason ?? undefined}
+                        >
+                            {cluster.ai_verdict === 'publish'
+                                ? 'IA: Publicar'
+                                : `IA: ${cluster.ai_reason ?? 'Descartar'}`}
+                        </Badge>
+                    )}
+                    <RumorBadge cluster={cluster} />
+                </div>
             </TableCell>
             <TableCell className="text-right">
                 {isAccepted && cluster.article_id ? (

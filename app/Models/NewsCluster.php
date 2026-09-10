@@ -22,10 +22,12 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property string|null $ai_verdict
  * @property string|null $ai_reason
+ * @property bool|null $ai_is_rumor
+ * @property string|null $ai_credibility
  * @property Carbon $first_seen_at
  * @property Carbon $last_seen_at
  */
-#[Fillable(['title', 'category', 'summary', 'image_url', 'video_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'first_seen_at', 'last_seen_at'])]
+#[Fillable(['title', 'category', 'summary', 'image_url', 'video_url', 'sources_count', 'relevance_score', 'status', 'ai_verdict', 'ai_reason', 'ai_is_rumor', 'ai_credibility', 'first_seen_at', 'last_seen_at'])]
 class NewsCluster extends Model
 {
     /** @use HasFactory<NewsClusterFactory> */
@@ -39,6 +41,7 @@ class NewsCluster extends Model
         return [
             'sources_count' => 'integer',
             'relevance_score' => 'float',
+            'ai_is_rumor' => 'boolean',
             'first_seen_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];

@@ -38,6 +38,54 @@ test('it analyzes pending clusters without a verdict and auto-rejects the discar
     expect($alreadyAnalyzed->fresh()->status)->toBe('pending');
 });
 
+test('it saves whether a cluster is a rumor and how credible it looks', function () {
+    AiProvider::factory()->create([
+        'provider' => 'anthropic',
+        'is_active' => true,
+        'api_key' => 'test-key',
+    ]);
+
+    $rumor = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+    $confirmed = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+
+    Prism::fake([
+        TextResponseFake::make()->withText(
+            "ID:{$rumor->id}:PUBLICAR:buena cobertura:SI:MEDIA\nID:{$confirmed->id}:PUBLICAR:anuncio oficial:NO:NA"
+        ),
+    ]);
+
+    $this->artisan('news:auto-review')->assertExitCode(0);
+
+    expect($rumor->fresh())
+        ->ai_is_rumor->toBeTrue()
+        ->ai_credibility->toBe('media');
+
+    expect($confirmed->fresh())
+        ->ai_is_rumor->toBeFalse()
+        ->ai_credibility->toBeNull();
+});
+
+test('it still parses the response if the ai replies without the rumor fields (backwards compatible)', function () {
+    AiProvider::factory()->create([
+        'provider' => 'anthropic',
+        'is_active' => true,
+        'api_key' => 'test-key',
+    ]);
+
+    $cluster = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+
+    Prism::fake([
+        TextResponseFake::make()->withText("ID:{$cluster->id}:PUBLICAR:buena cobertura"),
+    ]);
+
+    $this->artisan('news:auto-review')->assertExitCode(0);
+
+    expect($cluster->fresh())
+        ->ai_verdict->toBe('publish')
+        ->ai_is_rumor->toBeNull()
+        ->ai_credibility->toBeNull();
+});
+
 test('it does not touch clusters marked publish, even automatically', function () {
     AiProvider::factory()->create([
         'provider' => 'anthropic',
