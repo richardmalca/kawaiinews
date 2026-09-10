@@ -1,4 +1,5 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import NewsArticlesTable from '@/pages/admin/news-articles/components/news-articles-table';
-import { index } from '@/routes/admin/news-articles';
+import { create, index } from '@/routes/admin/news-articles';
 import type { NewsArticle } from '@/types/admin';
 
 type Meta = {
@@ -61,28 +62,36 @@ export default function NewsArticlesIndex({
                         title="Noticias"
                         description="Administra las noticias creadas a partir de la bandeja de revisión"
                     />
-                    <Select
-                        value={category ?? 'all'}
-                        onValueChange={handleCategoryChange}
-                    >
-                        <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Todas las categorías" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">
-                                Todas las categorías
-                            </SelectItem>
-                            {categories.map((item) => (
-                                <SelectItem
-                                    key={item}
-                                    value={item}
-                                    className="capitalize"
-                                >
-                                    {item}
+                    <div className="flex items-center gap-2">
+                        <Select
+                            value={category ?? 'all'}
+                            onValueChange={handleCategoryChange}
+                        >
+                            <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Todas las categorías" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    Todas las categorías
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                                {categories.map((item) => (
+                                    <SelectItem
+                                        key={item}
+                                        value={item}
+                                        className="capitalize"
+                                    >
+                                        {item}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button asChild>
+                            <Link href={create()}>
+                                <Plus />
+                                Nueva noticia
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">

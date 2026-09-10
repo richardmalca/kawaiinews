@@ -63,6 +63,27 @@ class NewsArticleService
     }
 
     /**
+     * Noticia cargada a mano desde el panel (sin pasar por el flujo de
+     * scraping + revisión con IA) — ej. un comunicado propio, un evento,
+     * algo que el equipo quiere publicar directo. No tiene news_cluster_id
+     * porque no viene de ningún cluster.
+     *
+     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
+     * @param  array<int, string>  $tags
+     */
+    public function createManual(array $data, array $tags, int $authorId): NewsArticle
+    {
+        // save() asume que el artículo ya tiene un slug y solo lo
+        // recalcula si `data.slug` viene distinto — para uno nuevo no hay
+        // slug previo, así que lo resolvemos acá antes de delegar.
+        $newsArticle = new NewsArticle(['author_id' => $authorId]);
+        $newsArticle->slug = $this->uniqueSlug(filled($data['slug'] ?? null) ? $data['slug'] : $data['title']);
+        unset($data['slug']);
+
+        return $this->save($newsArticle, $data, $tags);
+    }
+
+    /**
      * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
      * @param  array<int, string>  $tags
      */

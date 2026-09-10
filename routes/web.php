@@ -125,7 +125,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
 
             Route::resource('news-articles', NewsArticleController::class)
-                ->only(['index', 'edit', 'update', 'destroy']);
+                ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
             Route::post('news-articles/{newsArticle}/toggle-status', [NewsArticleController::class, 'toggleStatus'])
                 ->name('news-articles.toggle-status');
 

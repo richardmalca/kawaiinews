@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreNewsArticleRequest;
 use App\Http\Requests\Admin\UpdateNewsArticleRequest;
 use App\Http\Resources\Shared\NewsArticleResource;
 use App\Models\NewsArticle;
@@ -37,6 +38,25 @@ class NewsArticleController extends Controller
             'category' => $category,
             'categories' => array_keys(config('news_sources_catalog')),
         ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('admin/news-articles/create', [
+            'categories' => config('news_sources_catalog'),
+            'availableTags' => Tag::orderBy('name')->pluck('name'),
+        ]);
+    }
+
+    public function store(StoreNewsArticleRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $tags = $data['tags'] ?? [];
+        unset($data['tags']);
+
+        $newsArticle = $this->newsArticleService->createManual($data, $tags, $request->user()->id);
+
+        return to_route('admin.news-articles.edit', $newsArticle);
     }
 
     public function edit(NewsArticle $newsArticle): Response
