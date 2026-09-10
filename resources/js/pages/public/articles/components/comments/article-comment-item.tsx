@@ -91,7 +91,7 @@ export function ArticleCommentItem({
     return (
         <div
             id={`comentario-${comment.id}`}
-            className={`group relative scroll-mt-28 transition-all duration-500 rounded-2xl ${isReply ? 'mt-2 pl-2 sm:pl-3.5 border-l-[1.5px] sm:border-l-2 border-rose-100 dark:border-rose-950/60' : ''}`}
+            className={`group relative scroll-mt-36 sm:scroll-mt-32 transition-all duration-500 rounded-2xl ${isReply ? 'mt-2 pl-2 sm:pl-3.5 border-l-[1.5px] sm:border-l-2 border-rose-100 dark:border-rose-950/60' : ''}`}
         >
             <div className="flex items-start gap-2 sm:gap-3">
                 {/* Avatar */}

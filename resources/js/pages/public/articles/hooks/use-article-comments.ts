@@ -85,7 +85,19 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
         const scrollToAndHighlight = (commentId: string): boolean => {
             const el = document.getElementById(`comentario-${commentId}`);
             if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Obtenemos la altura real del header fijo (navbar + categorías)
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.getBoundingClientRect().height : 120;
+                
+                // Calculamos la posición exacta con un margen extra de 24px para que se aprecie holgadamente
+                const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementPosition - headerHeight - 24;
+
+                window.scrollTo({
+                    top: Math.max(0, offsetPosition),
+                    behavior: 'smooth',
+                });
+
                 el.classList.add(
                     'ring-2',
                     'ring-rose-500',
