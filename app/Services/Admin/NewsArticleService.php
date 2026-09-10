@@ -163,6 +163,39 @@ class NewsArticleService
     }
 
     /**
+     * Recalcula el slug de un artículo viejo cuyo título tiene "ñ", por si
+     * quedó con el bug de slugify() (ver arriba) generando "anos" en vez de
+     * "anios". Solo toca el slug si coincide EXACTO con lo que hubiera
+     * generado el algoritmo viejo (sin el fix) a partir del título actual
+     * — así nos aseguramos de arreglar solo el bug de la "ñ" y no pisar un
+     * slug que ya esté desactualizado por otro motivo (ej. el título se
+     * editó después y el slug quedó viejo, que es un problema aparte).
+     *
+     * @return array{old: string, new: string}|null null si no hacía falta cambiar nada
+     */
+    public function repairLegacySlug(NewsArticle $newsArticle): ?array
+    {
+        $legacySlug = Str::slug($newsArticle->title);
+
+        if ($legacySlug !== $newsArticle->slug) {
+            return null;
+        }
+
+        $correctSlug = $this->uniqueSlug($newsArticle->title, $newsArticle->id);
+
+        if ($correctSlug === $newsArticle->slug) {
+            return null;
+        }
+
+        $old = $newsArticle->slug;
+        $newsArticle->update(['slug' => $correctSlug]);
+
+        PublicNewsCacheVersion::bump();
+
+        return ['old' => $old, 'new' => $correctSlug];
+    }
+
+    /**
      * `Str::slug()` transliteran la "ñ" a "n" (ej. "años" -> "anos"), lo
      * que cambia el significado de la palabra en español. Reemplazamos
      * "ñ"/"Ñ" por "ni"/"Ni" ANTES de pasarlo por Str::slug() (que hace su
