@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import type { PublicCategorySummary } from '@/types';
@@ -63,32 +63,28 @@ export function LegalLayout({
                 </Link>
             </div>
 
-            <div className="mb-8 overflow-hidden rounded-3xl border border-neutral-200/80 bg-white p-6 shadow-xs sm:p-8 dark:border-neutral-800/80 dark:bg-neutral-900/50">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-600 dark:border-rose-400/20 dark:bg-rose-500/15 dark:text-rose-400">
-                            <span>Información Legal y Transparencia</span>
-                        </div>
-                        <h1 className="text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl dark:text-white">
-                            {title}
-                        </h1>
-                        <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-                            {description}
-                        </p>
+            <div className="mb-8 flex flex-col gap-4 border-b border-neutral-200/80 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800/80">
+                <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                        <span>Legal & Transparencia</span>
                     </div>
+                    <h1 className="text-3xl font-black tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+                        {title}
+                    </h1>
+                    <p className="max-w-2xl text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                        {description}
+                    </p>
+                </div>
 
-                    <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
-                        <Mail className="h-4 w-4 text-rose-500 shrink-0" />
-                        <div>
-                            <span className="block font-medium">Contacto legal</span>
-                            <a
-                                href="mailto:legal@kawaiinews.com"
-                                className="font-semibold text-rose-600 hover:underline dark:text-rose-400"
-                            >
-                                legal@kawaiinews.com
-                            </a>
-                        </div>
-                    </div>
+                <div className="inline-flex items-center gap-2 self-start sm:self-auto text-xs text-neutral-500 dark:text-neutral-400">
+                    <Mail className="h-4 w-4 text-rose-500 shrink-0" />
+                    <span>Contacto:</span>
+                    <a
+                        href="mailto:legal@kawaiinews.com"
+                        className="font-semibold text-neutral-800 hover:text-rose-600 dark:text-neutral-200 dark:hover:text-rose-400"
+                    >
+                        legal@kawaiinews.com
+                    </a>
                 </div>
             </div>
 
