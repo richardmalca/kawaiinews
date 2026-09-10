@@ -13,6 +13,7 @@ export default function RunScraperButton({ disabled = false }: Props) {
     return (
         <Button
             type="button"
+            className="w-full sm:w-auto"
             disabled={processing || disabled}
             onClick={runScraper}
         >

@@ -14,6 +14,7 @@ export default function AnalyzeWithAiButton({ disabled = false }: Props) {
         <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             disabled={processing || disabled}
             onClick={analyzeWithAi}
         >

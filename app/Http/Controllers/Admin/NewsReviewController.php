@@ -13,6 +13,7 @@ use App\Models\NewsSource;
 use App\Services\Admin\NewsClusterService;
 use App\Support\JobRunStatus;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,10 +58,21 @@ class NewsReviewController extends Controller
      * cálculo manual del cron — así nunca queda desactualizado si el
      * horario cambia ahí.
      *
+     * routes/console.php solo se carga cuando algo resuelve el Console
+     * Kernel (ver ApplicationBuilder::withCommands(), que engancha esa
+     * carga a `afterResolving(ConsoleKernel::class, ...)`) — eso pasa
+     * siempre en un comando artisan, pero en un request HTTP normal
+     * (php-fpm) nunca se dispara solo, así que Schedule::class venía
+     * vacío acá. Forzamos la resolución del kernel de consola antes de
+     * pedir el Schedule para que routes/console.php se cargue también en
+     * este contexto.
+     *
      * @return array{at: string, in: string}|null
      */
     private function nextScheduledRun(string $commandName): ?array
     {
+        app(ConsoleKernel::class);
+
         $event = collect(app(Schedule::class)->events())
             ->first(fn ($event) => str_contains($event->command ?? '', $commandName));
 

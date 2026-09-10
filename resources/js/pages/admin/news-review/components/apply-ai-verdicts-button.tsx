@@ -14,11 +14,13 @@ export default function ApplyAiVerdictsButton({ disabled = false }: Props) {
         <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             disabled={processing || disabled}
             onClick={apply}
+            title='Acepta y publica todo lo que la IA marcó como "Publicar"'
         >
             {processing ? <Spinner /> : <CheckCheck />}
-            Aceptar todo lo marcado "Publicar"
+            Aplicar veredictos IA
         </Button>
     );
 }
