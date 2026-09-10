@@ -171,3 +171,60 @@ la implementación propia.
 `tests/Feature/Public/CommentsTest.php` — 14 tests, incluyendo el caso
 exacto reportado (responder a una respuesta se aplana bajo la raíz pero
 etiqueta a quién se respondió) y los 3 casos de `is_spoiler`.
+
+## Plan: moderación automática (pendiente de implementar)
+
+Hoy todo comentario se publica al instante y solo se filtra a mano desde
+`/admin/comments`. La idea es agregar un primer filtro automático antes
+de eso, sin costo de IA por comentario (con el volumen que puede tener
+un sitio, mandarle cada comentario a un modelo sale caro y suma latencia
+al posteo).
+
+### Capa 1 — filtro por reglas, instantáneo y gratis
+
+Corre dentro de `CommentService::store()`, antes de crear el comentario:
+
+1. **Lista de palabras/frases prohibidas** — config nueva
+   `config/comment_moderation.php` con un array de términos (insultos,
+   spam típico tipo "gana dinero", "click aquí", etc.), en español.
+   Comparación case-insensitive, normalizando acentos.
+2. **Detección de spam por links** — si el comentario tiene 2+ URLs, o
+   una URL a un dominio que no sea del propio sitio, se marca.
+3. **Detección de repetición** — mismo usuario posteando el mismo texto
+   (o muy parecido) más de N veces en poco tiempo. Ya existe
+   `throttle:20,1` en la ruta, esto es un filtro de contenido, no de
+   frecuencia.
+4. **Todo mayúsculas / muy corto y sin sentido** — señal débil, no
+   bloquea solo, pero suma puntos si se combina con lo anterior.
+
+Si el comentario matchea, no se rechaza directamente (falsos positivos
+existen) — se crea igual, pero con un nuevo campo `status` en
+`comments` (`visible` por default, `pending` si lo agarró el filtro).
+Un comentario `pending` no aparece en `listForArticle()` (lo que ve el
+público) pero sí en `/admin/comments`, con un badge "Pendiente" y
+botones para aprobar/rechazar.
+
+### Capa 2 — IA, opcional y solo para lo dudoso
+
+Solo para los que ya cayeron en `pending` por la Capa 1 (volumen bajo),
+no para todos los comentarios. Un job en cola le pasa el texto a un
+modelo barato/rápido (ej. `claude-haiku-4-5`) pidiendo clasificación
+simple: `OK` / `SPAM` / `TOXICO`. Si el modelo dice `OK`, pasa a
+`visible` solo. Si dice `SPAM`/`TOXICO`, queda `pending` para que un
+humano decida (la IA no borra nada sola). Esto es opcional — la Capa 1
+sola ya cubre el caso típico de spam de bots.
+
+### Qué cambia en la base
+
+- `comments.status`: enum `visible` (default) / `pending` — reemplaza
+  el borrado directo por "queda oculto hasta que alguien lo revise".
+- `listForArticle()` filtra `where('status', 'visible')`.
+- `adminList()` puede filtrar por `status=pending` (nuevo filtro en el
+  panel, al lado de "solo spoilers").
+- `adminKpis()` suma `pending` a los KPIs existentes.
+
+### No incluido en este plan
+
+- Baneo automático de usuarios (queda manual, por ahora).
+- Shadow-ban (que el autor vea su comentario pero nadie más) — se puede
+  agregar después si hace falta, no cambia el esquema de arriba.
