@@ -1,10 +1,13 @@
 <?php
 
+use App\Jobs\GenerateMediaJob;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\User;
+use App\Services\Admin\MediaLibraryService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -59,6 +62,46 @@ test('audio upload rejects non audio files', function () {
 
     $response->assertUnprocessable()
         ->assertJsonValidationErrors(['file']);
+});
+
+test('generating an image queues a job and locks the article (regression: could be triggered twice while generating)', function () {
+    Queue::fake();
+
+    $article = NewsArticle::factory()->create();
+
+    $first = $this->postJson(route('admin.media.generate'), [
+        'prompt' => 'Un dibujo de un gato ninja',
+        'news_article_id' => $article->id,
+    ])->assertOk()->json();
+
+    expect($first['already_running'])->toBeFalse();
+    Queue::assertPushed(GenerateMediaJob::class, 1);
+
+    // Segundo intento mientras el primero "sigue corriendo" (no llamamos
+    // al job real porque Queue::fake() no lo ejecuta): no debe encolar
+    // otro job, tiene que devolver el mismo run_id del que ya está activo.
+    $second = $this->postJson(route('admin.media.generate'), [
+        'prompt' => 'Otro prompt distinto',
+        'news_article_id' => $article->id,
+    ])->assertOk()->json();
+
+    expect($second['already_running'])->toBeTrue()
+        ->and($second['run_id'])->toBe($first['run_id']);
+    Queue::assertPushed(GenerateMediaJob::class, 1);
+});
+
+test('the generation status endpoint reports whether an article has an image being generated', function () {
+    $article = NewsArticle::factory()->create();
+
+    $this->getJson(route('admin.media.generation-status', $article))
+        ->assertOk()
+        ->assertJson(['run_id' => null]);
+
+    app(MediaLibraryService::class)->lockGeneration($article->id, 'fake-run-id');
+
+    $this->getJson(route('admin.media.generation-status', $article))
+        ->assertOk()
+        ->assertJson(['run_id' => 'fake-run-id']);
 });
 
 test('image upload rejects svg files', function () {

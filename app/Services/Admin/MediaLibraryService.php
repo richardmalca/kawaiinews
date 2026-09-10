@@ -7,6 +7,7 @@ use App\Models\Media;
 use App\Models\NewsArticle;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -267,5 +268,37 @@ class MediaLibraryService
         $script = trim($newsArticle->title.". \n".($newsArticle->excerpt ?? '')." \n".$plainBody);
 
         return Str::limit($script, self::AUDIO_MAX_CHARS, '');
+    }
+
+    /**
+     * La generación de imagen con IA tarda hasta ~2.5 minutos (timeout del
+     * job). Sin esto, si el admin cierra el diálogo o recarga la página
+     * mientras se genera, no hay forma de saber que ya hay una en curso y
+     * puede terminar disparando otra generación duplicada (gasto de API
+     * doble por las dudas). Este lock por artículo evita eso: el
+     * controller lo consulta antes de encolar un nuevo job, y el propio
+     * job lo libera al terminar (ok o error).
+     */
+    public function activeGenerationRunId(int $newsArticleId): ?string
+    {
+        return Cache::get($this->generationLockKey($newsArticleId));
+    }
+
+    public function lockGeneration(int $newsArticleId, string $runId): void
+    {
+        // TTL bien por encima del timeout del job (150s) como red de
+        // seguridad: si algo mata el worker a mitad de camino y el job
+        // nunca libera el lock, no queda trabado para siempre.
+        Cache::put($this->generationLockKey($newsArticleId), $runId, now()->addMinutes(5));
+    }
+
+    public function unlockGeneration(int $newsArticleId): void
+    {
+        Cache::forget($this->generationLockKey($newsArticleId));
+    }
+
+    private function generationLockKey(int $newsArticleId): string
+    {
+        return "media-generation:article:{$newsArticleId}";
     }
 }

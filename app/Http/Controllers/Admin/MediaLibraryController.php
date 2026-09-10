@@ -78,11 +78,36 @@ class MediaLibraryController extends Controller
 
     public function generate(GenerateMediaRequest $request): JsonResponse
     {
+        $articleId = $request->validated('news_article_id');
+
+        // Si ya hay una generación en curso para esta noticia (otra
+        // pestaña, el diálogo se reabrió, se recargó la página), no
+        // encolamos otra: devolvemos el run_id que ya está corriendo para
+        // que el frontend se enganche a esa misma operación.
+        if ($articleId) {
+            $existingRunId = $this->mediaLibraryService->activeGenerationRunId($articleId);
+
+            if ($existingRunId) {
+                return response()->json(['run_id' => $existingRunId, 'already_running' => true]);
+            }
+        }
+
         $runId = JobRunStatus::start();
 
-        GenerateMediaJob::dispatch($runId, $request->validated('prompt'), $request->validated('news_article_id'));
+        if ($articleId) {
+            $this->mediaLibraryService->lockGeneration($articleId, $runId);
+        }
 
-        return response()->json(['run_id' => $runId]);
+        GenerateMediaJob::dispatch($runId, $request->validated('prompt'), $articleId);
+
+        return response()->json(['run_id' => $runId, 'already_running' => false]);
+    }
+
+    public function generationStatus(NewsArticle $newsArticle): JsonResponse
+    {
+        return response()->json([
+            'run_id' => $this->mediaLibraryService->activeGenerationRunId($newsArticle->id),
+        ]);
     }
 
     public function generateAudio(NewsArticle $newsArticle): JsonResponse

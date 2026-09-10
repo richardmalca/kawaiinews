@@ -17,6 +17,7 @@ use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\NotificationController;
 use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
 use App\Http\Controllers\Public\SearchSuggestionController;
@@ -49,6 +50,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])
         ->middleware('throttle:30,1')
         ->name('public.profile.follow');
+    Route::post('tag/{tag:slug}/seguir', [FollowController::class, 'toggleTag'])
+        ->middleware('throttle:30,1')
+        ->name('public.tag.follow');
+    Route::post('categoria/{category}/seguir', [FollowController::class, 'toggleCategory'])
+        ->middleware('throttle:30,1')
+        ->name('public.category.follow');
+
+    Route::get('notificaciones', [NotificationController::class, 'index'])
+        ->name('public.notifications.index');
+    Route::post('notificaciones/{id}/leida', [NotificationController::class, 'markAsRead'])
+        ->name('public.notifications.read');
+    Route::post('notificaciones/leer-todas', [NotificationController::class, 'markAllAsRead'])
+        ->name('public.notifications.read_all');
     Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])
         ->middleware('throttle:45,1')
         ->name('public.articles.like');
@@ -138,6 +152,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('media/generate', [MediaLibraryController::class, 'generate'])
                 ->middleware('throttle:ai-costly')
                 ->name('media.generate');
+            Route::get('media/generation-status/{newsArticle}', [MediaLibraryController::class, 'generationStatus'])
+                ->name('media.generation-status');
             Route::get('media/{media}/download', [MediaLibraryController::class, 'download'])->name('media.download');
             Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
 

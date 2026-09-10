@@ -35,6 +35,10 @@ class GenerateMediaJob implements ShouldQueue
             JobRunStatus::complete($this->runId, (new MediaResource($media))->resolve());
         } catch (Throwable $exception) {
             JobRunStatus::fail($this->runId, FriendlyAiError::forException($exception));
+        } finally {
+            if ($this->newsArticleId) {
+                $mediaLibraryService->unlockGeneration($this->newsArticleId);
+            }
         }
     }
 }

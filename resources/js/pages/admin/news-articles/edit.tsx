@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
 import { Check, FileText, ImageOff, Images } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatArticleAsPlainText } from '@/lib/utils';
 import ArticleAudioCard from '@/pages/admin/news-articles/components/article-audio-card';
 import ArticleCategoryPicker from '@/pages/admin/news-articles/components/article-category-picker';
+import ArticleImageGenerationStatus from '@/pages/admin/news-articles/components/article-image-generation-status';
 import ArticlePermalinkField from '@/pages/admin/news-articles/components/article-permalink-field';
 import ArticleStatusToggle from '@/pages/admin/news-articles/components/article-status-toggle';
 import ArticleVideoCard from '@/pages/admin/news-articles/components/article-video-card';
@@ -18,6 +19,7 @@ import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-ar
 import RichTextEditor from '@/pages/admin/news-articles/components/rich-text-editor';
 import { Spinner } from '@/components/ui/spinner';
 import { useArticleSlug } from '@/pages/admin/news-articles/hooks/use-article-slug';
+import { useMediaLibrary } from '@/pages/admin/news-articles/hooks/use-media-library';
 import { useSaveNewsArticle } from '@/pages/admin/news-articles/hooks/use-save-news-article';
 import type { NewsArticle, NewsCategoryCatalog } from '@/types/admin';
 
@@ -50,6 +52,32 @@ export default function NewsArticleEdit({
         article.slug,
     );
     const [copiedText, setCopiedText] = useState(false);
+
+    // Un solo estado de generación de imagen compartido con el diálogo (ver
+    // media-library-dialog.tsx): así arrancar la generación desde ahí
+    // adentro y cerrar el diálogo a mitad de camino no pierde el feedback,
+    // y no se puede abrir otro diálogo a generar de nuevo mientras tanto.
+    const {
+        generating: generatingImage,
+        generationStartedAt: imageGenerationStartedAt,
+        generateWithAi,
+        resumeActiveGeneration,
+    } = useMediaLibrary();
+
+    useEffect(() => {
+        let cancelled = false;
+
+        resumeActiveGeneration(article.id).then((media) => {
+            if (!cancelled && media) {
+                setFeaturedImage(media.url);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [article.id]);
 
     const handleCopyPlainText = async () => {
         try {
@@ -276,6 +304,13 @@ export default function NewsArticleEdit({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
+                                    <ArticleImageGenerationStatus
+                                        generating={generatingImage}
+                                        generationStartedAt={
+                                            imageGenerationStartedAt
+                                        }
+                                    />
+
                                     {featuredImage ? (
                                         <div className="space-y-2">
                                             <img
@@ -285,15 +320,29 @@ export default function NewsArticleEdit({
                                             />
                                             <div className="flex gap-2">
                                                 <MediaLibraryDialog
-                                                    onSelect={setFeaturedImage}
+                                                    onSelect={
+                                                        setFeaturedImage
+                                                    }
                                                     aiPrompt={aiImagePrompt}
-                                                    newsArticleId={article.id}
+                                                    newsArticleId={
+                                                        article.id
+                                                    }
+                                                    generation={{
+                                                        generating:
+                                                            generatingImage,
+                                                        generationStartedAt:
+                                                            imageGenerationStartedAt,
+                                                        generateWithAi,
+                                                    }}
                                                     trigger={
                                                         <Button
                                                             type="button"
                                                             variant="outline"
                                                             size="sm"
                                                             className="flex-1"
+                                                            disabled={
+                                                                generatingImage
+                                                            }
                                                         >
                                                             <Images />
                                                             Cambiar
@@ -304,6 +353,7 @@ export default function NewsArticleEdit({
                                                     type="button"
                                                     variant="outline"
                                                     size="sm"
+                                                    disabled={generatingImage}
                                                     onClick={() =>
                                                         setFeaturedImage('')
                                                     }
@@ -317,11 +367,18 @@ export default function NewsArticleEdit({
                                             onSelect={setFeaturedImage}
                                             aiPrompt={aiImagePrompt}
                                             newsArticleId={article.id}
+                                            generation={{
+                                                generating: generatingImage,
+                                                generationStartedAt:
+                                                    imageGenerationStartedAt,
+                                                generateWithAi,
+                                            }}
                                             trigger={
                                                 <Button
                                                     type="button"
                                                     variant="outline"
                                                     className="w-full"
+                                                    disabled={generatingImage}
                                                 >
                                                     <Images />
                                                     Elegir imagen

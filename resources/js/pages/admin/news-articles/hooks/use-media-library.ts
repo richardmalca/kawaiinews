@@ -4,6 +4,7 @@ import { waitForJobRun } from '@/lib/job-run';
 import {
     destroy,
     generate,
+    generationStatus,
     index,
     store,
     storeFromUrl,
@@ -20,6 +21,13 @@ export function useMediaLibrary() {
     const [items, setItems] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    // Distinto de `uploading`: esto es específico de la generación con IA,
+    // para poder mostrar "se está generando" incluso cuando la pestaña se
+    // recargó y ya no hay ningún fetch en curso en esta sesión de React.
+    const [generating, setGenerating] = useState(false);
+    const [generationStartedAt, setGenerationStartedAt] = useState<
+        number | null
+    >(null);
 
     const loadItems = async () => {
         setLoading(true);
@@ -114,11 +122,50 @@ export function useMediaLibrary() {
         }
     };
 
+    /**
+     * Consulta si ya hay una generación en curso para esta noticia (ej. la
+     * página se recargó a mitad de camino) y, si la hay, se engancha a
+     * esperarla en vez de dejar que el admin dispare otra.
+     */
+    const resumeActiveGeneration = async (
+        newsArticleId: number,
+    ): Promise<MediaItem | null> => {
+        try {
+            const response = await fetch(
+                generationStatus(newsArticleId).url,
+                {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                },
+            );
+            const data = (await response.json()) as { run_id: string | null };
+
+            if (!data.run_id) {
+                return null;
+            }
+
+            setGenerating(true);
+            setGenerationStartedAt(Date.now());
+
+            const media = await waitForJobRun<MediaItem>(data.run_id);
+            setItems((current) => [media, ...current]);
+
+            return media;
+        } catch {
+            return null;
+        } finally {
+            setGenerating(false);
+            setGenerationStartedAt(null);
+        }
+    };
+
     const generateWithAi = async (
         prompt: string,
         newsArticleId: number | null = null,
     ) => {
         setUploading(true);
+        setGenerating(true);
+        setGenerationStartedAt(Date.now());
 
         try {
             const response = await fetch(generate().url, {
@@ -141,6 +188,10 @@ export function useMediaLibrary() {
                 throw new Error(queued.message ?? 'No se pudo generar la imagen');
             }
 
+            if (queued.already_running) {
+                toast.info('Ya había una generación en curso para esta noticia, esperando que termine...');
+            }
+
             const media = await waitForJobRun<MediaItem>(queued.run_id);
             setItems((current) => [media, ...current]);
             toast.success('Imagen generada con IA');
@@ -155,6 +206,8 @@ export function useMediaLibrary() {
             return null;
         } finally {
             setUploading(false);
+            setGenerating(false);
+            setGenerationStartedAt(null);
         }
     };
 
@@ -186,10 +239,13 @@ export function useMediaLibrary() {
         items,
         loading,
         uploading,
+        generating,
+        generationStartedAt,
         loadItems,
         uploadFile,
         addFromUrl,
         generateWithAi,
+        resumeActiveGeneration,
         deleteItem,
     };
 }

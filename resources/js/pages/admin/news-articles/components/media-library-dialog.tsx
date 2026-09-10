@@ -21,14 +21,35 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useElapsedSeconds } from '@/hooks/use-elapsed-seconds';
 import { cn } from '@/lib/utils';
 import { useMediaLibrary } from '@/pages/admin/news-articles/hooks/use-media-library';
+import type { MediaItem } from '@/types/admin';
+
+/**
+ * Estado de generación compartido con el padre (edit.tsx) en vez de que
+ * cada instancia del diálogo tenga el suyo propio — así arrancar una
+ * generación acá adentro y cerrar el diálogo a mitad de camino no pierde
+ * el feedback ni el bloqueo contra generar dos veces (ver
+ * ArticleImageGenerationStatus, que muestra este mismo estado afuera del
+ * diálogo). Opcional: sin esto, el diálogo funciona con su propio estado
+ * local (create.tsx no ofrece generación con IA, así que no lo necesita).
+ */
+type SharedGeneration = {
+    generating: boolean;
+    generationStartedAt: number | null;
+    generateWithAi: (
+        prompt: string,
+        newsArticleId: number | null,
+    ) => Promise<MediaItem | null>;
+};
 
 type Props = {
     onSelect: (url: string) => void;
     trigger: React.ReactNode;
     aiPrompt?: string | null;
     newsArticleId?: number | null;
+    generation?: SharedGeneration;
 };
 
 export default function MediaLibraryDialog({
@@ -36,6 +57,7 @@ export default function MediaLibraryDialog({
     trigger,
     aiPrompt = null,
     newsArticleId = null,
+    generation,
 }: Props) {
     const [open, setOpen] = useState(false);
     const [urlInput, setUrlInput] = useState('');
@@ -44,12 +66,20 @@ export default function MediaLibraryDialog({
         items,
         loading,
         uploading,
+        generating: localGenerating,
+        generationStartedAt: localGenerationStartedAt,
         loadItems,
         uploadFile,
         addFromUrl,
-        generateWithAi,
+        generateWithAi: localGenerateWithAi,
         deleteItem,
     } = useMediaLibrary();
+
+    const generating = generation?.generating ?? localGenerating;
+    const generationStartedAt =
+        generation?.generationStartedAt ?? localGenerationStartedAt;
+    const generateWithAi = generation?.generateWithAi ?? localGenerateWithAi;
+    const generationElapsed = useElapsedSeconds(generationStartedAt);
 
     const handleOpenChange = (nextOpen: boolean) => {
         setOpen(nextOpen);
@@ -169,7 +199,7 @@ export default function MediaLibraryDialog({
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={uploading || !aiPrompt}
+                        disabled={uploading || generating || !aiPrompt}
                         title={
                             aiPrompt
                                 ? undefined
@@ -177,8 +207,10 @@ export default function MediaLibraryDialog({
                         }
                         onClick={handleGenerate}
                     >
-                        {uploading ? <Spinner /> : <Sparkles />}
-                        Generar con IA a partir de la noticia
+                        {generating ? <Spinner /> : <Sparkles />}
+                        {generating
+                            ? `Generando... (${generationElapsed}s, puede tardar hasta 2 min)`
+                            : 'Generar con IA a partir de la noticia'}
                     </Button>
                 </div>
 
