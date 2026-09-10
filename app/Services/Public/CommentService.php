@@ -107,4 +107,55 @@ class CommentService
             ]);
         }
     }
+
+    /**
+     * Listado plano (raíces y respuestas mezcladas, más nuevo primero) para
+     * el panel de moderación — a diferencia de listForArticle(), acá no
+     * interesa el aplanado visual del hilo, sino poder buscar/filtrar
+     * cualquier comentario de cualquier noticia de un vistazo.
+     *
+     * @param  array{search?: ?string, article_id?: ?int, spoilers_only?: bool}  $filters
+     */
+    public function adminList(array $filters, int $perPage = 20): LengthAwarePaginator
+    {
+        return Comment::query()
+            ->withCount('likers')
+            ->with([
+                'user:id,name,username,avatar,custom_avatar,avatar_source',
+                'newsArticle:id,title,slug,category',
+                'replyToComment.user:id,name,username',
+            ])
+            ->when(
+                $filters['search'] ?? null,
+                fn ($query, $search) => $query->where('body', 'like', "%{$search}%")
+            )
+            ->when(
+                $filters['article_id'] ?? null,
+                fn ($query, $articleId) => $query->where('news_article_id', $articleId)
+            )
+            ->when(
+                $filters['spoilers_only'] ?? false,
+                fn ($query) => $query->where('is_spoiler', true)
+            )
+            ->latest()
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * @return array{total: int, today: int, this_week: int, spoilers: int, replies: int}
+     */
+    public function adminKpis(): array
+    {
+        $today = now()->toDateString();
+        $weekAgo = now()->subDays(6)->toDateString();
+
+        return [
+            'total' => Comment::count(),
+            'today' => Comment::whereDate('created_at', $today)->count(),
+            'this_week' => Comment::whereDate('created_at', '>=', $weekAgo)->count(),
+            'spoilers' => Comment::where('is_spoiler', true)->count(),
+            'replies' => Comment::whereNotNull('parent_id')->count(),
+        ];
+    }
 }

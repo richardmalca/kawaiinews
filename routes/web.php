@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController;
 use App\Http\Controllers\Admin\JobRunController;
@@ -127,6 +128,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->only(['index', 'edit', 'update', 'destroy']);
             Route::post('news-articles/{newsArticle}/toggle-status', [NewsArticleController::class, 'toggleStatus'])
                 ->name('news-articles.toggle-status');
+
+            Route::get('comments', [AdminCommentController::class, 'index'])->name('comments.index');
+            Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])->name('comments.destroy');
 
             Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
             Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');

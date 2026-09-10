@@ -1,4 +1,4 @@
-import { Eye, Heart, Share2, Star } from 'lucide-react';
+import { Eye, Heart, MessagesSquare, Share2, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -53,6 +53,9 @@ export default function DashboardTopArticles({ articles }: Props) {
                                     <TableHead className="text-right">
                                         <Share2 className="ml-auto h-4 w-4" />
                                     </TableHead>
+                                    <TableHead className="text-right">
+                                        <MessagesSquare className="ml-auto h-4 w-4" />
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -83,6 +86,9 @@ export default function DashboardTopArticles({ articles }: Props) {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {article.shares}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {article.comments}
                                         </TableCell>
                                     </TableRow>
                                 ))}

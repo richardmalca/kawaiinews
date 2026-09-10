@@ -4,6 +4,7 @@ import {
     DatabaseBackup,
     LayoutGrid,
     Library,
+    MessagesSquare,
     Newspaper,
     Rss,
     Search,
@@ -24,6 +25,7 @@ import {
 import { dashboard } from '@/routes/admin';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
 import { index as backupIndex } from '@/routes/admin/backup';
+import { index as commentsIndex } from '@/routes/admin/comments';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
@@ -84,6 +86,11 @@ export function AppSidebar() {
                   title: 'Biblioteca de medios',
                   href: mediaLibraryIndex(),
                   icon: Library,
+              },
+              {
+                  title: 'Comentarios',
+                  href: commentsIndex(),
+                  icon: MessagesSquare,
               },
           ]
         : [];

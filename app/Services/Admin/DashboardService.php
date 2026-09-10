@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AiProvider;
+use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
@@ -53,6 +54,11 @@ class DashboardService
             ],
             'reactions_today' => $this->likesCountSince($today) + $this->favoritesCountSince($today),
             'shares_today' => DB::table('shares')->whereDate('created_at', $today)->count(),
+            'comments' => [
+                'total' => Comment::count(),
+                'today' => Comment::whereDate('created_at', $today)->count(),
+                'this_week' => Comment::whereDate('created_at', '>=', $weekAgo)->count(),
+            ],
             'articles' => [
                 'published' => NewsArticle::where('status', 'published')->count(),
                 'drafts' => NewsArticle::where('status', 'draft')->count(),
@@ -94,10 +100,16 @@ class DashboardService
         $reactionsCurrent = $this->reactionsCountBetween($currentStart, now()->toDateString());
         $reactionsPrevious = $this->reactionsCountBetween($previousStart, $previousEnd);
 
+        $commentsCurrent = Comment::whereDate('created_at', '>=', $currentStart)->count();
+        $commentsPrevious = Comment::whereDate('created_at', '>=', $previousStart)
+            ->whereDate('created_at', '<=', $previousEnd)
+            ->count();
+
         return [
             'views' => $this->growthEntry($viewsCurrent, $viewsPrevious),
             'users' => $this->growthEntry($usersCurrent, $usersPrevious),
             'reactions' => $this->growthEntry($reactionsCurrent, $reactionsPrevious),
+            'comments' => $this->growthEntry($commentsCurrent, $commentsPrevious),
         ];
     }
 
@@ -328,6 +340,11 @@ class DashboardService
             ->groupBy('day')
             ->pluck('total', 'day');
 
+        $commentsByDate = Comment::where('created_at', '>=', $start)
+            ->selectRaw($this->dateGroupExpression('created_at').' as day, count(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
         $timeline = [];
 
         for ($i = 0; $i < $days; $i++) {
@@ -339,6 +356,7 @@ class DashboardService
                 'users' => (int) ($usersByDate[$date] ?? 0),
                 'reactions' => (int) ($likesByDate[$date] ?? 0) + (int) ($favoritesByDate[$date] ?? 0),
                 'shares' => (int) ($sharesByDate[$date] ?? 0),
+                'comments' => (int) ($commentsByDate[$date] ?? 0),
             ];
         }
 
@@ -375,6 +393,11 @@ class DashboardService
             ->groupBy('news_article_id')
             ->pluck('total', 'news_article_id');
 
+        $comments = Comment::query()
+            ->selectRaw('news_article_id, count(*) as total')
+            ->groupBy('news_article_id')
+            ->pluck('total', 'news_article_id');
+
         return NewsArticle::where('status', 'published')
             ->orderByDesc('views_count')
             ->limit($limit)
@@ -388,6 +411,7 @@ class DashboardService
                 'likes' => (int) ($likes[$article->id] ?? 0),
                 'favorites' => (int) ($favorites[$article->id] ?? 0),
                 'shares' => (int) ($shares[$article->id] ?? 0),
+                'comments' => (int) ($comments[$article->id] ?? 0),
             ])
             ->all();
     }

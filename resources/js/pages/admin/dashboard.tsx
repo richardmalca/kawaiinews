@@ -3,6 +3,7 @@ import {
     Eye,
     FileText,
     Heart,
+    MessagesSquare,
     Share2,
     UserPlus,
     Users,
@@ -88,6 +89,13 @@ export default function AdminDashboard({
                         icon={Share2}
                         label="Compartidos hoy"
                         value={summary.shares_today}
+                    />
+                    <KpiCard
+                        icon={MessagesSquare}
+                        label="Comentarios hoy"
+                        value={summary.comments.today}
+                        sublabel={`${summary.comments.total} en total`}
+                        changePercent={growth.comments.change_percent}
                     />
                     <KpiCard
                         icon={FileText}

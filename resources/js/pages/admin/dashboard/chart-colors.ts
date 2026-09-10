@@ -7,4 +7,5 @@ export const CHART_COLORS = {
     shares: '#22c55e',
     users: '#3b82f6',
     likes: '#8b5cf6',
+    comments: '#ec4899',
 } as const;

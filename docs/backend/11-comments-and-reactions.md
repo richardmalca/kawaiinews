@@ -127,13 +127,34 @@ Throttle: `store`/`update` 20/min, `me-gusta` 60/min (mismo patrón que
 "Respondiendo a @username" sobre una respuesta — no hace falta calcular
 nada de jerarquía en el cliente, ya viene aplanado y resuelto.
 
+## Panel de moderación (admin)
+
+`/admin/comments` (solo `superadmin`, mismo nivel que noticias/medios en
+el sidebar) — `Admin\CommentController` + `CommentService::adminList()`/
+`adminKpis()`. Lista plana (raíces y respuestas mezcladas, sin agrupar
+por hilo) con búsqueda por texto, filtro por noticia y filtro
+"solo spoilers". Borrar desde acá usa la misma `CommentService::delete()`
+(cascada de respuestas si es raíz).
+
+KPIs del panel: total, hoy/semana, cantidad de respuestas vs. raíces,
+cantidad marcada spoiler.
+
+## KPIs en el dashboard principal
+
+`DashboardService` (`app/Services/Admin/DashboardService.php`) suma
+comentarios en:
+- `summary().comments` (total/hoy/semana)
+- `growth().comments` (semana actual vs. anterior, mismo patrón que vistas/reacciones)
+- `timeline()` — serie diaria de comentarios (últimos 14 días)
+- `topArticles()` — cantidad de comentarios por noticia, junto a vistas/likes/shares
+
 ## Pendiente (frontend público)
 
-Este trabajo es solo backend. La UI de comentarios en
-`resources/js/pages/public/articles/show.tsx` (input para comentar, hilo
-de respuestas aplanado, botones de like/editar/borrar según
-`can_update`/`can_delete` del `CommentResource`) la construye la otra
-sesión de IA a cargo del frontend público.
+El backend/admin ya está completo. La UI pública de comentarios en
+`resources/js/pages/public/articles/show.tsx` la construye la otra
+sesión de IA a cargo del frontend público (ya la tiene armada al momento
+de escribir esto: `article-comments-section`, `article-comment-item`,
+`article-comment-form` aparecen en el build).
 
 ## Sobre usar un paquete en vez de esto
 

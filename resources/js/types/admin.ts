@@ -138,6 +138,7 @@ export type NewsArticle = {
     likers_count?: number;
     favorites_count?: number;
     shares_count?: number;
+    comments_count?: number;
     has_liked?: boolean;
     has_favorited?: boolean;
     author?: {
@@ -182,6 +183,11 @@ export type DashboardSummary = {
     };
     reactions_today: number;
     shares_today: number;
+    comments: {
+        total: number;
+        today: number;
+        this_week: number;
+    };
     articles: {
         published: number;
         drafts: number;
@@ -198,6 +204,7 @@ export type DashboardGrowth = {
     views: DashboardGrowthEntry;
     users: DashboardGrowthEntry;
     reactions: DashboardGrowthEntry;
+    comments: DashboardGrowthEntry;
 };
 
 export type DashboardHealthStatus = 'ok' | 'warning' | 'critical';
@@ -214,6 +221,7 @@ export type DashboardTimelinePoint = {
     users: number;
     reactions: number;
     shares: number;
+    comments: number;
 };
 
 export type DashboardTopArticle = {
@@ -225,6 +233,7 @@ export type DashboardTopArticle = {
     likes: number;
     favorites: number;
     shares: number;
+    comments: number;
 };
 
 export type DashboardCategoryStat = {
@@ -233,4 +242,39 @@ export type DashboardCategoryStat = {
     articles: number;
     views: number;
     likes: number;
+};
+
+export type AdminComment = {
+    id: number;
+    body: string;
+    is_spoiler: boolean;
+    is_reply: boolean;
+    created_at: string;
+    created_at_formatted: string;
+    likes_count: number;
+    user: {
+        id: number;
+        name: string;
+        username: string | null;
+        avatar: string | null;
+    } | null;
+    article: {
+        id: number;
+        title: string;
+        slug: string;
+        category: string;
+    } | null;
+    reply_to: {
+        user_id: number;
+        name: string;
+        username: string | null;
+    } | null;
+};
+
+export type AdminCommentsKpis = {
+    total: number;
+    today: number;
+    this_week: number;
+    spoilers: number;
+    replies: number;
 };

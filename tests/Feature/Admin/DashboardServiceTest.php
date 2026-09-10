@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AiProvider;
+use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\NewsSource;
 use App\Models\Share;
@@ -183,4 +184,27 @@ test('dashboard queries still work even if the cache driver is broken', function
     $summary = app(DashboardService::class)->summary();
 
     expect($summary['users']['total'])->toBeInt();
+});
+
+test('summary, growth, timeline and top articles all include comments', function () {
+    $article = NewsArticle::factory()->published()->create();
+
+    Comment::factory()->create(['news_article_id' => $article->id, 'created_at' => now()]);
+    Comment::factory()->create(['news_article_id' => $article->id, 'created_at' => now()->subDays(2)]);
+    Comment::factory()->create(['news_article_id' => $article->id, 'created_at' => now()->subDays(20)]);
+
+    $summary = app(DashboardService::class)->summary();
+
+    expect($summary['comments']['total'])->toBe(3)
+        ->and($summary['comments']['today'])->toBe(1)
+        ->and($summary['comments']['this_week'])->toBe(2);
+
+    $growth = app(DashboardService::class)->growth();
+    expect($growth['comments']['current'])->toBe(2);
+
+    $timeline = collect(app(DashboardService::class)->timeline())->keyBy('date');
+    expect($timeline[now()->toDateString()]['comments'])->toBe(1);
+
+    $topArticles = collect(app(DashboardService::class)->topArticles())->keyBy('id');
+    expect($topArticles[$article->id]['comments'])->toBe(3);
 });

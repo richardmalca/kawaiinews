@@ -40,8 +40,8 @@ export default function DashboardTimelineChart({ data }: Props) {
             <CardHeader>
                 <CardTitle>Actividad de los últimos 14 días</CardTitle>
                 <CardDescription>
-                    Vistas, usuarios nuevos, reacciones (me gusta + favoritos)
-                    y compartidos por día
+                    Vistas, usuarios nuevos, reacciones (me gusta + favoritos),
+                    compartidos y comentarios por día
                 </CardDescription>
             </CardHeader>
             <CardContent className="h-72 w-full sm:h-80">
@@ -110,6 +110,14 @@ export default function DashboardTimelineChart({ data }: Props) {
                             dataKey="users"
                             name="Usuarios nuevos"
                             stroke={CHART_COLORS.users}
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="comments"
+                            name="Comentarios"
+                            stroke={CHART_COLORS.comments}
                             strokeWidth={2}
                             dot={false}
                         />
