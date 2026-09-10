@@ -38,10 +38,42 @@
 
         @php
             $serverArticle = $page['props']['article']['data'] ?? $page['props']['article'] ?? null;
-            $serverTitle = $serverArticle['title'] ?? config('app.name', 'KawaiiNews');
+            $serverTitle = isset($serverArticle['title'])
+                ? $serverArticle['title'] . ' - KawaiiNews'
+                : config('app.name', 'KawaiiNews');
             $serverDescription = $serverArticle['excerpt'] ?? 'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
-            $serverImage = $serverArticle['featured_image'] ?? asset('android-chrome-512x512.png');
+
+            $rawImage = $serverArticle['featured_image'] ?? null;
+            if ($rawImage) {
+                if (str_contains($rawImage, '/storage/')) {
+                    $path = parse_url($rawImage, PHP_URL_PATH);
+                    $serverImage = url($path);
+                } elseif (str_starts_with($rawImage, '/')) {
+                    $serverImage = url($rawImage);
+                } else {
+                    $serverImage = $rawImage;
+                }
+            } else {
+                $serverImage = asset('og-default.png');
+            }
+
+            if (request()->isSecure() && str_starts_with($serverImage, 'http://')) {
+                $serverImage = 'https://' . substr($serverImage, 7);
+            }
+
+            $ext = strtolower(pathinfo(parse_url($serverImage, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+            $serverImageType = match ($ext) {
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif',
+                default => 'image/png',
+            };
+
             $serverUrl = $serverArticle['canonical_url'] ?? url()->current();
+            if (request()->isSecure() && str_starts_with($serverUrl, 'http://')) {
+                $serverUrl = 'https://' . substr($serverUrl, 7);
+            }
         @endphp
 
         <meta property="og:site_name" content="KawaiiNews">
@@ -51,18 +83,22 @@
         <meta property="og:url" content="{{ $serverUrl }}">
         <meta property="og:image" content="{{ $serverImage }}">
         <meta property="og:image:secure_url" content="{{ $serverImage }}">
+        <meta property="og:image:type" content="{{ $serverImageType }}">
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="{{ $serverTitle }}">
+        <meta property="og:locale" content="es_LA">
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:site" content="@KawaiiNews">
         <meta name="twitter:title" content="{{ $serverTitle }}">
         <meta name="twitter:description" content="{{ $serverDescription }}">
         <meta name="twitter:image" content="{{ $serverImage }}">
+        <meta name="twitter:image:alt" content="{{ $serverTitle }}">
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ $serverTitle }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

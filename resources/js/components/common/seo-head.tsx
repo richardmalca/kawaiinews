@@ -28,8 +28,8 @@ export function SeoHead({
         'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
     const defaultImage =
         typeof window !== 'undefined'
-            ? `${window.location.origin}/android-chrome-512x512.png`
-            : '/android-chrome-512x512.png';
+            ? `${window.location.origin}/og-default.png`
+            : '/og-default.png';
 
     const computedTitle = article
         ? `${article.title} - ${siteName}`
@@ -56,6 +56,16 @@ export function SeoHead({
         profile?.avatar ||
         ogImage ||
         defaultImage;
+
+    const imageExtension = computedImage.split('?')[0].split('.').pop()?.toLowerCase();
+    const computedImageType =
+        imageExtension === 'webp'
+            ? 'image/webp'
+            : imageExtension === 'jpg' || imageExtension === 'jpeg'
+              ? 'image/jpeg'
+              : imageExtension === 'gif'
+                ? 'image/gif'
+                : 'image/png';
 
     const computedType = article ? 'article' : profile ? 'profile' : ogType;
 
@@ -157,6 +167,7 @@ export function SeoHead({
                 <>
                     <meta property="og:image" content={computedImage} />
                     <meta property="og:image:secure_url" content={computedImage} />
+                    <meta property="og:image:type" content={computedImageType} />
                     <meta property="og:image:alt" content={computedTitle} />
                     <meta property="og:image:width" content="1200" />
                     <meta property="og:image:height" content="630" />

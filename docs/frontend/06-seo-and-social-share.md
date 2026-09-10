@@ -96,3 +96,24 @@ El hook detecta la categoría de la noticia y selecciona automáticamente el emo
 - **Detalle de Artículo**: `resources/js/pages/public/articles/show.tsx`
 - **Portada y Categorías**: `resources/js/pages/public/home/index.tsx`
 - **Perfil Público**: `resources/js/pages/public/profile/show.tsx`
+
+---
+
+## 4. Renderizado Servidor en `app.blade.php` y Assets de Marca
+
+Dado que los rastreadores de redes sociales (WhatsApp, Facebook, Discord, X/Twitter, Telegram) no ejecutan JavaScript del lado del cliente, `resources/views/app.blade.php` inyecta las etiquetas Open Graph y Twitter Cards directamente en el HTML inicial:
+
+### 4.1 Resolución Dinámica de Imágenes
+- **Ajuste de Host y Esquema**: Si el artículo tiene una imagen almacenada en `/storage/`, el servidor reconstruye dinámicamente la URL con el dominio y protocolo de la solicitud actual (`request()->schemeAndHttpHost()`), evitando que URLs rígidas (`http://localhost:8000`) fallen al acceder vía túneles o dominios públicos.
+- **Protocolo Seguro**: Si la petición es HTTPS, `og:image` y `og:image:secure_url` se fuerzan a `https://`.
+- **Detección MIME (`og:image:type`)**: Identifica la extensión del archivo (`image/png`, `image/jpeg`, `image/webp`, etc.) para que plataformas como WhatsApp generen la previsualización al instante.
+- **Normalización en Resources**: `NewsArticleResource` aplica la misma resolución dinámica vía `resolveMediaUrl()` para `featured_image` y `audio_url`.
+
+### 4.2 Identidad Visual Oficial (Reemplazo del Starter Kit)
+Se reemplazaron todos los iconos por defecto de Laravel por la identidad oficial de KawaiiNews:
+- `public/favicon.svg`: Icono SVG con gradiente rosa a ámbar (`#e11d48` a `#f59e0b`) y destello `Sparkles`.
+- `public/apple-touch-icon.png`: Icono táctil de 180x180 px.
+- `public/android-chrome-192x192.png` y `public/android-chrome-512x512.png`: Iconos para PWA y navegadores móviles.
+- `public/favicon.ico`: Favicon multipropósito de 48x48 px.
+- `public/og-default.png`: Banner oficial de 1200x630 px usado como fallback en Open Graph para portada y páginas sin imagen destacada.
+
