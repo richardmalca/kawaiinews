@@ -96,7 +96,7 @@
         <meta name="twitter:image:alt" content="{{ $serverTitle }}">
 
         @viteReactRefresh
-        @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
+        @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         <x-inertia::head>
             <title>{{ $serverTitle }}</title>
         </x-inertia::head>
