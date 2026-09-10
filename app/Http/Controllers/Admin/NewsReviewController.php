@@ -47,6 +47,7 @@ class NewsReviewController extends Controller
             ],
             'nextScrapeAt' => $this->nextScheduledRun('news:scrape'),
             'nextAutoReviewAt' => $this->nextScheduledRun('news:auto-review'),
+            'kpis' => $this->newsClusterService->adminKpis($category),
         ]);
     }
 

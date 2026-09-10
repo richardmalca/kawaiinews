@@ -33,6 +33,40 @@ class NewsClusterService
         return $query->paginate($perPage, page: $page);
     }
 
+    /**
+     * KPIs sobre el mismo alcance que la bandeja (pending + accepted, con
+     * el mismo filtro de categoría si hay uno activo) — no sobre todos los
+     * clusters históricos, para que coincida con lo que el admin está
+     * viendo en la tabla.
+     *
+     * @return array{total: int, published: int, unpublished: int, analyzed: int}
+     */
+    public function adminKpis(?string $category = null): array
+    {
+        $scope = fn () => NewsCluster::query()
+            ->whereIn('status', ['pending', 'accepted'])
+            ->when($category, fn ($query) => $query->where('category', $category));
+
+        $total = $scope()->count();
+
+        // "Publicada" = el cluster ya se aceptó Y el artículo que generó
+        // está publicado en el sitio (no solo aceptado/borrador todavía).
+        $published = $scope()
+            ->where('status', 'accepted')
+            ->whereHas('article', fn ($query) => $query->where('status', 'published'))
+            ->count();
+
+        return [
+            'total' => $total,
+            'published' => $published,
+            // Todo lo que sigue en la bandeja sin ser un artículo publicado
+            // todavía: pendientes de revisar + aceptados que quedaron en
+            // borrador sin publicar.
+            'unpublished' => $total - $published,
+            'analyzed' => $scope()->whereNotNull('ai_verdict')->count(),
+        ];
+    }
+
     public function reject(NewsCluster $newsCluster): void
     {
         $newsCluster->update(['status' => 'rejected']);

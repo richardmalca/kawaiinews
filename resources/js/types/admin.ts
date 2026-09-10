@@ -286,3 +286,10 @@ export type AdminNewsArticlesKpis = {
     without_image: number;
     this_week: number;
 };
+
+export type AdminNewsReviewKpis = {
+    total: number;
+    published: number;
+    unpublished: number;
+    analyzed: number;
+};

@@ -1,5 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Clock, TriangleAlert } from 'lucide-react';
+import {
+    BadgeCheck,
+    Clock,
+    Inbox,
+    Sparkles,
+    TriangleAlert,
+    Undo2,
+} from 'lucide-react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -10,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import AnalyzeWithAiButton from '@/pages/admin/news-review/components/analyze-with-ai-button';
 import ApplyAiVerdictsButton from '@/pages/admin/news-review/components/apply-ai-verdicts-button';
 import NewsClusterRow from '@/pages/admin/news-review/components/news-cluster-row';
@@ -18,7 +26,11 @@ import NewsReviewSortSelect from '@/pages/admin/news-review/components/news-revi
 import RunScraperButton from '@/pages/admin/news-review/components/run-scraper-button';
 import { index } from '@/routes/admin/news-review';
 import { index as newsSourcesIndex } from '@/routes/admin/news-sources';
-import type { NewsCluster, NewsReviewSort } from '@/types/admin';
+import type {
+    AdminNewsReviewKpis,
+    NewsCluster,
+    NewsReviewSort,
+} from '@/types/admin';
 
 type Meta = {
     current_page: number;
@@ -41,6 +53,7 @@ type Props = {
     meta: Meta;
     nextScrapeAt: NextRun | null;
     nextAutoReviewAt: NextRun | null;
+    kpis: AdminNewsReviewKpis;
 };
 
 export default function NewsReviewIndex({
@@ -53,6 +66,7 @@ export default function NewsReviewIndex({
     meta,
     nextScrapeAt,
     nextAutoReviewAt,
+    kpis,
 }: Props) {
     const goToPage = (page: number) => {
         router.get(
@@ -101,6 +115,30 @@ export default function NewsReviewIndex({
                         )}
                     </div>
                 )}
+
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <KpiCard
+                        icon={Inbox}
+                        label="En la bandeja"
+                        value={kpis.total}
+                    />
+                    <KpiCard
+                        icon={BadgeCheck}
+                        label="Ya publicadas"
+                        value={kpis.published}
+                    />
+                    <KpiCard
+                        icon={Undo2}
+                        label="Sin publicar todavía"
+                        value={kpis.unpublished}
+                        sublabel="Pendientes o aceptadas en borrador"
+                    />
+                    <KpiCard
+                        icon={Sparkles}
+                        label="Analizadas por IA"
+                        value={kpis.analyzed}
+                    />
+                </div>
 
                 {!hasActiveSources && (
                     <Alert variant="destructive">

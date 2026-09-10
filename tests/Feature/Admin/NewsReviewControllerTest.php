@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\NewsArticle;
 use App\Models\NewsCluster;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -34,6 +35,31 @@ test('the index exposes when news:scrape and news:auto-review will run next', fu
         ->has('nextScrapeAt.in')
         ->has('nextAutoReviewAt.at')
         ->has('nextAutoReviewAt.in')
+    );
+});
+
+test('the index exposes kpis: total in the queue, published, unpublished and analyzed by ai', function () {
+    // Pendiente, sin analizar todavía.
+    NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+    // Pendiente, ya analizada por la IA.
+    NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish']);
+    // Aceptada pero el artículo todavía está en borrador (no cuenta como "publicada").
+    $draftArticleCluster = NewsCluster::factory()->create(['status' => 'accepted', 'ai_verdict' => 'publish']);
+    NewsArticle::factory()->create(['news_cluster_id' => $draftArticleCluster->id, 'status' => 'draft']);
+    // Aceptada y con el artículo ya publicado.
+    $publishedArticleCluster = NewsCluster::factory()->create(['status' => 'accepted', 'ai_verdict' => 'publish']);
+    NewsArticle::factory()->published()->create(['news_cluster_id' => $publishedArticleCluster->id]);
+    // Rechazada: no cuenta para nada de esto (no está en la bandeja).
+    NewsCluster::factory()->create(['status' => 'rejected']);
+
+    $response = $this->get(route('admin.news-review.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('kpis.total', 4)
+        ->where('kpis.published', 1)
+        ->where('kpis.unpublished', 3)
+        ->where('kpis.analyzed', 3)
     );
 });
 
