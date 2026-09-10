@@ -3,6 +3,7 @@ import '@blocknote/mantine/style.css';
 import { BlockNoteView } from '@blocknote/mantine';
 import { useCreateBlockNote } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
+import { useAppearance } from '@/hooks/use-appearance';
 
 type Props = {
     value: string;
@@ -12,6 +13,7 @@ type Props = {
 export default function RichTextEditor({ value, onChange }: Props) {
     const editor = useCreateBlockNote();
     const isLoadingInitialContent = useRef(true);
+    const { resolvedAppearance } = useAppearance();
 
     useEffect(() => {
         if (value) {
@@ -36,7 +38,7 @@ export default function RichTextEditor({ value, onChange }: Props) {
         <div className="border-input border">
             <BlockNoteView
                 editor={editor}
-                theme="dark"
+                theme={resolvedAppearance}
                 onChange={handleChange}
             />
         </div>
