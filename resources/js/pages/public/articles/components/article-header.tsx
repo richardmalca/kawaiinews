@@ -2,7 +2,7 @@ import { CategoryBadge } from '@/components/public/category-badge';
 import { estimateReadingTime } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Calendar, Eye, User } from 'lucide-react';
+import { BookOpen, Calendar, Eye, MessageCircle, User } from 'lucide-react';
 import { ArticleAudioPlayer } from './article-audio-player';
 
 interface ArticleHeaderProps {
@@ -69,6 +69,22 @@ export function ArticleHeader({ article }: ArticleHeaderProps) {
                                 {article.views_count.toLocaleString()} vistas
                             </span>
                         </span>
+                    </>
+                )}
+                {typeof article.comments_count === 'number' && (
+                    <>
+                        <span className="text-neutral-300 dark:text-neutral-700">
+                            •
+                        </span>
+                        <a
+                            href="#comentarios"
+                            className="inline-flex items-center gap-1 text-neutral-500 transition-colors hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400"
+                        >
+                            <MessageCircle className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
+                            <span>
+                                {article.comments_count} {article.comments_count === 1 ? 'comentario' : 'comentarios'}
+                            </span>
+                        </a>
                     </>
                 )}
             </div>

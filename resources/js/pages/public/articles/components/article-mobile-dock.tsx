@@ -1,4 +1,4 @@
-import { Bookmark, Check, FileText, Headphones, Heart, Minus, Pause, Play, Plus } from 'lucide-react';
+import { Bookmark, Check, FileText, Headphones, Heart, MessageCircle, Minus, Pause, Play, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -10,6 +10,7 @@ interface ArticleMobileDockProps {
     isFavoriting: boolean;
     fontSize: 'sm' | 'base' | 'lg';
     copiedText: boolean;
+    commentsCount?: number;
     onToggleLike: () => void;
     onToggleFavorite: () => void;
     onCopyPlainText: () => void;
@@ -24,6 +25,7 @@ export function ArticleMobileDock({
     isFavoriting,
     fontSize,
     copiedText,
+    commentsCount = 0,
     onToggleLike,
     onToggleFavorite,
     onCopyPlainText,
@@ -123,6 +125,17 @@ export function ArticleMobileDock({
                     />
                     <span>{favorited ? 'Guardado' : 'Guardar'}</span>
                 </button>
+
+                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+
+                <a
+                    href="#comentarios"
+                    aria-label="Comentarios"
+                    className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-neutral-700 transition-all hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                >
+                    <MessageCircle className="h-4 w-4 text-violet-500 dark:text-violet-400" />
+                    <span>{commentsCount > 0 ? commentsCount : 'Opinar'}</span>
+                </a>
 
                 <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
 

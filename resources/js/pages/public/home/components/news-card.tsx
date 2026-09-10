@@ -6,7 +6,7 @@ import {
 } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Bookmark, Calendar, Eye, Heart, Share2 } from 'lucide-react';
+import { BookOpen, Bookmark, Calendar, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface NewsCardProps {
     article: PublicArticle;
@@ -18,6 +18,7 @@ export function NewsCard({ article }: NewsCardProps) {
     const likersCount = article.likers_count ?? 0;
     const favoritesCount = article.favorites_count ?? 0;
     const sharesCount = article.shares_count ?? 0;
+    const commentsCount = article.comments_count ?? 0;
 
     return (
         <Link
@@ -128,6 +129,18 @@ export function NewsCard({ article }: NewsCardProps) {
                             >
                                 <Share2 className="h-3.5 w-3.5" />
                                 <span className="text-[11px] font-semibold">{sharesCount}</span>
+                            </span>
+
+                            <span
+                                title="Comentarios"
+                                className={`inline-flex items-center gap-1 font-medium transition-colors ${
+                                    commentsCount > 0
+                                        ? 'text-violet-600 dark:text-violet-400'
+                                        : 'text-neutral-400 dark:text-neutral-500'
+                                }`}
+                            >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span className="text-[11px] font-semibold">{commentsCount}</span>
                             </span>
                         </div>
 

@@ -64,6 +64,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const [articleSuggestions, setArticleSuggestions] = useState<SearchArticleSuggestion[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,10 +75,11 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
         };
 
         const handleClickOutside = (e: MouseEvent) => {
-            if (
-                searchContainerRef.current &&
-                !searchContainerRef.current.contains(e.target as Node)
-            ) {
+            const target = e.target as Node;
+            const clickedDesktop = searchContainerRef.current?.contains(target);
+            const clickedMobile = mobileSearchContainerRef.current?.contains(target);
+
+            if (!clickedDesktop && !clickedMobile) {
                 setIsDropdownOpen(false);
             }
         };
@@ -540,7 +542,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                 </div>
 
                 {isSearchOpen && (
-                    <div className="relative border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
+                    <div ref={mobileSearchContainerRef} className="relative border-t border-neutral-200/80 py-3 sm:hidden dark:border-neutral-800/80">
                         <form
                             onSubmit={handleSearchSubmit}
                             className="relative"

@@ -9,7 +9,9 @@ class ProfileService
 {
     public function findByUsername(string $username): User
     {
-        return User::where('username', $username)->firstOrFail();
+        $normalized = trim($username);
+
+        return User::whereRaw('LOWER(username) = LOWER(?)', [$normalized])->firstOrFail();
     }
 
     /**

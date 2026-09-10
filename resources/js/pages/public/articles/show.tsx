@@ -281,6 +281,7 @@ export default function ShowArticle({
                             fontSize={fontSize}
                             copiedText={copiedText}
                             sharesCount={sharesCount}
+                            commentsCount={item.comments_count}
                             visible={isScrolled}
                             onToggleLike={toggleLike}
                             onToggleFavorite={toggleFavorite}
@@ -307,6 +308,7 @@ export default function ShowArticle({
                 isFavoriting={isFavoriting}
                 fontSize={fontSize}
                 copiedText={copiedText}
+                commentsCount={item.comments_count}
                 onToggleLike={toggleLike}
                 onToggleFavorite={toggleFavorite}
                 onCopyPlainText={handleCopyPlainText}

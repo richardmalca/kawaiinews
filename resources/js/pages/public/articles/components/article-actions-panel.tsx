@@ -1,4 +1,4 @@
-import { Bookmark, Check, FileText, Headphones, Heart, Minus, Pause, Play, Plus, Share2 } from 'lucide-react';
+import { Bookmark, Check, FileText, Headphones, Heart, MessageCircle, Minus, Pause, Play, Plus, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -11,6 +11,7 @@ interface ArticleActionsPanelProps {
     fontSize: 'sm' | 'base' | 'lg';
     copiedText: boolean;
     sharesCount: number;
+    commentsCount?: number;
     visible?: boolean;
     onToggleLike: () => void;
     onToggleFavorite: () => void;
@@ -27,6 +28,7 @@ export function ArticleActionsPanel({
     fontSize,
     copiedText,
     sharesCount,
+    commentsCount = 0,
     visible = true,
     onToggleLike,
     onToggleFavorite,
@@ -158,6 +160,20 @@ export function ArticleActionsPanel({
                     />
                     <span>{favorited ? 'Guardado' : 'Guardar'}</span>
                 </button>
+            </div>
+
+            <div className="mt-2">
+                <a
+                    href="#comentarios"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-100/70 p-2 text-xs font-semibold text-neutral-700 transition-all hover:border-neutral-300 hover:bg-neutral-200/60 active:scale-95 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
+                >
+                    <MessageCircle className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
+                    <span>
+                        {commentsCount > 0
+                            ? `${commentsCount} ${commentsCount === 1 ? 'Comentario' : 'Comentarios'}`
+                            : 'Comentarios'}
+                    </span>
+                </a>
             </div>
 
             <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2.5 dark:border-neutral-800">

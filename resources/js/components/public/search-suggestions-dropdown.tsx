@@ -48,7 +48,10 @@ export function SearchSuggestionsDropdown({
     const hasResults = hasTags || hasUsers || hasArticles;
 
     return (
-        <div className="absolute top-full left-0 mt-2 w-72 sm:w-96 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 dark:border-neutral-800/80 dark:bg-neutral-900/95">
+        <div
+            onMouseDown={(e) => e.preventDefault()}
+            className="absolute top-full left-0 mt-2 w-72 sm:w-96 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 dark:border-neutral-800/80 dark:bg-neutral-900/95"
+        >
             {isLoading && !hasResults ? (
                 <div className="p-4 text-center text-xs text-neutral-400">
                     Buscando sugerencias...
