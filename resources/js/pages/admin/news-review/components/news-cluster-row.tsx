@@ -21,7 +21,7 @@ export default function NewsClusterRow({ cluster }: Props) {
 
     return (
         <TableRow>
-            <TableCell className="max-w-xs">
+            <TableCell className="max-w-48 sm:max-w-xs">
                 <p
                     className="flex items-center gap-1.5 truncate font-medium"
                     title={cluster.title}
@@ -48,9 +48,25 @@ export default function NewsClusterRow({ cluster }: Props) {
                         </a>
                     ))}
                 </div>
+                {/* En mobile, Categoría/Fuentes/Fecha están ocultas: las
+                    mostramos acá abajo compactas para no perder contexto. */}
+                <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2 text-xs md:hidden">
+                    <Badge variant="outline" className="capitalize">
+                        {cluster.category}
+                    </Badge>
+                    <span>
+                        {cluster.sources_count} fuente
+                        {cluster.sources_count === 1 ? '' : 's'}
+                    </span>
+                    <span className="lg:hidden">
+                        {cluster.published_at ?? cluster.first_seen_at}
+                    </span>
+                </div>
             </TableCell>
-            <TableCell className="capitalize">{cluster.category}</TableCell>
-            <TableCell>
+            <TableCell className="hidden capitalize md:table-cell">
+                {cluster.category}
+            </TableCell>
+            <TableCell className="hidden md:table-cell">
                 <Badge
                     variant={
                         cluster.sources_count > 1 ? 'default' : 'secondary'
@@ -59,7 +75,7 @@ export default function NewsClusterRow({ cluster }: Props) {
                     {cluster.sources_count}
                 </Badge>
             </TableCell>
-            <TableCell className="text-muted-foreground text-xs">
+            <TableCell className="text-muted-foreground hidden text-xs lg:table-cell">
                 {cluster.published_at ?? cluster.first_seen_at}
             </TableCell>
             <TableCell>

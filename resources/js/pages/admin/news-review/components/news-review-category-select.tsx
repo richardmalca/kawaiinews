@@ -24,7 +24,7 @@ export default function NewsReviewCategorySelect({ value, categories }: Props) {
 
     return (
         <Select value={value ?? 'all'} onValueChange={handleChange}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="Todas las categorías" />
             </SelectTrigger>
             <SelectContent>

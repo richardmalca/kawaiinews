@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { TriangleAlert } from 'lucide-react';
+import { Clock, TriangleAlert } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,11 @@ type Meta = {
     total: number;
 };
 
+type NextRun = {
+    at: string;
+    in: string;
+};
+
 type Props = {
     clusters: NewsCluster[];
     hasActiveSources: boolean;
@@ -34,6 +39,8 @@ type Props = {
     category: string | null;
     categories: string[];
     meta: Meta;
+    nextScrapeAt: NextRun | null;
+    nextAutoReviewAt: NextRun | null;
 };
 
 export default function NewsReviewIndex({
@@ -44,6 +51,8 @@ export default function NewsReviewIndex({
     category,
     categories,
     meta,
+    nextScrapeAt,
+    nextAutoReviewAt,
 }: Props) {
     const goToPage = (page: number) => {
         router.get(
@@ -62,7 +71,7 @@ export default function NewsReviewIndex({
             <Head title="Revisar noticias" />
 
             <div className="space-y-6 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Revisar noticias"
                         description="Noticias encontradas en tus fuentes activas. Acepta las que valen la pena o descarta el resto"
@@ -73,6 +82,25 @@ export default function NewsReviewIndex({
                         <RunScraperButton disabled={!hasActiveSources} />
                     </div>
                 </div>
+
+                {(nextScrapeAt || nextAutoReviewAt) && (
+                    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                        {nextScrapeAt && (
+                            <span className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                Próximo scraping: {nextScrapeAt.in} (
+                                {nextScrapeAt.at})
+                            </span>
+                        )}
+                        {nextAutoReviewAt && (
+                            <span className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                Próximo análisis con IA: {nextAutoReviewAt.in}{' '}
+                                ({nextAutoReviewAt.at})
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 {!hasActiveSources && (
                     <Alert variant="destructive">
@@ -96,7 +124,7 @@ export default function NewsReviewIndex({
                     </p>
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex flex-wrap justify-end gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                             <NewsReviewCategorySelect
                                 value={category}
                                 categories={categories}
@@ -114,9 +142,15 @@ export default function NewsReviewIndex({
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Tema</TableHead>
-                                            <TableHead>Categoría</TableHead>
-                                            <TableHead>Fuentes</TableHead>
-                                            <TableHead>Fecha</TableHead>
+                                            <TableHead className="hidden md:table-cell">
+                                                Categoría
+                                            </TableHead>
+                                            <TableHead className="hidden md:table-cell">
+                                                Fuentes
+                                            </TableHead>
+                                            <TableHead className="hidden lg:table-cell">
+                                                Fecha
+                                            </TableHead>
                                             <TableHead>IA / Estado</TableHead>
                                             <TableHead className="text-right">
                                                 Acciones
@@ -136,7 +170,7 @@ export default function NewsReviewIndex({
                         )}
 
                         {meta.last_page > 1 && (
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
                                 <p className="text-muted-foreground text-sm">
                                     Página {meta.current_page} de{' '}
                                     {meta.last_page} ({meta.total} en total)

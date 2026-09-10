@@ -12,6 +12,7 @@ use App\Models\NewsCluster;
 use App\Models\NewsSource;
 use App\Services\Admin\NewsClusterService;
 use App\Support\JobRunStatus;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +45,34 @@ class NewsReviewController extends Controller
                 'last_page' => $clusters->lastPage(),
                 'total' => $clusters->total(),
             ],
+            'nextScrapeAt' => $this->nextScheduledRun('news:scrape'),
+            'nextAutoReviewAt' => $this->nextScheduledRun('news:auto-review'),
         ]);
+    }
+
+    /**
+     * Cuándo corre la próxima vez `news:scrape`/`news:auto-review` según el
+     * schedule real de routes/console.php (Schedule::events()), no un
+     * cálculo manual del cron — así nunca queda desactualizado si el
+     * horario cambia ahí.
+     *
+     * @return array{at: string, in: string}|null
+     */
+    private function nextScheduledRun(string $commandName): ?array
+    {
+        $event = collect(app(Schedule::class)->events())
+            ->first(fn ($event) => str_contains($event->command ?? '', $commandName));
+
+        if (! $event) {
+            return null;
+        }
+
+        $nextRun = $event->nextRunDate();
+
+        return [
+            'at' => $nextRun->format('H:i'),
+            'in' => $nextRun->diffForHumans(),
+        ];
     }
 
     public function scrape(): JsonResponse

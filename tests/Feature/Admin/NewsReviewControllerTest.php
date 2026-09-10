@@ -25,6 +25,18 @@ test('review queue paginates pending clusters', function () {
     );
 });
 
+test('the index exposes when news:scrape and news:auto-review will run next', function () {
+    $response = $this->get(route('admin.news-review.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('nextScrapeAt.at')
+        ->has('nextScrapeAt.in')
+        ->has('nextAutoReviewAt.at')
+        ->has('nextAutoReviewAt.in')
+    );
+});
+
 test('review queue can be filtered by category', function () {
     NewsCluster::factory()->count(3)->create(['status' => 'pending', 'category' => 'anime']);
     NewsCluster::factory()->count(2)->create(['status' => 'pending', 'category' => 'gaming']);
