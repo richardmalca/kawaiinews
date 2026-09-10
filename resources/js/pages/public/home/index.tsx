@@ -18,6 +18,8 @@ interface HomeProps {
     trending: { data: PublicArticle[] };
     categories: Record<string, PublicCategorySummary>;
     selectedCategory: string | null;
+    isFollowingCategory?: boolean;
+    categoryFollowersCount?: number;
     search?: string | null;
 }
 
@@ -27,6 +29,8 @@ export default function Home({
     trending,
     categories = {},
     selectedCategory,
+    isFollowingCategory = false,
+    categoryFollowersCount = 0,
     search,
 }: HomeProps) {
     const isFiltered = Boolean(selectedCategory || search);
@@ -71,6 +75,8 @@ export default function Home({
                         selectedCategory={selectedCategory}
                         categories={categories}
                         search={search}
+                        isFollowingCategory={isFollowingCategory}
+                        categoryFollowersCount={categoryFollowersCount}
                     />
 
                     {gridArticles.length > 0 ? (

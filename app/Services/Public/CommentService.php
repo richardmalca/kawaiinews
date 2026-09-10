@@ -5,6 +5,7 @@ namespace App\Services\Public;
 use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
+use App\Notifications\CommentRepliedNotification;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
@@ -55,7 +56,7 @@ class CommentService
             }
         }
 
-        return Comment::create([
+        $comment = Comment::create([
             'news_article_id' => $article->id,
             'user_id' => $user->id,
             'parent_id' => $parentId,
@@ -63,6 +64,15 @@ class CommentService
             'body' => $body,
             'is_spoiler' => $isSpoiler,
         ]);
+
+        if (isset($target) && $target->user_id !== $user->id) {
+            $targetAuthor = $target->user;
+            if ($targetAuthor) {
+                $targetAuthor->notify(new CommentRepliedNotification($comment, $user));
+            }
+        }
+
+        return $comment;
     }
 
     public function update(Comment $comment, string $body, ?bool $isSpoiler = null): Comment

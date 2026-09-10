@@ -6,10 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -77,6 +79,57 @@ class User extends Authenticatable implements PasskeyUser
     public function shares(): HasMany
     {
         return $this->hasMany(Share::class);
+    }
+
+    /**
+     * Comentarios realizados por este usuario.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Categorías seguidas por el usuario.
+     */
+    public function followedCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            related: User::class,
+            table: 'category_user',
+            foreignPivotKey: 'user_id',
+            relatedPivotKey: 'id',
+        )->withTimestamps();
+    }
+
+    public function isFollowingCategory(string $category): bool
+    {
+        return DB::table('category_user')
+            ->where('user_id', $this->id)
+            ->where('category', $category)
+            ->exists();
+    }
+
+    public function toggleFollowCategory(string $category): bool
+    {
+        $existing = DB::table('category_user')
+            ->where('user_id', $this->id)
+            ->where('category', $category);
+
+        if ($existing->exists()) {
+            $existing->delete();
+
+            return false;
+        }
+
+        DB::table('category_user')->insert([
+            'user_id' => $this->id,
+            'category' => $category,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return true;
     }
 
     public function publishedArticlesCount(): int

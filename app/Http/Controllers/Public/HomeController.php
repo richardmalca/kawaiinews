@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Shared\NewsArticleResource;
 use App\Services\Public\NewsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,12 +30,25 @@ class HomeController extends Controller
         $trendingTopics = $this->newsService->getTrendingTopics(limit: 6);
         $categories = $this->newsService->getCategoriesSummary();
 
+        $user = $request->user();
+        $isFollowingCategory = false;
+        $categoryFollowersCount = 0;
+
+        if ($selectedCategory) {
+            $isFollowingCategory = $user ? $user->isFollowingCategory($selectedCategory) : false;
+            $categoryFollowersCount = DB::table('category_user')
+                ->where('category', $selectedCategory)
+                ->count();
+        }
+
         return Inertia::render('public/home/index', [
             'featured' => NewsArticleResource::collection($featuredArticles),
             'articles' => NewsArticleResource::collection($paginatedArticles),
             'trending' => NewsArticleResource::collection($trendingTopics),
             'categories' => $categories,
             'selectedCategory' => $selectedCategory,
+            'isFollowingCategory' => $isFollowingCategory,
+            'categoryFollowersCount' => $categoryFollowersCount,
             'search' => $search,
         ]);
     }

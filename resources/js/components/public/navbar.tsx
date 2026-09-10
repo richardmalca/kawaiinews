@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from './theme-toggle';
+import { NotificationBell } from './notification-bell';
 import {
     SearchSuggestionsDropdown,
     type SearchArticleSuggestion,
@@ -261,6 +262,8 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         </button>
 
                         <ThemeToggle />
+
+                        <NotificationBell />
 
                         {/* Menú hamburguesa solo en pantallas móviles (md:hidden) */}
                         <button

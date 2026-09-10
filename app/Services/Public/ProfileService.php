@@ -81,6 +81,31 @@ class ProfileService
                     })
                     ->values()
                 : [],
+            'comments' => $profileUser->comments()
+                ->with('newsArticle:id,title,slug,category,featured_image')
+                ->latest()
+                ->limit(20)
+                ->get()
+                ->filter(fn ($c) => $c->newsArticle !== null)
+                ->map(function ($comment) {
+                    $article = $comment->newsArticle;
+
+                    return [
+                        'id' => $comment->id,
+                        'body' => $comment->body,
+                        'is_spoiler' => (bool) $comment->is_spoiler,
+                        'created_at' => $comment->created_at?->diffForHumans(),
+                        'created_date' => $comment->created_at?->translatedFormat('d M, Y'),
+                        'article' => [
+                            'id' => $article->id,
+                            'title' => $article->title,
+                            'slug' => $article->slug,
+                            'category' => $article->category,
+                            'featured_image' => $article->featured_image,
+                        ],
+                    ];
+                })
+                ->values(),
         ];
     }
 }

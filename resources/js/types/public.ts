@@ -12,6 +12,8 @@ export type PublicTag = {
     name: string;
     slug: string;
     articles_count?: number;
+    followers_count?: number;
+    is_following?: boolean;
 };
 
 export type PublicPaginationLink = {
@@ -67,6 +69,20 @@ export type PublicUserProfile = {
         category?: string;
         excerpt?: string | null;
         featured_image: string | null;
+    }[];
+    comments?: {
+        id: number;
+        body: string;
+        is_spoiler: boolean;
+        created_at?: string;
+        created_date?: string;
+        article: {
+            id: number;
+            title: string;
+            slug: string;
+            category: string;
+            featured_image: string | null;
+        };
     }[];
 };
 
