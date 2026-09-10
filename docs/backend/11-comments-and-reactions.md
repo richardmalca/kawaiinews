@@ -47,6 +47,14 @@ Así, sin importar cuántos niveles de respuesta reales haya, en la base
 todo cuelga directo de la raíz con `parent_id`, y `reply_to_comment_id`
 lleva el registro de la conversación real para la UI.
 
+## Spoilers
+
+`is_spoiler` (boolean, default `false`) — lo marca el propio autor al
+comentar (`is_spoiler` opcional en el POST) o al editar su comentario. Es
+solo una bandera de dato: el backend no oculta ni recorta `body`, la UI
+del frontend público es la que decide cómo mostrarlo (blur/"click para
+revelar spoiler"), igual que en Reddit o MyAnimeList.
+
 ## Reacciones
 
 Los comentarios reutilizan el trait `Likeable` de `overtrue/laravel-like`

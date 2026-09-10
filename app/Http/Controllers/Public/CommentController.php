@@ -45,6 +45,7 @@ class CommentController extends Controller
             $article,
             $request->validated('body'),
             $request->validated('reply_to_comment_id'),
+            (bool) $request->validated('is_spoiler', false),
         );
 
         $comment->load(['user:id,name,username,avatar,custom_avatar,avatar_source', 'replyToComment.user:id,name,username']);
@@ -54,7 +55,7 @@ class CommentController extends Controller
 
     public function update(UpdateCommentRequest $request, Comment $comment): JsonResponse
     {
-        $comment = $this->commentService->update($comment, $request->validated('body'));
+        $comment = $this->commentService->update($comment, $request->validated('body'), $request->validated('is_spoiler'));
 
         $comment->load(['user:id,name,username,avatar,custom_avatar,avatar_source', 'replyToComment.user:id,name,username']);
 

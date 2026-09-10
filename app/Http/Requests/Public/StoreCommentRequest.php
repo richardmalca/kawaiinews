@@ -19,6 +19,7 @@ class StoreCommentRequest extends FormRequest
         return [
             'body' => ['required', 'string', 'min:1', 'max:2000'],
             'reply_to_comment_id' => ['nullable', 'integer', 'exists:comments,id'],
+            'is_spoiler' => ['sometimes', 'boolean'],
         ];
     }
 }

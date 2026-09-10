@@ -18,6 +18,7 @@ class UpdateCommentRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'min:1', 'max:2000'],
+            'is_spoiler' => ['sometimes', 'boolean'],
         ];
     }
 }

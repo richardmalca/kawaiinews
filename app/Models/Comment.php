@@ -25,15 +25,23 @@ use Overtrue\LaravelLike\Traits\Likeable;
  * @property int|null $parent_id
  * @property int|null $reply_to_comment_id
  * @property string $body
+ * @property bool $is_spoiler
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['news_article_id', 'user_id', 'parent_id', 'reply_to_comment_id', 'body'])]
+#[Fillable(['news_article_id', 'user_id', 'parent_id', 'reply_to_comment_id', 'body', 'is_spoiler'])]
 class Comment extends Model
 {
     /** @use HasFactory<CommentFactory> */
     use HasFactory, Likeable, SoftDeletes;
+
+    protected function casts(): array
+    {
+        return [
+            'is_spoiler' => 'boolean',
+        ];
+    }
 
     public function newsArticle(): BelongsTo
     {

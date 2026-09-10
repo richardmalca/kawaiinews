@@ -25,7 +25,13 @@ class CommentFactory extends Factory
             'parent_id' => null,
             'reply_to_comment_id' => null,
             'body' => fake()->realText(120),
+            'is_spoiler' => false,
         ];
+    }
+
+    public function spoiler(): static
+    {
+        return $this->state(fn () => ['is_spoiler' => true]);
     }
 
     /**

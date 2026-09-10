@@ -39,7 +39,7 @@ class CommentService
      * la raíz del hilo (se aplana), pero guarda a quién le está
      * respondiendo puntualmente para poder mostrar "Respondiendo a @fulano".
      */
-    public function store(User $user, NewsArticle $article, string $body, ?int $replyToCommentId = null): Comment
+    public function store(User $user, NewsArticle $article, string $body, ?int $replyToCommentId = null, bool $isSpoiler = false): Comment
     {
         $parentId = null;
         $replyToId = null;
@@ -61,12 +61,16 @@ class CommentService
             'parent_id' => $parentId,
             'reply_to_comment_id' => $replyToId,
             'body' => $body,
+            'is_spoiler' => $isSpoiler,
         ]);
     }
 
-    public function update(Comment $comment, string $body): Comment
+    public function update(Comment $comment, string $body, ?bool $isSpoiler = null): Comment
     {
-        $comment->update(['body' => $body]);
+        $comment->update([
+            'body' => $body,
+            ...($isSpoiler !== null ? ['is_spoiler' => $isSpoiler] : []),
+        ]);
 
         return $comment;
     }

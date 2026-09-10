@@ -15,6 +15,7 @@ class CommentResource extends JsonResource
         return [
             'id' => $this->id,
             'body' => $this->body,
+            'is_spoiler' => (bool) $this->is_spoiler,
             'created_at' => $this->created_at?->diffForHumans(),
             'created_at_iso' => $this->created_at?->toIso8601String(),
             'is_edited' => $this->updated_at && $this->created_at && ! $this->updated_at->eq($this->created_at),

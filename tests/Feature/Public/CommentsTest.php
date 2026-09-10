@@ -85,6 +85,44 @@ test('replying to a reply flattens under the same root but tags who was replied 
         ->assertJsonPath('data.0.replies', fn ($replies) => count($replies) === 2);
 });
 
+test('a comment can be posted marked as spoiler', function () {
+    $user = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('public.comments.store', $article->slug), [
+            'body' => 'Muere el protagonista en el capítulo final',
+            'is_spoiler' => true,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('is_spoiler', true);
+
+    $this->getJson(route('public.comments.index', $article->slug))
+        ->assertOk()
+        ->assertJsonPath('data.0.is_spoiler', true);
+});
+
+test('a comment defaults to not being a spoiler', function () {
+    $user = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('public.comments.store', $article->slug), ['body' => 'Sin spoilers'])
+        ->assertCreated()
+        ->assertJsonPath('is_spoiler', false);
+});
+
+test('the author can flag their own comment as spoiler when editing it', function () {
+    $user = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+    $comment = Comment::factory()->create(['news_article_id' => $article->id, 'user_id' => $user->id, 'is_spoiler' => false]);
+
+    $this->actingAs($user)
+        ->patchJson(route('public.comments.update', $comment), ['body' => $comment->body, 'is_spoiler' => true])
+        ->assertOk()
+        ->assertJsonPath('is_spoiler', true);
+});
+
 test('the author can update their own comment', function () {
     $user = User::factory()->create();
     $article = NewsArticle::factory()->published()->create();
