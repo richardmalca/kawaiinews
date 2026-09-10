@@ -76,8 +76,8 @@ export function ArticleCommentItem({
     const authorAvatar = author?.avatar;
 
     return (
-        <div className={`group relative transition-colors ${isReply ? 'mt-3 pl-3 sm:pl-4 border-l-2 border-rose-100 dark:border-rose-950/60' : ''}`}>
-            <div className="flex items-start gap-2.5 sm:gap-3">
+        <div className={`group relative transition-colors ${isReply ? 'mt-2 pl-2 sm:pl-3.5 border-l-[1.5px] sm:border-l-2 border-rose-100 dark:border-rose-950/60' : ''}`}>
+            <div className="flex items-start gap-2 sm:gap-3">
                 {/* Avatar */}
                 <div className="shrink-0">
                     {authorUsername ? (
@@ -86,16 +86,16 @@ export function ArticleCommentItem({
                                 <img
                                     src={authorAvatar}
                                     alt={authorName}
-                                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
                                 />
                             ) : (
-                                <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-rose-100 font-bold text-xs text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-rose-100 font-bold text-[10px] sm:text-xs text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                                     {authorName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                         </Link>
                     ) : (
-                        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-neutral-200 font-bold text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-neutral-200 font-bold text-[10px] sm:text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                             {authorName.charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -103,33 +103,33 @@ export function ArticleCommentItem({
 
                 {/* Content Box */}
                 <div className="min-w-0 flex-1">
-                    <div className="rounded-2xl border border-neutral-200/70 bg-white/70 p-3 sm:p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800/70 dark:bg-neutral-900/40">
+                    <div className="rounded-xl sm:rounded-2xl border border-neutral-200/70 bg-white/70 p-2.5 sm:p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800/70 dark:bg-neutral-900/40">
                         {/* Header: Author & Meta */}
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs">
                                 {authorUsername ? (
                                     <Link
                                         href={`/perfil/${authorUsername}`}
-                                        className="font-bold text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400"
+                                        className="font-bold text-[11px] sm:text-xs text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400"
                                     >
                                         {authorName}
                                     </Link>
                                 ) : (
-                                    <span className="font-bold text-neutral-900 dark:text-neutral-100">
+                                    <span className="font-bold text-[11px] sm:text-xs text-neutral-900 dark:text-neutral-100">
                                         {authorName}
                                     </span>
                                 )}
 
                                 {authorUsername && (
-                                    <span className="hidden text-[11px] text-neutral-400 sm:inline">
+                                    <span className="hidden text-[10px] sm:text-[11px] text-neutral-400 sm:inline">
                                         @{authorUsername}
                                     </span>
                                 )}
 
                                 {/* Etiqueta de respuesta solo si responde a OTRA respuesta (no al comentario raíz) */}
                                 {comment.reply_to && (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                                        <CornerDownRight className="h-3 w-3 text-neutral-400" />
+                                    <span className="inline-flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                                        <CornerDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-neutral-400" />
                                         <span className="text-neutral-400">a</span>
                                         <Link
                                             href={`/perfil/${comment.reply_to.username}`}
@@ -141,7 +141,7 @@ export function ArticleCommentItem({
                                 )}
 
                                 <span className="text-neutral-300 dark:text-neutral-700">•</span>
-                                <span className="text-[11px] text-neutral-400" title={comment.created_at_iso}>
+                                <span className="text-[10px] sm:text-[11px] text-neutral-400" title={comment.created_at_iso}>
                                     {comment.created_at ?? 'hace un momento'}
                                 </span>
 
