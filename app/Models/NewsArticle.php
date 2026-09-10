@@ -61,6 +61,11 @@ class NewsArticle extends Model
         return $this->hasMany(Share::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);

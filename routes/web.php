@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ArticleInteractionController;
+use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
@@ -40,6 +41,9 @@ Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, '
     ->middleware('throttle:30,1')
     ->name('public.articles.share');
 
+Route::get('noticias/{slug}/comentarios', [CommentController::class, 'index'])
+    ->name('public.comments.index');
+
 Route::middleware(['auth'])->group(function () {
     Route::post('perfil/{username}/seguir', [FollowController::class, 'toggle'])
         ->middleware('throttle:30,1')
@@ -50,6 +54,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])
         ->middleware('throttle:45,1')
         ->name('public.articles.favorite');
+
+    Route::post('noticias/{slug}/comentarios', [CommentController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('public.comments.store');
+    Route::patch('comentarios/{comment}', [CommentController::class, 'update'])
+        ->middleware('throttle:20,1')
+        ->name('public.comments.update');
+    Route::delete('comentarios/{comment}', [CommentController::class, 'destroy'])
+        ->name('public.comments.destroy');
+    Route::post('comentarios/{comment}/me-gusta', [CommentController::class, 'toggleLike'])
+        ->middleware('throttle:60,1')
+        ->name('public.comments.like');
 
     Route::get('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'redirectToSelf'])
         ->name('public.profile.settings.self');

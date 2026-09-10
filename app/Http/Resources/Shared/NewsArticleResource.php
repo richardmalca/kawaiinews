@@ -44,6 +44,7 @@ class NewsArticleResource extends JsonResource
             'likers_count' => (int) ($this->likers_count ?? $this->likers()->count()),
             'favorites_count' => (int) ($this->favorites_count ?? $this->favoriters()->count()),
             'shares_count' => (int) ($this->shares_count ?? $this->shares()->count()),
+            'comments_count' => (int) ($this->comments_count ?? $this->comments()->count()),
             'has_liked' => $request->user() ? $request->user()->hasLiked($this->resource) : false,
             'has_favorited' => $request->user() ? $request->user()->hasFavorited($this->resource) : false,
         ];
