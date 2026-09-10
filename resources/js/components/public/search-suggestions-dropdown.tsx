@@ -1,6 +1,13 @@
 import { Link } from '@inertiajs/react';
-import { Newspaper, Sparkles, User as UserIcon } from 'lucide-react';
+import { Newspaper, Sparkles, Tag as TagIcon, User as UserIcon } from 'lucide-react';
 import { CategoryBadge } from '@/components/public/category-badge';
+
+export interface SearchTagSuggestion {
+    id: number;
+    name: string;
+    slug: string;
+    articles_count?: number;
+}
 
 export interface SearchUserSuggestion {
     id: number;
@@ -19,6 +26,7 @@ export interface SearchArticleSuggestion {
 }
 
 interface SearchSuggestionsDropdownProps {
+    tags?: SearchTagSuggestion[];
     users: SearchUserSuggestion[];
     articles: SearchArticleSuggestion[];
     isLoading: boolean;
@@ -27,15 +35,17 @@ interface SearchSuggestionsDropdownProps {
 }
 
 export function SearchSuggestionsDropdown({
+    tags = [],
     users,
     articles,
     isLoading,
     query,
     onSelect,
 }: SearchSuggestionsDropdownProps) {
+    const hasTags = tags.length > 0;
     const hasUsers = users.length > 0;
     const hasArticles = articles.length > 0;
-    const hasResults = hasUsers || hasArticles;
+    const hasResults = hasTags || hasUsers || hasArticles;
 
     return (
         <div className="absolute top-full left-0 mt-2 w-72 sm:w-96 overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/95 p-2 shadow-2xl backdrop-blur-xl z-50 dark:border-neutral-800/80 dark:bg-neutral-900/95">
@@ -49,6 +59,32 @@ export function SearchSuggestionsDropdown({
                 </div>
             ) : (
                 <div className="space-y-3">
+                    {hasTags && (
+                        <div>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                                <TagIcon className="h-3 w-3 text-rose-500" />
+                                <span>Etiquetas</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 p-1">
+                                {tags.map((tag) => (
+                                    <Link
+                                        key={tag.id}
+                                        href={`/tag/${tag.slug}`}
+                                        onClick={onSelect}
+                                        className="group inline-flex items-center gap-1.5 rounded-xl border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 text-xs font-medium text-neutral-800 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-600 dark:border-neutral-800/80 dark:bg-neutral-800/60 dark:text-neutral-200 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/20 dark:hover:text-rose-400"
+                                    >
+                                        <span>#{tag.name}</span>
+                                        {tag.articles_count !== undefined && tag.articles_count > 0 && (
+                                            <span className="text-[10px] text-neutral-400 group-hover:text-rose-500/80 dark:text-neutral-500">
+                                                {tag.articles_count}
+                                            </span>
+                                        )}
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {hasUsers && (
                         <div>
                             <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">

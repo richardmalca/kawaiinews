@@ -28,6 +28,7 @@ import { ThemeToggle } from './theme-toggle';
 import {
     SearchSuggestionsDropdown,
     type SearchArticleSuggestion,
+    type SearchTagSuggestion,
     type SearchUserSuggestion,
 } from './search-suggestions-dropdown';
 
@@ -50,6 +51,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [tagSuggestions, setTagSuggestions] = useState<SearchTagSuggestion[]>([]);
     const [userSuggestions, setUserSuggestions] = useState<SearchUserSuggestion[]>([]);
     const [articleSuggestions, setArticleSuggestions] = useState<SearchArticleSuggestion[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +86,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     useEffect(() => {
         const trimmed = searchQuery.trim();
         if (trimmed.length < 2) {
+            setTagSuggestions([]);
             setUserSuggestions([]);
             setArticleSuggestions([]);
             setIsDropdownOpen(false);
@@ -100,10 +103,12 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                 );
                 if (response.ok) {
                     const data = await response.json();
+                    setTagSuggestions(data.tags || []);
                     setUserSuggestions(data.users || []);
                     setArticleSuggestions(data.articles || []);
                 }
             } catch {
+                setTagSuggestions([]);
                 setUserSuggestions([]);
                 setArticleSuggestions([]);
             } finally {
@@ -124,6 +129,11 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
             if (trimmed.startsWith('@') && trimmed.length > 1) {
                 const username = trimmed.slice(1);
                 router.get(`/perfil/${username}`);
+                return;
+            }
+            if (trimmed.startsWith('#') && trimmed.length > 1) {
+                const tagSlug = trimmed.slice(1).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                router.get(`/tag/${tagSlug}`);
                 return;
             }
             router.get('/', { q: trimmed });
@@ -214,6 +224,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                             {isDropdownOpen && (
                                 <SearchSuggestionsDropdown
+                                    tags={tagSuggestions}
                                     users={userSuggestions}
                                     articles={articleSuggestions}
                                     isLoading={isLoadingSuggestions}
@@ -374,6 +385,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                         {isDropdownOpen && (
                             <SearchSuggestionsDropdown
+                                tags={tagSuggestions}
                                 users={userSuggestions}
                                 articles={articleSuggestions}
                                 isLoading={isLoadingSuggestions}

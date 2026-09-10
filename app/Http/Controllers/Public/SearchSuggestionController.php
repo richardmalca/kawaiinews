@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\NewsArticle;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,10 +18,24 @@ class SearchSuggestionController extends Controller
 
         if (mb_strlen($term) < 2) {
             return response()->json([
+                'tags' => [],
                 'users' => [],
                 'articles' => [],
             ]);
         }
+
+        $cleanTerm = ltrim(ltrim($term, '#'), '@');
+
+        $tags = Tag::query()
+            ->where(function ($query) use ($cleanTerm) {
+                $query->where('name', 'like', "%{$cleanTerm}%")
+                    ->orWhere('slug', 'like', "%{$cleanTerm}%");
+            })
+            ->whereHas('articles', fn ($q) => $q->where('status', 'published')->whereNotNull('published_at'))
+            ->withCount(['articles' => fn ($q) => $q->where('status', 'published')->whereNotNull('published_at')])
+            ->orderByDesc('articles_count')
+            ->take(5)
+            ->get(['id', 'name', 'slug']);
 
         $cleanUsername = ltrim($term, '@');
 
@@ -56,6 +71,7 @@ class SearchSuggestionController extends Controller
             ->get();
 
         return response()->json([
+            'tags' => $tags,
             'users' => $users,
             'articles' => $articles,
         ]);

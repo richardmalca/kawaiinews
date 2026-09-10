@@ -146,6 +146,11 @@ export type NewsArticle = {
         username: string | null;
     } | null;
     tags: string[];
+    tag_items?: {
+        id: number;
+        name: string;
+        slug: string;
+    }[];
 };
 
 export type NewsCategoryCatalog = Record<string, { label: string }>;

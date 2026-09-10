@@ -31,6 +31,11 @@ class NewsArticleResource extends JsonResource
             'canonical_url' => url("/noticias/{$this->slug}"),
             'audio_url' => $this->resolveMediaUrl($this->audio_url),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')->values()),
+            'tag_items' => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($t) => [
+                'id' => $t->id,
+                'name' => $t->name,
+                'slug' => $t->slug,
+            ])->values()),
             'author' => $this->whenLoaded('author', fn () => $this->author ? [
                 'id' => $this->author->id,
                 'name' => $this->author->name,

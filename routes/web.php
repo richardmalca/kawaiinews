@@ -19,12 +19,14 @@ use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
 use App\Http\Controllers\Public\SearchSuggestionController;
 use App\Http\Controllers\Public\SitemapController;
+use App\Http\Controllers\Public\TagController;
 use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('categoria/{category}', HomeController::class)->name('public.category');
 Route::get('tendencias', TrendingController::class)->name('public.trending');
+Route::get('tag/{tag:slug}', TagController::class)->name('public.tag');
 Route::get('buscar/sugerencias', SearchSuggestionController::class)
     ->middleware('throttle:60,1')
     ->name('public.search.suggestions');

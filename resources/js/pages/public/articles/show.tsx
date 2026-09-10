@@ -251,7 +251,7 @@ export default function ShowArticle({
                     </div>
 
                     <div className="pt-4">
-                        <ArticleTags tags={item.tags} />
+                        <ArticleTags tags={item.tags} tagItems={item.tag_items} />
                     </div>
 
                     <ArticleMetaFooter

@@ -3,6 +3,7 @@
 namespace App\Services\Public;
 
 use App\Models\NewsArticle;
+use App\Models\Tag;
 use App\Support\PublicNewsCacheVersion;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -96,6 +97,34 @@ class NewsService
 
                 return [
                     'ids' => (clone $query)->orderByDesc('views_count')->orderByDesc('published_at')->forPage($page, $perPage)->pluck('id')->all(),
+                    'total' => $query->count(),
+                ];
+            }
+        );
+
+        return (new ConcreteLengthAwarePaginator(
+            $this->hydrateOrdered($pageData['ids']),
+            $pageData['total'],
+            $perPage,
+            $page,
+            ['path' => Paginator::resolveCurrentPath()],
+        ))->withQueryString();
+    }
+
+    public function getPaginatedArticlesByTag(Tag $tag, int $perPage = 12): LengthAwarePaginator
+    {
+        $page = Paginator::resolveCurrentPage();
+
+        /** @var array{ids: array<int, int>, total: int} $pageData */
+        $pageData = $this->remember(
+            "tag-articles-ids:{$tag->id}:{$perPage}:{$page}",
+            function () use ($tag, $perPage, $page) {
+                $query = $tag->articles()
+                    ->where('status', 'published')
+                    ->whereNotNull('published_at');
+
+                return [
+                    'ids' => (clone $query)->orderByDesc('published_at')->forPage($page, $perPage)->pluck('news_articles.id')->all(),
                     'total' => $query->count(),
                 ];
             }

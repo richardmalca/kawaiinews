@@ -7,6 +7,13 @@ export type PublicCategorySummary = {
     count: number;
 };
 
+export type PublicTag = {
+    id: number;
+    name: string;
+    slug: string;
+    articles_count?: number;
+};
+
 export type PublicPaginationLink = {
     url: string | null;
     label: string;
