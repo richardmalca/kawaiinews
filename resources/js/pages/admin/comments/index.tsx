@@ -10,14 +10,8 @@ import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import ArticleFilter from '@/pages/admin/comments/components/article-filter';
 import CommentsTable from '@/pages/admin/comments/components/comments-table';
 import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import { index } from '@/routes/admin/comments';
@@ -132,34 +126,13 @@ export default function CommentsIndex({
                         />
                     </div>
 
-                    <Select
-                        value={filters.article_id?.toString() ?? 'all'}
-                        onValueChange={(value) =>
-                            applyFilters({
-                                article_id:
-                                    value === 'all' ? null : Number(value),
-                            })
+                    <ArticleFilter
+                        articles={articlesWithComments}
+                        value={filters.article_id}
+                        onChange={(articleId) =>
+                            applyFilters({ article_id: articleId })
                         }
-                    >
-                        <SelectTrigger className="w-full sm:w-56">
-                            <SelectValue placeholder="Todas las noticias" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">
-                                Todas las noticias
-                            </SelectItem>
-                            {articlesWithComments.map((article) => (
-                                <SelectItem
-                                    key={article.id}
-                                    value={article.id.toString()}
-                                >
-                                    <span className="line-clamp-1">
-                                        {article.title}
-                                    </span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    />
 
                     <div className="flex items-center gap-2">
                         <Switch
