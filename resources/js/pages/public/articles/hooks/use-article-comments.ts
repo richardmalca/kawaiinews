@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import { toast } from 'sonner';
 import type { PublicComment, PublicCommentsResponse } from '@/types';
 import { openChooseUsernameModal } from '@/lib/username-rules';
 
@@ -114,7 +115,8 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
             }
 
             setIsSubmitting(true);
-            try {
+
+            const postPromise = async () => {
                 const response = await fetch(`/noticias/${articleSlug}/comentarios`, {
                     method: 'POST',
                     headers: {
@@ -131,10 +133,21 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 });
 
                 if (!response.ok) {
-                    return false;
+                    throw new Error('Error al publicar comentario');
                 }
 
-                const created = (await response.json()) as PublicComment;
+                return (await response.json()) as PublicComment;
+            };
+
+            try {
+                const promise = postPromise();
+                toast.promise(promise, {
+                    loading: 'Publicando comentario...',
+                    success: '¡Comentario publicado!',
+                    error: 'No se pudo publicar el comentario',
+                });
+
+                const created = await promise;
 
                 if (replyToCommentId) {
                     setComments((prev) =>
@@ -177,7 +190,7 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 return false;
             }
 
-            try {
+            const updatePromise = async () => {
                 const response = await fetch(`/comentarios/${commentId}`, {
                     method: 'PATCH',
                     headers: {
@@ -193,10 +206,21 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 });
 
                 if (!response.ok) {
-                    return false;
+                    throw new Error('Error al actualizar');
                 }
 
-                const updated = (await response.json()) as PublicComment;
+                return (await response.json()) as PublicComment;
+            };
+
+            try {
+                const promise = updatePromise();
+                toast.promise(promise, {
+                    loading: 'Guardando cambios...',
+                    success: 'Comentario actualizado',
+                    error: 'No se pudo actualizar el comentario',
+                });
+
+                const updated = await promise;
 
                 setComments((prev) =>
                     prev.map((root) => {
@@ -241,7 +265,7 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 return false;
             }
 
-            try {
+            const deletePromise = async () => {
                 const response = await fetch(`/comentarios/${commentId}`, {
                     method: 'DELETE',
                     headers: {
@@ -252,8 +276,21 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
                 });
 
                 if (!response.ok) {
-                    return false;
+                    throw new Error('Error al eliminar');
                 }
+
+                return true;
+            };
+
+            try {
+                const promise = deletePromise();
+                toast.promise(promise, {
+                    loading: 'Eliminando comentario...',
+                    success: 'Comentario eliminado',
+                    error: 'No se pudo eliminar el comentario',
+                });
+
+                await promise;
 
                 if (isRoot) {
                     setComments((prev) => prev.filter((c) => c.id !== commentId));

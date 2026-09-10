@@ -11,6 +11,7 @@ import { HomePagination } from './components/home-pagination';
 import { NewsCard } from './components/news-card';
 import { NewsSectionHeader } from './components/news-section-header';
 import { TrendingSidebar } from './components/trending-sidebar';
+import { AdBanner } from '@/components/public/ad-banner';
 
 interface HomeProps {
     featured: { data: PublicArticle[] };
@@ -80,11 +81,23 @@ export default function Home({
                     />
 
                     {gridArticles.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            {gridArticles.map((article) => (
-                                <NewsCard key={article.id} article={article} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {gridArticles.slice(0, 4).map((article) => (
+                                    <NewsCard key={article.id} article={article} />
+                                ))}
+                            </div>
+
+                            <AdBanner format="inline" />
+
+                            {gridArticles.length > 4 && (
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {gridArticles.slice(4).map((article) => (
+                                        <NewsCard key={article.id} article={article} />
+                                    ))}
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <HomeEmptyState />
                     )}

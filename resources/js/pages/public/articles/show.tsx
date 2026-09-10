@@ -17,6 +17,7 @@ import {
     Plus,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ArticleActionsPanel } from './components/article-actions-panel';
 import { ArticleMobileDock } from './components/article-mobile-dock';
 import { ArticleContent } from './components/article-content';
@@ -27,6 +28,7 @@ import { ArticleCommentsSection } from './components/comments/article-comments-s
 import { RelatedArticles } from './components/related-articles';
 import { useArticleInteractions } from './hooks/use-article-interactions';
 import { LoginDialog } from '@/components/public/login-dialog';
+import { AdBanner } from '@/components/public/ad-banner';
 
 interface ShowArticleProps {
     article: { data: PublicArticle };
@@ -80,9 +82,11 @@ export default function ShowArticle({
             const formatted = formatArticleAsPlainText(item);
             await navigator.clipboard.writeText(formatted);
             setCopiedText(true);
+            toast.success('Texto de la noticia copiado al portapapeles');
             setTimeout(() => setCopiedText(false), 2000);
         } catch {
             setCopiedText(false);
+            toast.error('No se pudo copiar el texto');
         }
     };
 
@@ -260,6 +264,8 @@ export default function ShowArticle({
                         sharesCount={sharesCount}
                         onShare={recordShare}
                     />
+
+                    <AdBanner format="leaderboard" />
 
                     <ArticleCommentsSection
                         articleSlug={item.slug}

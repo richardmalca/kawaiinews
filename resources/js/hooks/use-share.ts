@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export interface UseShareOptions {
     title: string;
@@ -72,10 +73,12 @@ export function useShare({
         try {
             await navigator.clipboard.writeText(shareUrl);
             setCopied(true);
+            toast.success('¡Enlace copiado al portapapeles!');
             onShare?.('link');
             setTimeout(() => setCopied(false), 2000);
         } catch {
             setCopied(false);
+            toast.error('No se pudo copiar el enlace');
         }
     };
 

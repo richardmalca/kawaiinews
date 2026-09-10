@@ -17,6 +17,7 @@ use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\LegalController;
 use App\Http\Controllers\Public\NotificationController;
 use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
@@ -36,6 +37,11 @@ Route::get('buscar/sugerencias', SearchSuggestionController::class)
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
+
+Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('terminos', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('dmca', [LegalController::class, 'dmca'])->name('legal.dmca');
+Route::get('cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
 
 Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
 

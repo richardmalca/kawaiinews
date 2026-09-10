@@ -5,6 +5,9 @@ import { PublicFooter } from '@/components/public/footer';
 import { PublicNavbar } from '@/components/public/navbar';
 import { UsernameRequiredBanner } from '@/components/public/username-required-banner';
 import { ChooseUsernameDialog } from '@/components/public/choose-username-dialog';
+import { CookieConsentBanner } from '@/components/public/cookie-consent-banner';
+import { AppToaster } from '@/components/app-toaster';
+import { useFlashToast } from '@/hooks/use-flash-toast';
 
 interface PublicLayoutProps {
     children: ReactNode;
@@ -17,6 +20,8 @@ export default function PublicLayout({
     categories,
     progress,
 }: PublicLayoutProps) {
+    useFlashToast();
+
     return (
         <div className="flex min-h-screen flex-col bg-neutral-50 font-sans text-neutral-900 transition-colors duration-200 selection:bg-rose-500 selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
             <UsernameRequiredBanner />
@@ -27,6 +32,8 @@ export default function PublicLayout({
             <PublicFooter />
             <BackToTop />
             <ChooseUsernameDialog />
+            <CookieConsentBanner />
+            <AppToaster />
         </div>
     );
 }

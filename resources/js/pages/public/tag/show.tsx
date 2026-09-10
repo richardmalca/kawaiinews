@@ -6,6 +6,7 @@ import type { PublicCategorySummary, PublicPaginatedArticles, PublicTag } from '
 import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Check, Newspaper, Plus, Sparkles, Tag as TagIcon, Users } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { readCsrfToken } from '../profile/lib/profile-utils';
 
 interface TagShowProps {
@@ -55,15 +56,22 @@ export default function TagShow({
             if (!res.ok) {
                 setIsFollowing(prevFollowing);
                 setFollowersCount(prevCount);
+                toast.error('No se pudo actualizar el seguimiento');
                 return;
             }
 
             const data = (await res.json()) as { following: boolean; followers_count: number };
             setIsFollowing(data.following);
             setFollowersCount(data.followers_count);
+            if (data.following) {
+                toast.success(`Ahora sigues el tag #${tag.name}`);
+            } else {
+                toast(`Dejaste de seguir #${tag.name}`);
+            }
         } catch {
             setIsFollowing(prevFollowing);
             setFollowersCount(prevCount);
+            toast.error('Error de conexión');
         } finally {
             setIsSubmitting(false);
         }

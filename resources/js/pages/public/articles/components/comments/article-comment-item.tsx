@@ -12,6 +12,16 @@ import {
 } from 'lucide-react';
 import type { PublicComment } from '@/types';
 import { ArticleCommentForm } from './article-comment-form';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ArticleCommentItemProps {
     comment: PublicComment;
@@ -46,6 +56,8 @@ export function ArticleCommentItem({
     const [editSpoiler, setEditSpoiler] = useState(comment.is_spoiler);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const isThisReplying = replyingCommentId === comment.id;
 
@@ -64,10 +76,11 @@ export function ArticleCommentItem({
         }
     };
 
-    const handleDelete = async () => {
-        if (window.confirm('¿Seguro que deseas eliminar este comentario?')) {
-            await onDeleteComment(comment.id, !isReply);
-        }
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        await onDeleteComment(comment.id, !isReply);
+        setIsDeleting(false);
+        setIsDeleteDialogOpen(false);
     };
 
     const author = comment.user;
@@ -187,7 +200,7 @@ export function ArticleCommentItem({
                                                     type="button"
                                                     onClick={() => {
                                                         setShowMenu(false);
-                                                        handleDelete();
+                                                        setIsDeleteDialogOpen(true);
                                                     }}
                                                     className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                                 >
@@ -314,6 +327,38 @@ export function ArticleCommentItem({
                     )}
                 </div>
             </div>
+
+            {/* Custom AlertDialog for Delete Confirmation */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent className="rounded-3xl border-neutral-200/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/95">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-base font-bold text-neutral-900 dark:text-white">
+                            ¿Eliminar comentario?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Esta acción no se puede deshacer. Tu comentario y su contenido serán eliminados permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-3 gap-2">
+                        <AlertDialogCancel
+                            disabled={isDeleting}
+                            className="rounded-xl border-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-800"
+                        >
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                confirmDelete();
+                            }}
+                            disabled={isDeleting}
+                            className="rounded-xl bg-rose-600 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                        >
+                            {isDeleting ? 'Eliminando...' : 'Sí, eliminar'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

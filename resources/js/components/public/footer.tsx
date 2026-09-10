@@ -5,7 +5,7 @@ export function PublicFooter() {
     return (
         <footer className="border-t border-neutral-200 bg-white text-xs text-neutral-600 dark:border-neutral-900 dark:bg-neutral-950 dark:text-neutral-400">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
                     <div>
                         <div className="mb-3 flex items-center gap-2">
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-sm">
@@ -58,6 +58,46 @@ export function PublicFooter() {
                                     className="transition-colors hover:text-rose-500 dark:hover:text-rose-400"
                                 >
                                     Tecnología & Geek
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="mb-3 text-xs font-bold tracking-wider text-neutral-900 uppercase dark:text-neutral-200">
+                            Legal & Confianza
+                        </h4>
+                        <ul className="space-y-2 text-xs">
+                            <li>
+                                <Link
+                                    href="/terminos"
+                                    className="transition-colors hover:text-rose-500 dark:hover:text-rose-400"
+                                >
+                                    Términos de Servicio
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/privacidad"
+                                    className="transition-colors hover:text-rose-500 dark:hover:text-rose-400"
+                                >
+                                    Política de Privacidad
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/dmca"
+                                    className="transition-colors hover:text-rose-500 dark:hover:text-rose-400"
+                                >
+                                    Derechos de Autor (DMCA)
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/cookies"
+                                    className="transition-colors hover:text-rose-500 dark:hover:text-rose-400"
+                                >
+                                    Política de Cookies
                                 </Link>
                             </li>
                         </ul>

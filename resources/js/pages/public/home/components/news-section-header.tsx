@@ -2,6 +2,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import type { PublicCategorySummary } from '@/types';
 import { Check, Filter, Newspaper, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
 
 interface NewsSectionHeaderProps {
@@ -54,18 +55,27 @@ export function NewsSectionHeader({
                 credentials: 'same-origin',
             });
 
+            const categoryName = categories[selectedCategory]?.label ?? selectedCategory;
+
             if (!res.ok) {
                 setIsFollowing(prevFollowing);
                 setFollowersCount(prevCount);
+                toast.error('No se pudo actualizar el seguimiento');
                 return;
             }
 
             const data = (await res.json()) as { following: boolean; followers_count: number };
             setIsFollowing(data.following);
             setFollowersCount(data.followers_count);
+            if (data.following) {
+                toast.success(`Ahora sigues la categoría ${categoryName}`);
+            } else {
+                toast(`Dejaste de seguir la categoría ${categoryName}`);
+            }
         } catch {
             setIsFollowing(prevFollowing);
             setFollowersCount(prevCount);
+            toast.error('Error de conexión');
         } finally {
             setIsSubmitting(false);
         }

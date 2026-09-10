@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import { toast } from 'sonner';
 import type { PublicArticle } from '@/types';
 import { openChooseUsernameModal } from '@/lib/username-rules';
 
@@ -115,13 +116,20 @@ export function useArticleInteractions({ article, onRequireAuth }: UseArticleInt
 
             if (!response.ok) {
                 setFavorited(previousFavorited);
+                toast.error('No se pudo actualizar favoritos');
                 return;
             }
 
             const data = (await response.json()) as { favorited: boolean };
             setFavorited(data.favorited);
+            if (data.favorited) {
+                toast.success('Guardado en favoritos');
+            } else {
+                toast('Eliminado de favoritos');
+            }
         } catch {
             setFavorited(previousFavorited);
+            toast.error('Error de conexión');
         } finally {
             setIsFavoriting(false);
         }

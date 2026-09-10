@@ -1,6 +1,7 @@
 import { Bell, Check, CheckCheck, MessageSquare, UserPlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
 
 export interface AppNotificationItem {
@@ -98,9 +99,10 @@ export function NotificationBell() {
     };
 
     const handleMarkAllAsRead = async () => {
-        try {
-            setIsLoading(true);
-            await fetch('/notificaciones/leer-todas', {
+        setIsLoading(true);
+
+        const markPromise = async () => {
+            const res = await fetch('/notificaciones/leer-todas', {
                 method: 'POST',
                 headers: {
                     Accept: 'application/json',
@@ -110,12 +112,26 @@ export function NotificationBell() {
                 credentials: 'same-origin',
             });
 
+            if (!res.ok) {
+                throw new Error('Error al actualizar');
+            }
+
+            return res;
+        };
+
+        try {
+            await toast.promise(markPromise(), {
+                loading: 'Marcando todas como leídas...',
+                success: 'Todas las notificaciones marcadas como leídas',
+                error: 'No se pudieron actualizar las notificaciones',
+            });
+
             setUnreadCount(0);
             setNotifications((prev) =>
                 prev.map((n) => ({ ...n, read_at: new Date().toISOString() })),
             );
         } catch {
-            // Ignorar
+            // Error capturado por toast.promise
         } finally {
             setIsLoading(false);
         }
