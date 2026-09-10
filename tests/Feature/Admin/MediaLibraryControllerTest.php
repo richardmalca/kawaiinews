@@ -90,6 +90,21 @@ test('generating an image queues a job and locks the article (regression: could 
     Queue::assertPushed(GenerateMediaJob::class, 1);
 });
 
+test('the job releases the article lock when it finishes, on success or failure (regression: a stale worker left a lock stuck forever)', function () {
+    $article = NewsArticle::factory()->create();
+    $mediaLibraryService = app(MediaLibraryService::class);
+
+    $mediaLibraryService->lockGeneration($article->id, 'a-run-id');
+    expect($mediaLibraryService->activeGenerationRunId($article->id))->toBe('a-run-id');
+
+    // Sin proveedor de IA configurado, generateWithAi() tira una excepción
+    // antes de pegarle a ninguna API real — igual pasa por el finally del
+    // job, que es lo que queremos probar acá.
+    (new GenerateMediaJob('a-run-id', 'un prompt', $article->id))->handle($mediaLibraryService);
+
+    expect($mediaLibraryService->activeGenerationRunId($article->id))->toBeNull();
+});
+
 test('the generation status endpoint reports whether an article has an image being generated', function () {
     $article = NewsArticle::factory()->create();
 
