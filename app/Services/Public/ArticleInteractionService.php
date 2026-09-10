@@ -38,11 +38,21 @@ class ArticleInteractionService
      */
     public function recordShare(?User $user, NewsArticle $article, ?string $channel): array
     {
-        Share::create([
-            'user_id' => $user?->id,
-            'news_article_id' => $article->id,
-            'channel' => $channel,
-        ]);
+        if ($user) {
+            // Un usuario logueado solo tiene un share por noticia: si ya la
+            // había compartido, actualizamos el canal y la fecha en vez de
+            // duplicar la fila (eso es lo que inflaba su perfil).
+            Share::updateOrCreate(
+                ['user_id' => $user->id, 'news_article_id' => $article->id],
+                ['channel' => $channel, 'updated_at' => now(), 'created_at' => now()]
+            );
+        } else {
+            Share::create([
+                'user_id' => null,
+                'news_article_id' => $article->id,
+                'channel' => $channel,
+            ]);
+        }
 
         return [
             'shared' => true,

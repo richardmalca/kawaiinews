@@ -78,6 +78,34 @@ test('sharing an article works both logged in and as a guest', function () {
     expect(Share::where('news_article_id', $article->id)->where('user_id', $user->id)->exists())->toBeTrue();
 });
 
+test('sharing the same article twice does not duplicate it in the user profile (regression: shares were never unified)', function () {
+    $user = User::factory()->create(['show_shares_on_profile' => true]);
+    $article = NewsArticle::factory()->published()->create();
+
+    $this->actingAs($user)
+        ->post(route('public.articles.share', $article->slug), ['channel' => 'whatsapp'])
+        ->assertOk();
+
+    $this->actingAs($user)
+        ->post(route('public.articles.share', $article->slug), ['channel' => 'link'])
+        ->assertOk();
+
+    expect(Share::where('user_id', $user->id)->where('news_article_id', $article->id)->count())->toBe(1)
+        ->and(Share::where('user_id', $user->id)->where('news_article_id', $article->id)->first()->channel)->toBe('link');
+
+    $this->get(route('public.profile.show', $user->username))
+        ->assertInertia(fn ($page) => $page->has('profile.shares', 1));
+});
+
+test('two different guests sharing the same article are both counted (no user to unify by)', function () {
+    $article = NewsArticle::factory()->published()->create();
+
+    $this->post(route('public.articles.share', $article->slug), ['channel' => 'whatsapp'])->assertOk();
+    $this->post(route('public.articles.share', $article->slug), ['channel' => 'link'])->assertOk();
+
+    expect(Share::where('news_article_id', $article->id)->whereNull('user_id')->count())->toBe(2);
+});
+
 test('a public profile only shows shares when the user opted in', function () {
     $author = User::factory()->create(['show_shares_on_profile' => false]);
     $article = NewsArticle::factory()->published()->create();
