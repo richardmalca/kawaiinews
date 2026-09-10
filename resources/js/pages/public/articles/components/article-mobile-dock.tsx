@@ -66,12 +66,13 @@ export function ArticleMobileDock({
                 isAudioActive ? 'bottom-20' : 'bottom-4'
             }`}
         >
-            <div className="mx-auto flex max-w-md items-center justify-between gap-1 rounded-2xl border border-neutral-200/80 bg-white/90 px-2.5 py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
+            <div className="mx-auto flex max-w-md items-center justify-between gap-1 sm:gap-1.5 rounded-2xl border border-neutral-200/80 bg-white/90 px-2 py-1.5 sm:px-3 sm:py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
                 <button
                     type="button"
                     onClick={handleToggleAudio}
                     aria-label="Escuchar artículo"
-                    className={`flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs font-bold transition-all active:scale-95 ${
+                    title="Escuchar artículo"
+                    className={`flex h-8 w-8 sm:h-9 sm:w-auto items-center justify-center gap-1 rounded-xl px-1.5 sm:px-2 py-1.5 text-xs font-bold transition-all active:scale-95 ${
                         audioState.isPlaying
                             ? 'bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400 animate-pulse'
                             : audioState.isPaused
@@ -88,14 +89,15 @@ export function ArticleMobileDock({
                     )}
                 </button>
 
-                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
 
                 <button
                     type="button"
                     onClick={onToggleLike}
                     disabled={isLiking}
                     aria-label="Me gusta"
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all active:scale-95 ${
+                    title="Me gusta"
+                    className={`flex h-8 items-center gap-1 rounded-xl px-2 py-1 text-xs font-bold transition-all active:scale-95 ${
                         liked
                             ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
                             : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
@@ -104,17 +106,20 @@ export function ArticleMobileDock({
                     <Heart
                         className={`h-4 w-4 ${liked ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400' : 'text-neutral-500 dark:text-neutral-400'}`}
                     />
-                    <span>{likersCount > 0 ? likersCount : 'Gusta'}</span>
+                    {likersCount > 0 && (
+                        <span className="text-[11px]">{likersCount}</span>
+                    )}
                 </button>
 
-                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
 
                 <button
                     type="button"
                     onClick={onToggleFavorite}
                     disabled={isFavoriting}
                     aria-label="Guardar"
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all active:scale-95 ${
+                    title="Guardar"
+                    className={`flex h-8 items-center gap-1 rounded-xl px-2 py-1 text-xs font-bold transition-all active:scale-95 ${
                         favorited
                             ? 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
                             : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
@@ -123,23 +128,25 @@ export function ArticleMobileDock({
                     <Bookmark
                         className={`h-4 w-4 ${favorited ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400' : 'text-neutral-500 dark:text-neutral-400'}`}
                     />
-                    <span>{favorited ? 'Guardado' : 'Guardar'}</span>
                 </button>
 
-                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
 
                 <a
                     href="#comentarios"
                     aria-label="Comentarios"
-                    className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold text-neutral-700 transition-all hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    title="Comentarios"
+                    className="flex h-8 items-center gap-1 rounded-xl px-2 py-1 text-xs font-bold text-neutral-700 transition-all hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
                     <MessageCircle className="h-4 w-4 text-violet-500 dark:text-violet-400" />
-                    <span>{commentsCount > 0 ? commentsCount : 'Opinar'}</span>
+                    {commentsCount > 0 && (
+                        <span className="text-[11px]">{commentsCount}</span>
+                    )}
                 </a>
 
-                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
 
-                <div className="flex items-center gap-0.5 rounded-xl bg-neutral-100/80 p-0.5 dark:bg-neutral-800/80">
+                <div className="flex items-center gap-0.5 rounded-lg bg-neutral-100/80 p-0.5 dark:bg-neutral-800/80">
                     <button
                         type="button"
                         onClick={() =>
@@ -148,11 +155,11 @@ export function ArticleMobileDock({
                             )
                         }
                         disabled={fontSize === 'sm'}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg text-neutral-600 hover:bg-white disabled:opacity-30 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-600 hover:bg-white disabled:opacity-30 dark:text-neutral-300 dark:hover:bg-neutral-700"
                     >
                         <Minus className="h-3 w-3" />
                     </button>
-                    <span className="px-1 text-[10px] font-bold uppercase text-neutral-700 dark:text-neutral-300">
+                    <span className="px-0.5 text-[9px] font-bold uppercase text-neutral-700 dark:text-neutral-300">
                         {fontSize}
                     </span>
                     <button
@@ -163,19 +170,19 @@ export function ArticleMobileDock({
                             )
                         }
                         disabled={fontSize === 'lg'}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg text-neutral-600 hover:bg-white disabled:opacity-30 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-600 hover:bg-white disabled:opacity-30 dark:text-neutral-300 dark:hover:bg-neutral-700"
                     >
                         <Plus className="h-3 w-3" />
                     </button>
                 </div>
 
-                <div className="h-5 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
 
                 <button
                     type="button"
                     onClick={onCopyPlainText}
                     title="Copiar texto"
-                    className="flex h-7 w-7 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
                     {copiedText ? (
                         <Check className="h-3.5 w-3.5 text-emerald-500" />
