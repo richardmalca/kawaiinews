@@ -71,13 +71,61 @@ Los comentarios reutilizan el trait `Likeable` de `overtrue/laravel-like`
 
 ## Endpoints
 
-| Método | Ruta | Auth | Notas |
+| Método | Ruta | Auth | Body / Notas |
 |---|---|---|---|
-| GET | `/noticias/{slug}/comentarios` | No | Pagina comentarios raíz, con `replies` ya cargadas y aplanadas |
-| POST | `/noticias/{slug}/comentarios` | Sí | `body`, `reply_to_comment_id` opcional |
-| PATCH | `/comentarios/{comment}` | Sí (autor) | `body` |
+| GET | `/noticias/{slug}/comentarios` | No | Query `page`. Pagina comentarios raíz (15 por página), con `replies` ya cargadas y aplanadas |
+| POST | `/noticias/{slug}/comentarios` | Sí | `body` (string, 1-2000), `reply_to_comment_id` (opcional, int), `is_spoiler` (opcional, bool) |
+| PATCH | `/comentarios/{comment}` | Sí (autor) | `body`, `is_spoiler` (opcional) |
 | DELETE | `/comentarios/{comment}` | Sí (autor o staff) | — |
-| POST | `/comentarios/{comment}/me-gusta` | Sí | Toggle like |
+| POST | `/comentarios/{comment}/me-gusta` | Sí | Toggle like, sin body |
+
+Throttle: `store`/`update` 20/min, `me-gusta` 60/min (mismo patrón que
+`ArticleInteractionController`).
+
+## Forma de la respuesta (`CommentResource`)
+
+```jsonc
+// GET /noticias/{slug}/comentarios
+{
+  "data": [
+    {
+      "id": 12,
+      "body": "Qué buen capítulo",
+      "is_spoiler": false,
+      "created_at": "hace 2 horas",
+      "created_at_iso": "2026-09-10T18:03:00+00:00",
+      "is_edited": false,
+      "user": { "id": 3, "name": "Richard", "username": "richard", "avatar": "https://..." },
+      "reply_to": null,           // null en la raíz
+      "likes_count": 4,
+      "has_liked": true,          // según el usuario autenticado que pide la página
+      "can_update": true,         // policy resuelta server-side, no hace falta replicarla en el front
+      "can_delete": true,
+      "replies": [
+        {
+          "id": 15,
+          "body": "Muere el prota en el capítulo final",
+          "is_spoiler": true,
+          "reply_to": null,       // responde directo a la raíz (id 12)
+          "...": "..."
+        },
+        {
+          "id": 18,
+          "body": "Respuesta 3 a Respuesta 2",
+          "is_spoiler": false,
+          "reply_to": { "comment_id": 15, "user_id": 3, "name": "Richard", "username": "richard" },
+          "...": "..."
+        }
+      ]
+    }
+  ],
+  "meta": { "current_page": 1, "last_page": 3, "total": 42 }
+}
+```
+
+`reply_to` es lo único que el front necesita leer para renderizar
+"Respondiendo a @username" sobre una respuesta — no hace falta calcular
+nada de jerarquía en el cliente, ya viene aplanado y resuelto.
 
 ## Pendiente (frontend público)
 
@@ -87,8 +135,18 @@ de respuestas aplanado, botones de like/editar/borrar según
 `can_update`/`can_delete` del `CommentResource`) la construye la otra
 sesión de IA a cargo del frontend público.
 
+## Sobre usar un paquete en vez de esto
+
+Se evaluó reemplazar esto por un paquete de comentarios de terceros
+(`beyondcode/laravel-comments`, `actuallymab/laravel-comment`, etc.).
+Ninguno resolvía el aplanado a 2 niveles de fábrica (todos hacen anidado
+recursivo real, que no era lo pedido) ni soporta `is_spoiler` — así que
+se hubiera terminado reescribiendo la mitad de su comportamiento igual,
+sumando una dependencia externa sin necesidad real. Se decidió mantener
+la implementación propia.
+
 ## Tests
 
-`tests/Feature/Public/CommentsTest.php` — 11 tests, incluyendo el caso
+`tests/Feature/Public/CommentsTest.php` — 14 tests, incluyendo el caso
 exacto reportado (responder a una respuesta se aplana bajo la raíz pero
-etiqueta a quién se respondió).
+etiqueta a quién se respondió) y los 3 casos de `is_spoiler`.
