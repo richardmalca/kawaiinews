@@ -25,6 +25,33 @@ test('articles index paginates results', function () {
     );
 });
 
+test('articles index exposes kpis: total, published, drafts, without image and this week', function () {
+    NewsArticle::factory()->published()->create(['featured_image' => 'https://example.test/a.png', 'created_at' => now()]);
+    NewsArticle::factory()->published()->create(['featured_image' => null, 'created_at' => now()->subDays(20)]);
+    NewsArticle::factory()->create(['status' => 'draft', 'featured_image' => null, 'created_at' => now()]);
+
+    $response = $this->get(route('admin.news-articles.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('kpis.total', 3)
+        ->where('kpis.published', 2)
+        ->where('kpis.drafts', 1)
+        ->where('kpis.without_image', 2)
+        ->where('kpis.this_week', 2)
+    );
+});
+
+test('kpis are scoped to the active category filter', function () {
+    NewsArticle::factory()->count(2)->create(['category' => 'anime']);
+    NewsArticle::factory()->count(5)->create(['category' => 'geek']);
+
+    $response = $this->get(route('admin.news-articles.index', ['category' => 'anime']));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page->where('kpis.total', 2));
+});
+
 test('articles index can be filtered by category', function () {
     NewsArticle::factory()->count(3)->create(['category' => 'anime']);
     NewsArticle::factory()->count(4)->create(['category' => 'geek']);

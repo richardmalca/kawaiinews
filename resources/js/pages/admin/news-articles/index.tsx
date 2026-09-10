@@ -1,5 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import {
+    FileText,
+    ImageOff,
+    Newspaper,
+    Plus,
+    SquareCheckBig,
+} from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,9 +15,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import NewsArticlesTable from '@/pages/admin/news-articles/components/news-articles-table';
 import { create, index } from '@/routes/admin/news-articles';
-import type { NewsArticle } from '@/types/admin';
+import type { AdminNewsArticlesKpis, NewsArticle } from '@/types/admin';
 
 type Meta = {
     current_page: number;
@@ -24,6 +31,7 @@ type Props = {
     meta: Meta;
     category: string | null;
     categories: string[];
+    kpis: AdminNewsArticlesKpis;
 };
 
 export default function NewsArticlesIndex({
@@ -31,6 +39,7 @@ export default function NewsArticlesIndex({
     meta,
     category,
     categories,
+    kpis,
 }: Props) {
     const handleCategoryChange = (value: string) => {
         router.get(index().url, value === 'all' ? {} : { category: value }, {
@@ -56,18 +65,18 @@ export default function NewsArticlesIndex({
         <>
             <Head title="Noticias" />
 
-            <div className="space-y-8 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-6 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Noticias"
                         description="Administra las noticias creadas a partir de la bandeja de revisión"
                     />
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Select
                             value={category ?? 'all'}
                             onValueChange={handleCategoryChange}
                         >
-                            <SelectTrigger className="w-48">
+                            <SelectTrigger className="w-full sm:w-48">
                                 <SelectValue placeholder="Todas las categorías" />
                             </SelectTrigger>
                             <SelectContent>
@@ -94,12 +103,37 @@ export default function NewsArticlesIndex({
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <NewsArticlesTable articles={articles} />
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <KpiCard
+                        icon={Newspaper}
+                        label="Noticias totales"
+                        value={kpis.total}
+                        sublabel={
+                            category ? `Categoría: ${category}` : undefined
+                        }
+                    />
+                    <KpiCard
+                        icon={SquareCheckBig}
+                        label="Publicadas"
+                        value={kpis.published}
+                        sublabel={`${kpis.this_week} esta semana`}
+                    />
+                    <KpiCard
+                        icon={FileText}
+                        label="Borradores"
+                        value={kpis.drafts}
+                    />
+                    <KpiCard
+                        icon={ImageOff}
+                        label="Sin imagen destacada"
+                        value={kpis.without_image}
+                    />
                 </div>
 
+                <NewsArticlesTable articles={articles} />
+
                 {meta.last_page > 1 && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
                         <p className="text-muted-foreground text-sm">
                             Página {meta.current_page} de {meta.last_page} (
                             {meta.total} en total)

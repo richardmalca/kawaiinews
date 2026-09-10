@@ -313,4 +313,25 @@ class NewsArticleService
             'tags' => $tags,
         ];
     }
+
+    /**
+     * @param  string|null  $category  si viene, los KPIs quedan acotados al filtro activo en la lista (no siempre al total general)
+     * @return array{total: int, published: int, drafts: int, without_image: int, this_week: int}
+     */
+    public function adminKpis(?string $category = null): array
+    {
+        $weekAgo = now()->subDays(6)->toDateString();
+
+        $base = NewsArticle::query()->when($category, fn ($query) => $query->where('category', $category));
+
+        return [
+            'total' => (clone $base)->count(),
+            'published' => (clone $base)->where('status', 'published')->count(),
+            'drafts' => (clone $base)->where('status', 'draft')->count(),
+            'without_image' => (clone $base)
+                ->where(fn ($query) => $query->whereNull('featured_image')->orWhere('featured_image', ''))
+                ->count(),
+            'this_week' => (clone $base)->whereDate('created_at', '>=', $weekAgo)->count(),
+        ];
+    }
 }

@@ -37,6 +37,7 @@ class NewsArticleController extends Controller
             ],
             'category' => $category,
             'categories' => array_keys(config('news_sources_catalog')),
+            'kpis' => $this->newsArticleService->adminKpis($category),
         ]);
     }
 

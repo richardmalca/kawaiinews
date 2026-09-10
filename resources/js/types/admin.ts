@@ -278,3 +278,11 @@ export type AdminCommentsKpis = {
     spoilers: number;
     replies: number;
 };
+
+export type AdminNewsArticlesKpis = {
+    total: number;
+    published: number;
+    drafts: number;
+    without_image: number;
+    this_week: number;
+};
