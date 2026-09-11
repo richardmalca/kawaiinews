@@ -16,6 +16,11 @@ class CommentResource extends JsonResource
             'id' => $this->id,
             'body' => $this->body,
             'is_spoiler' => (bool) $this->is_spoiler,
+            // Para que el propio autor sepa que lo que acaba de mandar
+            // quedó en revisión (filtro automático) en vez de creer que no
+            // se guardó — nadie más ve este campo importar, un comentario
+            // pending ni siquiera aparece en el listado público.
+            'is_pending' => $this->status === 'pending',
             'created_at' => $this->created_at?->diffForHumans(),
             'created_at_iso' => $this->created_at?->toIso8601String(),
             'is_edited' => $this->updated_at && $this->created_at && ! $this->updated_at->eq($this->created_at),

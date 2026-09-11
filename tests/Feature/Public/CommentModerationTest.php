@@ -11,7 +11,8 @@ test('a comment with a banned word is held for review instead of published', fun
 
     $this->actingAs($user)
         ->postJson(route('public.comments.store', $article->slug), ['body' => 'sos un pelotudo'])
-        ->assertCreated();
+        ->assertCreated()
+        ->assertJsonPath('is_pending', true);
 
     $comment = Comment::where('user_id', $user->id)->firstOrFail();
     expect($comment->status)->toBe('pending');
@@ -77,7 +78,8 @@ test('a normal comment is published immediately, not held', function () {
 
     $this->actingAs($user)
         ->postJson(route('public.comments.store', $article->slug), ['body' => 'Qué buen capítulo, la verdad'])
-        ->assertCreated();
+        ->assertCreated()
+        ->assertJsonPath('is_pending', false);
 
     expect(Comment::where('user_id', $user->id)->firstOrFail()->status)->toBe('visible');
 });
