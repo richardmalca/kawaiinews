@@ -201,16 +201,44 @@ reglas tienen falsos positivos) pero con `status = 'pending'` en vez de
 Tests: `tests/Feature/Public/CommentModerationTest.php` (9 tests — cada
 regla del filtro, que un admin puede aprobar, filtro y KPI del panel).
 
-## Capa 2 — IA, opcional y todavía no implementada
+## Capa 2 — IA (implementada, opcional)
 
-Solo para los que ya cayeron en `pending` por la Capa 1 (volumen bajo),
-no para todos los comentarios. Un job en cola le pasaría el texto a un
-modelo barato/rápido (ej. `claude-haiku-4-5`) pidiendo clasificación
-simple: `OK` / `SPAM` / `TOXICO`. Si el modelo dice `OK`, pasaría a
-`visible` solo. Si dice `SPAM`/`TOXICO`, quedaría `pending` para que un
-humano decida (la IA no borraría nada sola). No se implementó porque la
-Capa 1 sola ya cubre el caso típico de spam de bots — se agrega después
-si hace falta más precisión.
+Solo corre sobre los que ya cayeron en `pending` por la Capa 1 (volumen
+bajo) — nunca sobre todos los comentarios, así no hay costo de IA por
+cada comentario normal del sitio.
+
+Es **opcional de verdad**: usa el mismo mecanismo de "activar un
+proveedor" que ya existe para imágenes y audio en `/admin/ai-providers`
+(`AiProvider.is_active_for_moderation`, capability `moderation` en
+`AiProviderService::activate()`). Si el admin no activó ningún proveedor
+para moderación, `ModerateCommentWithAiJob` no hace nada — el comentario
+se queda `pending` esperando revisión manual, exactamente como si la
+Capa 2 no existiera.
+
+Cuando SÍ hay un proveedor activado (`CommentModerationService::reviewWithAi()`):
+1. Le pasa el texto del comentario, pidiendo una única respuesta:
+   `OK` o `BLOQUEAR: <motivo corto>`.
+2. Si dice `OK` → el comentario pasa a `visible` solo.
+3. Si dice `BLOQUEAR` (o responde algo que no matchea ningún formato
+   esperado — por las dudas no se aprueba solo) → sigue `pending`, pero
+   ahora con `comments.moderation_reason` explicando por qué (ej.
+   "insulto grave hacia otro usuario"). Un admin igual puede aprobarlo a
+   mano si no está de acuerdo con la IA — la IA nunca borra nada sola.
+4. Si la llamada a la IA falla (rate limit, key mala, etc.), el
+   comentario se queda `pending` sin romper nada.
+
+`comments.moderation_reason` se muestra como tooltip/texto en el badge
+"Pendiente" del panel — reemplaza "Pendiente" genérico por "IA: insulto
+grave hacia otro usuario" cuando la IA ya lo revisó.
+
+Prompt pensado para ser permisivo con sarcasmo/enojo normal de fan/lenguaje
+informal — solo bloquea insultos graves, discurso de odio, acoso, spam o
+contenido sexual explícito.
+
+Tests: `tests/Feature/Public/CommentAiModerationTest.php` (8 tests —
+dispatch del job solo cuando corresponde, aprobación, bloqueo con motivo,
+respuesta inesperada de la IA, no pisa una aprobación manual ya hecha,
+activar el proveedor desde el panel).
 
 ### No incluido en este plan
 

@@ -30,12 +30,13 @@ export type AiProvider = {
     is_active: boolean;
     is_active_for_images: boolean;
     is_active_for_audio: boolean;
+    is_active_for_moderation: boolean;
     supports_image: boolean;
     supports_audio: boolean;
     last_verified_at: string | null;
 };
 
-export type AiProviderCapability = 'text' | 'image' | 'audio';
+export type AiProviderCapability = 'text' | 'image' | 'audio' | 'moderation';
 
 export type AiProviderSummary = {
     total: number;
@@ -51,6 +52,10 @@ export type AiProviderSummary = {
         provider: string;
     } | null;
     active_audio: {
+        label: string;
+        provider: string;
+    } | null;
+    active_moderation: {
         label: string;
         provider: string;
     } | null;
@@ -252,6 +257,7 @@ export type AdminComment = {
     is_spoiler: boolean;
     is_reply: boolean;
     status: 'visible' | 'pending';
+    moderation_reason: string | null;
     created_at: string;
     created_at_formatted: string;
     likes_count: number;

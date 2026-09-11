@@ -72,10 +72,20 @@ function CommentRow({ comment }: { comment: AdminComment }) {
                 )}
                 <div className="flex items-start gap-1.5">
                     {isPending && (
-                        <Badge variant="outline" className="shrink-0 gap-1 border-amber-500 text-amber-600 dark:text-amber-400">
+                        <Badge
+                            variant="outline"
+                            className="shrink-0 gap-1 border-amber-500 text-amber-600 dark:text-amber-400"
+                            title={
+                                comment.moderation_reason
+                                    ? `IA: ${comment.moderation_reason}`
+                                    : 'Retenido por el filtro automático, todavía sin revisar por IA'
+                            }
+                        >
                             <ShieldAlert className="h-3 w-3" />
                             <span className="hidden sm:inline">
-                                Pendiente
+                                {comment.moderation_reason
+                                    ? `IA: ${comment.moderation_reason}`
+                                    : 'Pendiente'}
                             </span>
                         </Badge>
                     )}

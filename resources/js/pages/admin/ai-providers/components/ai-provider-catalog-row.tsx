@@ -4,6 +4,7 @@ import {
     CheckCircle2,
     Image,
     MessageSquareText,
+    ShieldCheck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ const CAPABILITY_LABELS: Record<AiProviderCapability, string> = {
     text: 'Texto',
     image: 'Imágenes',
     audio: 'Audio',
+    moderation: 'Moderación',
 };
 
 const CAPABILITY_ICONS: Record<AiProviderCapability, typeof MessageSquareText> =
@@ -34,6 +36,7 @@ const CAPABILITY_ICONS: Record<AiProviderCapability, typeof MessageSquareText> =
         text: MessageSquareText,
         image: Image,
         audio: AudioLines,
+        moderation: ShieldCheck,
     };
 
 export default function AiProviderCatalogRow({ entry, provider }: Props) {
@@ -56,6 +59,15 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
             key: 'audio',
             supported: entry.supports_audio,
             active: provider?.is_active_for_audio ?? false,
+        },
+        {
+            // La moderación de comentarios con IA reutiliza un modelo de
+            // texto (clasifica "OK"/"BLOQUEAR"), no es una capacidad nueva
+            // del catálogo — por eso depende de supports_text igual que
+            // "text".
+            key: 'moderation',
+            supported: entry.supports_text,
+            active: provider?.is_active_for_moderation ?? false,
         },
     ];
 

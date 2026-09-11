@@ -27,11 +27,12 @@ use Overtrue\LaravelLike\Traits\Likeable;
  * @property string $body
  * @property bool $is_spoiler
  * @property string $status
+ * @property string|null $moderation_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['news_article_id', 'user_id', 'parent_id', 'reply_to_comment_id', 'body', 'is_spoiler', 'status'])]
+#[Fillable(['news_article_id', 'user_id', 'parent_id', 'reply_to_comment_id', 'body', 'is_spoiler', 'status', 'moderation_reason'])]
 class Comment extends Model
 {
     /** @use HasFactory<CommentFactory> */

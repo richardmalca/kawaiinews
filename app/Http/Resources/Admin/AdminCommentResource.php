@@ -18,6 +18,7 @@ class AdminCommentResource extends JsonResource
             'is_spoiler' => (bool) $this->is_spoiler,
             'is_reply' => $this->parent_id !== null,
             'status' => $this->status,
+            'moderation_reason' => $this->moderation_reason,
             'created_at' => $this->created_at?->diffForHumans(),
             'created_at_formatted' => $this->created_at?->translatedFormat('d M, Y H:i'),
             'likes_count' => (int) ($this->likers_count ?? $this->likers()->count()),

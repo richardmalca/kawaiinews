@@ -31,6 +31,10 @@ class AiProviderService
         'text' => 'is_active',
         'image' => 'is_active_for_images',
         'audio' => 'is_active_for_audio',
+        // La moderación con IA (Capa 2 de comentarios) es una clasificación
+        // de texto, así que reutiliza el mismo requisito que "text"
+        // (supportsText()) — no es una capacidad nueva del catálogo.
+        'moderation' => 'is_active_for_moderation',
     ];
 
     public function activate(AiProvider $aiProvider, string $capability = 'text'): void
@@ -46,6 +50,10 @@ class AiProviderService
         }
 
         if ($capability === 'audio' && ! $aiProvider->supportsAudio()) {
+            return;
+        }
+
+        if ($capability === 'moderation' && ! $aiProvider->supportsText()) {
             return;
         }
 
@@ -130,6 +138,7 @@ class AiProviderService
      *     active: array{label: string, provider: string, model: string}|null,
      *     active_image: array{label: string, provider: string}|null,
      *     active_audio: array{label: string, provider: string}|null,
+     *     active_moderation: array{label: string, provider: string}|null,
      * }
      */
     public function summary(): array
@@ -138,6 +147,7 @@ class AiProviderService
         $active = $providers->firstWhere('is_active', true);
         $activeImage = $providers->firstWhere('is_active_for_images', true);
         $activeAudio = $providers->firstWhere('is_active_for_audio', true);
+        $activeModeration = $providers->firstWhere('is_active_for_moderation', true);
 
         return [
             'total' => $providers->count(),
@@ -155,6 +165,10 @@ class AiProviderService
             'active_audio' => $activeAudio ? [
                 'label' => $activeAudio->label,
                 'provider' => $activeAudio->provider,
+            ] : null,
+            'active_moderation' => $activeModeration ? [
+                'label' => $activeModeration->label,
+                'provider' => $activeModeration->provider,
             ] : null,
         ];
     }

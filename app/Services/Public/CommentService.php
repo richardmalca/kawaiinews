@@ -2,6 +2,7 @@
 
 namespace App\Services\Public;
 
+use App\Jobs\ModerateCommentWithAiJob;
 use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
@@ -73,6 +74,14 @@ class CommentService
             'is_spoiler' => $isSpoiler,
             'status' => $status,
         ]);
+
+        if ($status === 'pending') {
+            // Capa 2: opcional, solo corre si el admin activó un
+            // proveedor para moderación en /admin/ai-providers. Si no
+            // activó ninguno, el job no hace nada y el comentario espera
+            // revisión manual, como si esto no existiera.
+            ModerateCommentWithAiJob::dispatch($comment);
+        }
 
         if (isset($target) && $target->user_id !== $user->id) {
             $targetAuthor = $target->user;
