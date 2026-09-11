@@ -5,6 +5,7 @@ import {
     MessagesSquare,
     Reply,
     Search,
+    ShieldAlert,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
@@ -27,6 +28,7 @@ type Filters = {
     search: string | null;
     article_id: number | null;
     spoilers_only: boolean;
+    pending_only: boolean;
 };
 
 type Props = {
@@ -70,6 +72,7 @@ export default function CommentsIndex({
                 ...(merged.search ? { search: merged.search } : {}),
                 ...(merged.article_id ? { article_id: merged.article_id } : {}),
                 ...(merged.spoilers_only ? { spoilers_only: 1 } : {}),
+                ...(merged.pending_only ? { pending_only: 1 } : {}),
                 ...(next.page ? { page: next.page } : {}),
             },
             {
@@ -90,7 +93,7 @@ export default function CommentsIndex({
                     description="Modera los comentarios de los usuarios en las noticias"
                 />
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                     <KpiCard
                         icon={MessagesSquare}
                         label="Comentarios totales"
@@ -101,6 +104,12 @@ export default function CommentsIndex({
                         label="Hoy"
                         value={kpis.today}
                         sublabel={`${kpis.this_week} esta semana`}
+                    />
+                    <KpiCard
+                        icon={ShieldAlert}
+                        label="Pendientes de revisión"
+                        value={kpis.pending}
+                        sublabel="Filtro automático los retuvo"
                     />
                     <KpiCard
                         icon={Reply}
@@ -147,6 +156,22 @@ export default function CommentsIndex({
                             className="text-sm select-none"
                         >
                             Solo spoilers
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            id="pending-only"
+                            checked={filters.pending_only}
+                            onCheckedChange={(checked) =>
+                                applyFilters({ pending_only: checked })
+                            }
+                        />
+                        <label
+                            htmlFor="pending-only"
+                            className="text-sm select-none"
+                        >
+                            Solo pendientes
                         </label>
                     </div>
                 </div>

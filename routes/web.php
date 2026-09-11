@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('news-articles.toggle-status');
 
             Route::get('comments', [AdminCommentController::class, 'index'])->name('comments.index');
+            Route::post('comments/{comment}/approve', [AdminCommentController::class, 'approve'])->name('comments.approve');
             Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])->name('comments.destroy');
 
             Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');

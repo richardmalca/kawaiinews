@@ -11,19 +11,25 @@ use Illuminate\Validation\ValidationException;
 
 class CommentService
 {
+    public function __construct(private readonly CommentModerationService $moderationService) {}
+
     /**
      * Comentarios raíz de una noticia, paginados, con sus respuestas
-     * (aplanadas a un solo nivel) ya cargadas.
+     * (aplanadas a un solo nivel) ya cargadas. Solo los `visible` — los
+     * `pending` (agarrados por el filtro automático) no se muestran al
+     * público hasta que un admin los apruebe.
      */
     public function listForArticle(NewsArticle $article, int $perPage = 15): LengthAwarePaginator
     {
         return Comment::query()
             ->where('news_article_id', $article->id)
+            ->where('status', 'visible')
             ->whereNull('parent_id')
             ->withCount('likers')
             ->with([
                 'user:id,name,username,avatar,custom_avatar,avatar_source',
                 'replies' => fn ($query) => $query
+                    ->where('status', 'visible')
                     ->withCount('likers')
                     ->with([
                         'user:id,name,username,avatar,custom_avatar,avatar_source',
@@ -56,6 +62,8 @@ class CommentService
             }
         }
 
+        $status = $this->moderationService->shouldHoldForReview($user, $body) ? 'pending' : 'visible';
+
         $comment = Comment::create([
             'news_article_id' => $article->id,
             'user_id' => $user->id,
@@ -63,6 +71,7 @@ class CommentService
             'reply_to_comment_id' => $replyToId,
             'body' => $body,
             'is_spoiler' => $isSpoiler,
+            'status' => $status,
         ]);
 
         if (isset($target) && $target->user_id !== $user->id) {
@@ -122,9 +131,10 @@ class CommentService
      * Listado plano (raíces y respuestas mezcladas, más nuevo primero) para
      * el panel de moderación — a diferencia de listForArticle(), acá no
      * interesa el aplanado visual del hilo, sino poder buscar/filtrar
-     * cualquier comentario de cualquier noticia de un vistazo.
+     * cualquier comentario de cualquier noticia de un vistazo. Muestra
+     * `visible` y `pending` por igual salvo que se pida `pending_only`.
      *
-     * @param  array{search?: ?string, article_id?: ?int, spoilers_only?: bool}  $filters
+     * @param  array{search?: ?string, article_id?: ?int, spoilers_only?: bool, pending_only?: bool}  $filters
      */
     public function adminList(array $filters, int $perPage = 20): LengthAwarePaginator
     {
@@ -147,13 +157,28 @@ class CommentService
                 $filters['spoilers_only'] ?? false,
                 fn ($query) => $query->where('is_spoiler', true)
             )
+            ->when(
+                $filters['pending_only'] ?? false,
+                fn ($query) => $query->where('status', 'pending')
+            )
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
     }
 
     /**
-     * @return array{total: int, today: int, this_week: int, spoilers: int, replies: int}
+     * El comentario ya venía `pending` (el filtro automático lo agarró) y
+     * un admin decide que en realidad está bien — pasa a `visible`.
+     */
+    public function approve(Comment $comment): Comment
+    {
+        $comment->update(['status' => 'visible']);
+
+        return $comment;
+    }
+
+    /**
+     * @return array{total: int, today: int, this_week: int, spoilers: int, replies: int, pending: int}
      */
     public function adminKpis(): array
     {
@@ -166,6 +191,7 @@ class CommentService
             'this_week' => Comment::whereDate('created_at', '>=', $weekAgo)->count(),
             'spoilers' => Comment::where('is_spoiler', true)->count(),
             'replies' => Comment::whereNotNull('parent_id')->count(),
+            'pending' => Comment::where('status', 'pending')->count(),
         ];
     }
 }

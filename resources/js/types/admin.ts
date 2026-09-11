@@ -251,6 +251,7 @@ export type AdminComment = {
     body: string;
     is_spoiler: boolean;
     is_reply: boolean;
+    status: 'visible' | 'pending';
     created_at: string;
     created_at_formatted: string;
     likes_count: number;
@@ -279,6 +280,7 @@ export type AdminCommentsKpis = {
     this_week: number;
     spoilers: number;
     replies: number;
+    pending: number;
 };
 
 export type AdminNewsArticlesKpis = {

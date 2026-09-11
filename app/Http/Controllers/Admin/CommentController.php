@@ -23,6 +23,7 @@ class CommentController extends Controller
             'search' => $request->string('search')->value() ?: null,
             'article_id' => $request->integer('article_id') ?: null,
             'spoilers_only' => $request->boolean('spoilers_only'),
+            'pending_only' => $request->boolean('pending_only'),
         ];
 
         $comments = $this->commentService->adminList($filters);
@@ -38,6 +39,7 @@ class CommentController extends Controller
                 'search' => $filters['search'],
                 'article_id' => $filters['article_id'],
                 'spoilers_only' => $filters['spoilers_only'],
+                'pending_only' => $filters['pending_only'],
             ],
             'kpis' => $this->commentService->adminKpis(),
             // Para el filtro por noticia: solo las que ya tienen comentarios.
@@ -48,6 +50,16 @@ class CommentController extends Controller
                 ->map(fn (NewsArticle $article) => ['id' => $article->id, 'title' => $article->title])
                 ->values(),
         ]);
+    }
+
+    public function approve(Comment $comment): RedirectResponse
+    {
+        // Sin Gate::authorize acá: esta ruta ya está detrás de
+        // role:superadmin en routes/web.php, igual que el resto de este
+        // controller.
+        $this->commentService->approve($comment);
+
+        return back();
     }
 
     public function destroy(Comment $comment): RedirectResponse
