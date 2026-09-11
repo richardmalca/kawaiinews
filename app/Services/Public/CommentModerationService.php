@@ -4,7 +4,9 @@ namespace App\Services\Public;
 
 use App\Models\AiProvider;
 use App\Models\Comment;
+use App\Models\LearnedBannedPhrase;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -62,7 +64,7 @@ class CommentModerationService
                 ->withPrompt($this->buildPrompt($comment->body))
                 ->asText();
 
-            [$verdict, $reason] = $this->parseVerdict($response->text);
+            [$verdict, $reason, $phrase] = $this->parseVerdict($response->text);
 
             if ($verdict === 'OK') {
                 $comment->update(['status' => 'visible', 'moderation_reason' => null]);
@@ -73,6 +75,10 @@ class CommentModerationService
                 $comment->update([
                     'moderation_reason' => $reason ?: 'Vulnera las normas de la comunidad',
                 ]);
+
+                if ($phrase) {
+                    $this->learnBannedPhrase($phrase, $comment);
+                }
             }
         } catch (Throwable) {
             // Si la IA falla (rate limit, key mala, etc.), el comentario
@@ -90,28 +96,53 @@ class CommentModerationService
             Devolvé EXACTAMENTE una línea, sin texto adicional:
             OK
             o
-            BLOQUEAR: (motivo de máximo 6 palabras en español, ej. "insulto grave hacia otro usuario")
+            BLOQUEAR: (motivo de máximo 6 palabras en español, ej. "insulto grave hacia otro usuario") | FRASE: (la palabra o frase puntual del comentario que causa el problema, textual, en minúsculas, sin el resto de la oración — ej. "hijo de puta". Si el problema es el tono general y no una palabra puntual, dejá FRASE vacío)
             PROMPT;
     }
 
     /**
-     * @return array{0: 'OK'|'BLOQUEAR', 1: ?string}
+     * @return array{0: 'OK'|'BLOQUEAR', 1: ?string, 2: ?string}
      */
     private function parseVerdict(string $text): array
     {
         $text = trim($text);
 
-        if (preg_match('/^BLOQUEAR\s*:\s*(.+)/i', $text, $match)) {
-            return ['BLOQUEAR', trim($match[1])];
+        if (preg_match('/^BLOQUEAR\s*:\s*([^|]+?)\s*(?:\|\s*FRASE\s*:\s*(.*))?$/i', $text, $match)) {
+            $reason = trim($match[1]);
+            $phrase = isset($match[2]) ? trim($match[2], " \t\n\r\0\x0B\"'.") : null;
+
+            return ['BLOQUEAR', $reason, $phrase ?: null];
         }
 
         if (Str::startsWith(Str::upper($text), 'OK')) {
-            return ['OK', null];
+            return ['OK', null, null];
         }
 
         // Respuesta que no matchea ningún formato esperado: por las dudas,
-        // no se aprueba solo — queda pending para que lo vea un humano.
-        return ['BLOQUEAR', 'Vulnera las normas de la comunidad'];
+        // no se aprueba solo — queda pending para que lo vea un humano. Sin
+        // frase puntual porque no sabemos cuál sería.
+        return ['BLOQUEAR', 'Vulnera las normas de la comunidad', null];
+    }
+
+    /**
+     * La Capa 2 (IA) identificó esta frase puntual como el motivo del
+     * bloqueo — se guarda para que la próxima vez la agarre la Capa 1
+     * (gratis) sin volver a consultar a la IA por lo mismo.
+     */
+    private function learnBannedPhrase(string $phrase, Comment $comment): void
+    {
+        $normalized = $this->normalize($phrase);
+
+        if ($normalized === '' || mb_strlen($normalized) > 100) {
+            return;
+        }
+
+        LearnedBannedPhrase::firstOrCreate(
+            ['phrase' => $normalized],
+            ['comment_id' => $comment->id],
+        );
+
+        Cache::forget('comment_moderation:learned_phrases');
     }
 
     private function hasBannedWords(string $body): bool
@@ -124,7 +155,29 @@ class CommentModerationService
             }
         }
 
+        foreach ($this->learnedPhrases() as $phrase) {
+            if (str_contains($normalized, $phrase)) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function learnedPhrases(): array
+    {
+        // Cache corta: esta lista puede crecer con el tiempo y se consulta
+        // en cada comentario — no hace falta pegarle a la base siempre,
+        // pero tampoco conviene cachearla por mucho tiempo (una frase
+        // recién aprendida por la IA debería aplicar pronto).
+        return Cache::remember(
+            'comment_moderation:learned_phrases',
+            now()->addMinutes(5),
+            fn () => LearnedBannedPhrase::pluck('phrase')->all(),
+        );
     }
 
     private function hasTooManyLinks(string $body): bool

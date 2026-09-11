@@ -217,7 +217,7 @@ Capa 2 no existiera.
 
 Cuando SÍ hay un proveedor activado (`CommentModerationService::reviewWithAi()`):
 1. Le pasa el texto del comentario, pidiendo una única respuesta:
-   `OK` o `BLOQUEAR: <motivo corto>`.
+   `OK` o `BLOQUEAR: <motivo corto> | FRASE: <palabra/frase puntual>`.
 2. Si dice `OK` → el comentario pasa a `visible` solo.
 3. Si dice `BLOQUEAR` (o responde algo que no matchea ningún formato
    esperado — por las dudas no se aprueba solo) → sigue `pending`, pero
@@ -235,8 +235,28 @@ Prompt pensado para ser permisivo con sarcasmo/enojo normal de fan/lenguaje
 informal — solo bloquea insultos graves, discurso de odio, acoso, spam o
 contenido sexual explícito.
 
-Tests: `tests/Feature/Public/CommentAiModerationTest.php` (8 tests —
+### Aprendizaje: la Capa 2 le "enseña" a la Capa 1
+
+Cuando la IA bloquea un comentario por una palabra/frase puntual (no un
+tono general), esa frase queda en `learned_banned_phrases`
+(`CommentModerationService::learnBannedPhrase()`) y `hasBannedWords()`
+(Capa 1) también la revisa a partir de ahí — cacheada 5 minutos
+(`comment_moderation:learned_phrases`). Motivo: la lista fija de
+`config('comment_moderation.banned_words')` nunca va a cubrir todo (ver
+el caso real "gilaso" que ninguna de las dos capas agarró la primera
+vez); en vez de mantener esa lista a mano para siempre, la Capa 2 la va
+completando sola con lo que realmente aparece — y la próxima vez que
+alguien use la misma palabra, ya no hace falta gastar en IA para
+detectarla, la agarra la Capa 1 gratis.
+
+Si la IA bloquea por tono general sin señalar una palabra puntual
+(`FRASE` vacío en su respuesta), no se aprende nada — evita ensuciar la
+lista con frases completas o cosas demasiado genéricas.
+
+Tests: `tests/Feature/Public/CommentAiModerationTest.php` (10 tests —
 dispatch del job solo cuando corresponde, aprobación, bloqueo con motivo,
+aprendizaje de frase puntual y que efectivamente la agarre la Capa 1
+después, que un bloqueo por tono general no aprende nada,
 respuesta inesperada de la IA, no pisa una aprobación manual ya hecha,
 activar el proveedor desde el panel).
 

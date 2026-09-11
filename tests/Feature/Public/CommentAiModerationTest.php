@@ -3,6 +3,7 @@
 use App\Jobs\ModerateCommentWithAiJob;
 use App\Models\AiProvider;
 use App\Models\Comment;
+use App\Models\LearnedBannedPhrase;
 use App\Models\NewsArticle;
 use App\Models\User;
 use App\Services\Public\CommentModerationService;
@@ -83,6 +84,53 @@ test('the ai blocks the comment and tags it as violating community guidelines', 
     $fresh = $comment->fresh();
     expect($fresh->status)->toBe('pending')
         ->and($fresh->moderation_reason)->toBe('insulto grave hacia otro usuario');
+});
+
+test('when the ai points out the offending phrase, it gets learned for layer 1', function () {
+    AiProvider::factory()->create([
+        'provider' => 'anthropic',
+        'is_active_for_moderation' => true,
+        'api_key' => 'test-key',
+    ]);
+
+    $comment = Comment::factory()->create(['status' => 'pending', 'body' => 'sos un gilaso, te odio']);
+
+    Prism::fake([
+        TextResponseFake::make()->withText('BLOQUEAR: insulto hacia otro usuario | FRASE: gilaso'),
+    ]);
+
+    app(CommentModerationService::class)->reviewWithAi($comment);
+
+    expect(LearnedBannedPhrase::where('phrase', 'gilaso')->exists())->toBeTrue();
+
+    // Ahora un comentario nuevo con esa misma palabra lo agarra la Capa 1
+    // solo, sin tener que volver a consultar a la IA.
+    $user = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+
+    $this->actingAs($user)
+        ->postJson(route('public.comments.store', $article->slug), ['body' => 'GILASO de mierda'])
+        ->assertCreated();
+
+    expect(Comment::where('user_id', $user->id)->firstOrFail()->status)->toBe('pending');
+});
+
+test('the ai blocking for a general tone (no specific phrase) does not learn anything', function () {
+    AiProvider::factory()->create([
+        'provider' => 'anthropic',
+        'is_active_for_moderation' => true,
+        'api_key' => 'test-key',
+    ]);
+
+    $comment = Comment::factory()->create(['status' => 'pending']);
+
+    Prism::fake([
+        TextResponseFake::make()->withText('BLOQUEAR: tono agresivo general'),
+    ]);
+
+    app(CommentModerationService::class)->reviewWithAi($comment);
+
+    expect(LearnedBannedPhrase::count())->toBe(0);
 });
 
 test('an unexpected ai response does not auto-approve, stays pending with a generic reason', function () {
