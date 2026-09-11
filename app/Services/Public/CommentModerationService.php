@@ -89,7 +89,17 @@ class CommentModerationService
     private function buildPrompt(string $body): string
     {
         return <<<PROMPT
-            Sos un moderador de comentarios de un sitio de noticias de anime/manga/gaming en español. Evaluá si este comentario de un usuario vulnera las normas básicas de la comunidad (insultos graves, discurso de odio, acoso, spam, contenido sexual explícito). Sé permisivo con el sarcasmo, el enojo normal de un fan, o el lenguaje informal — eso NO vulnera las normas.
+            Sos un moderador de comentarios de un sitio de noticias de anime/manga/gaming en español. Evaluá si este comentario vulnera las normas básicas de la comunidad.
+
+            BLOQUEAR si el comentario:
+            - Insulta, agrede o le desea mal a OTRO USUARIO o autor puntual (ej. "callate", "te odio", "sos un [insulto]"), aunque sea corto o informal. La hostilidad dirigida a una persona concreta no es "lenguaje informal", es acoso.
+            - Tiene discurso de odio, insultos graves, contenido sexual explícito, o es spam.
+
+            NO bloquear (dejar pasar) si el comentario:
+            - Es crítica, sarcasmo o bronca sobre la NOTICIA, un personaje, un estudio o una obra (ej. "este anime es una porquería", "qué final más flojo, la cagaron").
+            - Es lenguaje informal o grosero pero sin apuntar a agredir a una persona específica.
+
+            La diferencia clave es el destinatario: contra la obra/noticia = se permite; contra una persona (otro usuario, el autor de la nota) = se bloquea.
 
             Comentario: "{$body}"
 
