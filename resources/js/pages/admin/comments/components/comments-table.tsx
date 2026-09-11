@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Ban,
     Check,
     CornerDownRight,
     EyeOff,
@@ -31,9 +32,18 @@ function CommentRow({ comment }: { comment: AdminComment }) {
     const getInitials = useInitials();
     const { approveComment, processing } = useApproveComment();
     const isPending = comment.status === 'pending';
+    const isBlocked = comment.status === 'blocked';
 
     return (
-        <TableRow className={isPending ? 'bg-amber-500/5' : undefined}>
+        <TableRow
+            className={
+                isBlocked
+                    ? 'bg-destructive/5'
+                    : isPending
+                      ? 'bg-amber-500/5'
+                      : undefined
+            }
+        >
             <TableCell>
                 <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8 shrink-0">
@@ -71,21 +81,27 @@ function CommentRow({ comment }: { comment: AdminComment }) {
                     </p>
                 )}
                 <div className="flex items-start gap-1.5">
+                    {isBlocked && (
+                        <Badge
+                            variant="destructive"
+                            className="shrink-0 gap-1"
+                            title={`Bloqueado por IA: ${comment.moderation_reason}. Se muestra al público como "Comentario no permitido".`}
+                        >
+                            <Ban className="h-3 w-3" />
+                            <span className="hidden sm:inline">
+                                Bloqueado: {comment.moderation_reason}
+                            </span>
+                        </Badge>
+                    )}
                     {isPending && (
                         <Badge
                             variant="outline"
                             className="shrink-0 gap-1 border-amber-500 text-amber-600 dark:text-amber-400"
-                            title={
-                                comment.moderation_reason
-                                    ? `IA: ${comment.moderation_reason}`
-                                    : 'Retenido por el filtro automático, todavía sin revisar por IA'
-                            }
+                            title="Retenido por el filtro automático, todavía sin revisar por IA — no se muestra al público hasta que se resuelva"
                         >
                             <ShieldAlert className="h-3 w-3" />
                             <span className="hidden sm:inline">
-                                {comment.moderation_reason
-                                    ? `IA: ${comment.moderation_reason}`
-                                    : 'Pendiente'}
+                                Pendiente
                             </span>
                         </Badge>
                     )}
@@ -145,14 +161,14 @@ function CommentRow({ comment }: { comment: AdminComment }) {
             </TableCell>
             <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                    {isPending && (
+                    {(isPending || isBlocked) && (
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             disabled={processing}
                             onClick={() => approveComment(comment.id)}
-                            title="Aprobar: hacerlo visible al público"
+                            title="Aprobar: hacerlo visible al público (anula el veredicto si estaba bloqueado)"
                         >
                             {processing ? <Spinner /> : <Check className="h-4 w-4" />}
                             <span className="hidden sm:inline">Aprobar</span>

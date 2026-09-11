@@ -21,6 +21,13 @@ class CommentResource extends JsonResource
             // se guardó — nadie más ve este campo importar, un comentario
             // pending ni siquiera aparece en el listado público.
             'is_pending' => $this->status === 'pending',
+            // `blocked` = la IA (o un admin) ya confirmó que vulnera las
+            // normas. A diferencia de `pending`, SÍ aparece en el hilo
+            // (listForArticle lo incluye) — el `body` real igual viaja
+            // acá, la UI decide taparlo con un placeholder tipo
+            // "Comentario no permitido" y dejar que quien quiera lo
+            // despliegue igual, mismo patrón que `is_spoiler`.
+            'is_blocked' => $this->status === 'blocked',
             'created_at' => $this->created_at?->diffForHumans(),
             'created_at_iso' => $this->created_at?->toIso8601String(),
             'is_edited' => $this->updated_at && $this->created_at && ! $this->updated_at->eq($this->created_at),

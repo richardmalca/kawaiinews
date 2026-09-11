@@ -256,7 +256,7 @@ export type AdminComment = {
     body: string;
     is_spoiler: boolean;
     is_reply: boolean;
-    status: 'visible' | 'pending';
+    status: 'visible' | 'pending' | 'blocked';
     moderation_reason: string | null;
     created_at: string;
     created_at_formatted: string;
@@ -287,6 +287,7 @@ export type AdminCommentsKpis = {
     spoilers: number;
     replies: number;
     pending: number;
+    blocked: number;
 };
 
 export type AdminNewsArticlesKpis = {

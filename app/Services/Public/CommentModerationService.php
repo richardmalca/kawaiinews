@@ -69,10 +69,15 @@ class CommentModerationService
             if ($verdict === 'OK') {
                 $comment->update(['status' => 'visible', 'moderation_reason' => null]);
             } else {
-                // Sigue pending — la IA solo confirma y explica el motivo,
-                // no cambia que un admin todavía pueda aprobarlo a mano si
-                // no está de acuerdo.
+                // "blocked" (no "pending"): la IA ya confirmó que vulnera
+                // las normas, a diferencia de "pending" que solo significa
+                // "sin revisar todavía". Un blocked SÍ aparece en el hilo
+                // público, pero como placeholder "Comentario no permitido"
+                // en vez del texto — igual que el spoiler, quien quiera
+                // puede verlo igual (ver CommentResource). Un admin
+                // todavía puede aprobarlo a mano si no está de acuerdo.
                 $comment->update([
+                    'status' => 'blocked',
                     'moderation_reason' => $reason ?: 'Vulnera las normas de la comunidad',
                 ]);
 

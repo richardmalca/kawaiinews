@@ -24,6 +24,7 @@ class CommentController extends Controller
             'article_id' => $request->integer('article_id') ?: null,
             'spoilers_only' => $request->boolean('spoilers_only'),
             'pending_only' => $request->boolean('pending_only'),
+            'blocked_only' => $request->boolean('blocked_only'),
         ];
 
         $comments = $this->commentService->adminList($filters);
@@ -40,6 +41,7 @@ class CommentController extends Controller
                 'article_id' => $filters['article_id'],
                 'spoilers_only' => $filters['spoilers_only'],
                 'pending_only' => $filters['pending_only'],
+                'blocked_only' => $filters['blocked_only'],
             ],
             'kpis' => $this->commentService->adminKpis(),
             // Para el filtro por noticia: solo las que ya tienen comentarios.

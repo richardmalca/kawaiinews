@@ -66,14 +66,15 @@ test('the ai approves the comment and it becomes visible', function () {
         ->moderation_reason->toBeNull();
 });
 
-test('the ai blocks the comment and tags it as violating community guidelines', function () {
+test('the ai blocks the comment, tags it as violating community guidelines, and it shows up as a placeholder in the thread', function () {
     AiProvider::factory()->create([
         'provider' => 'anthropic',
         'is_active_for_moderation' => true,
         'api_key' => 'test-key',
     ]);
 
-    $comment = Comment::factory()->create(['status' => 'pending', 'body' => 'algo bien grave']);
+    $article = NewsArticle::factory()->published()->create();
+    $comment = Comment::factory()->create(['news_article_id' => $article->id, 'status' => 'pending', 'body' => 'algo bien grave']);
 
     Prism::fake([
         TextResponseFake::make()->withText('BLOQUEAR: insulto grave hacia otro usuario'),
@@ -82,8 +83,17 @@ test('the ai blocks the comment and tags it as violating community guidelines', 
     app(CommentModerationService::class)->reviewWithAi($comment);
 
     $fresh = $comment->fresh();
-    expect($fresh->status)->toBe('pending')
+    expect($fresh->status)->toBe('blocked')
         ->and($fresh->moderation_reason)->toBe('insulto grave hacia otro usuario');
+
+    // A diferencia de "pending", un "blocked" SÍ aparece en el hilo
+    // público (como placeholder, ver CommentResource::is_blocked) — no
+    // desaparece del todo.
+    $this->getJson(route('public.comments.index', $article->slug))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.is_blocked', true)
+        ->assertJsonPath('data.0.body', 'algo bien grave');
 });
 
 test('when the ai points out the offending phrase, it gets learned for layer 1', function () {
@@ -133,7 +143,7 @@ test('the ai blocking for a general tone (no specific phrase) does not learn any
     expect(LearnedBannedPhrase::count())->toBe(0);
 });
 
-test('an unexpected ai response does not auto-approve, stays pending with a generic reason', function () {
+test('an unexpected ai response does not auto-approve, gets blocked with a generic reason', function () {
     AiProvider::factory()->create([
         'provider' => 'anthropic',
         'is_active_for_moderation' => true,
@@ -147,7 +157,7 @@ test('an unexpected ai response does not auto-approve, stays pending with a gene
     app(CommentModerationService::class)->reviewWithAi($comment);
 
     expect($comment->fresh())
-        ->status->toBe('pending')
+        ->status->toBe('blocked')
         ->moderation_reason->toBe('Vulnera las normas de la comunidad');
 });
 

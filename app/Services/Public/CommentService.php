@@ -16,21 +16,27 @@ class CommentService
 
     /**
      * Comentarios raíz de una noticia, paginados, con sus respuestas
-     * (aplanadas a un solo nivel) ya cargadas. Solo los `visible` — los
-     * `pending` (agarrados por el filtro automático) no se muestran al
-     * público hasta que un admin los apruebe.
+     * (aplanadas a un solo nivel) ya cargadas.
+     *
+     * `visible` y `blocked` se muestran los dos — `blocked` (la IA ya
+     * confirmó que vulnera las normas) aparece en el hilo como
+     * placeholder "Comentario no permitido" en vez del texto real
+     * (ver CommentResource), igual que un spoiler: no desaparece del
+     * hilo, solo se oculta el contenido por defecto. `pending` (todavía
+     * sin confirmar, recién retenido por el filtro automático) sí queda
+     * completamente afuera hasta que se resuelva.
      */
     public function listForArticle(NewsArticle $article, int $perPage = 15): LengthAwarePaginator
     {
         return Comment::query()
             ->where('news_article_id', $article->id)
-            ->where('status', 'visible')
+            ->whereIn('status', ['visible', 'blocked'])
             ->whereNull('parent_id')
             ->withCount('likers')
             ->with([
                 'user:id,name,username,avatar,custom_avatar,avatar_source',
                 'replies' => fn ($query) => $query
-                    ->where('status', 'visible')
+                    ->whereIn('status', ['visible', 'blocked'])
                     ->withCount('likers')
                     ->with([
                         'user:id,name,username,avatar,custom_avatar,avatar_source',
@@ -143,7 +149,7 @@ class CommentService
      * cualquier comentario de cualquier noticia de un vistazo. Muestra
      * `visible` y `pending` por igual salvo que se pida `pending_only`.
      *
-     * @param  array{search?: ?string, article_id?: ?int, spoilers_only?: bool, pending_only?: bool}  $filters
+     * @param  array{search?: ?string, article_id?: ?int, spoilers_only?: bool, pending_only?: bool, blocked_only?: bool}  $filters
      */
     public function adminList(array $filters, int $perPage = 20): LengthAwarePaginator
     {
@@ -170,24 +176,29 @@ class CommentService
                 $filters['pending_only'] ?? false,
                 fn ($query) => $query->where('status', 'pending')
             )
+            ->when(
+                $filters['blocked_only'] ?? false,
+                fn ($query) => $query->where('status', 'blocked')
+            )
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
     }
 
     /**
-     * El comentario ya venía `pending` (el filtro automático lo agarró) y
-     * un admin decide que en realidad está bien — pasa a `visible`.
+     * El comentario venía `pending` o `blocked` y un admin decide que en
+     * realidad está bien — pasa a `visible` de nuevo (anula el veredicto
+     * de la IA si no está de acuerdo).
      */
     public function approve(Comment $comment): Comment
     {
-        $comment->update(['status' => 'visible']);
+        $comment->update(['status' => 'visible', 'moderation_reason' => null]);
 
         return $comment;
     }
 
     /**
-     * @return array{total: int, today: int, this_week: int, spoilers: int, replies: int, pending: int}
+     * @return array{total: int, today: int, this_week: int, spoilers: int, replies: int, pending: int, blocked: int}
      */
     public function adminKpis(): array
     {
@@ -201,6 +212,7 @@ class CommentService
             'spoilers' => Comment::where('is_spoiler', true)->count(),
             'replies' => Comment::whereNotNull('parent_id')->count(),
             'pending' => Comment::where('status', 'pending')->count(),
+            'blocked' => Comment::where('status', 'blocked')->count(),
         ];
     }
 }

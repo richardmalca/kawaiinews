@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import {
+    Ban,
     EyeOff,
     MessageSquare,
     MessagesSquare,
@@ -29,6 +30,7 @@ type Filters = {
     article_id: number | null;
     spoilers_only: boolean;
     pending_only: boolean;
+    blocked_only: boolean;
 };
 
 type Props = {
@@ -73,6 +75,7 @@ export default function CommentsIndex({
                 ...(merged.article_id ? { article_id: merged.article_id } : {}),
                 ...(merged.spoilers_only ? { spoilers_only: 1 } : {}),
                 ...(merged.pending_only ? { pending_only: 1 } : {}),
+                ...(merged.blocked_only ? { blocked_only: 1 } : {}),
                 ...(next.page ? { page: next.page } : {}),
             },
             {
@@ -93,7 +96,7 @@ export default function CommentsIndex({
                     description="Modera los comentarios de los usuarios en las noticias"
                 />
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
                     <KpiCard
                         icon={MessagesSquare}
                         label="Comentarios totales"
@@ -110,6 +113,12 @@ export default function CommentsIndex({
                         label="Pendientes de revisión"
                         value={kpis.pending}
                         sublabel="Filtro automático los retuvo"
+                    />
+                    <KpiCard
+                        icon={Ban}
+                        label="Bloqueados por IA"
+                        value={kpis.blocked}
+                        sublabel="Vulneran las normas"
                     />
                     <KpiCard
                         icon={Reply}
@@ -172,6 +181,22 @@ export default function CommentsIndex({
                             className="text-sm select-none"
                         >
                             Solo pendientes
+                        </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            id="blocked-only"
+                            checked={filters.blocked_only}
+                            onCheckedChange={(checked) =>
+                                applyFilters({ blocked_only: checked })
+                            }
+                        />
+                        <label
+                            htmlFor="blocked-only"
+                            className="text-sm select-none"
+                        >
+                            Solo bloqueados
                         </label>
                     </div>
                 </div>

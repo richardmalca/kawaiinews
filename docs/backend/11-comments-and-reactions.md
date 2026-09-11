@@ -218,22 +218,36 @@ Capa 2 no existiera.
 Cuando SÍ hay un proveedor activado (`CommentModerationService::reviewWithAi()`):
 1. Le pasa el texto del comentario, pidiendo una única respuesta:
    `OK` o `BLOQUEAR: <motivo corto> | FRASE: <palabra/frase puntual>`.
-2. Si dice `OK` → el comentario pasa a `visible` solo.
+2. Si dice `OK` → el comentario pasa a `visible`.
 3. Si dice `BLOQUEAR` (o responde algo que no matchea ningún formato
-   esperado — por las dudas no se aprueba solo) → sigue `pending`, pero
-   ahora con `comments.moderation_reason` explicando por qué (ej.
-   "insulto grave hacia otro usuario"). Un admin igual puede aprobarlo a
-   mano si no está de acuerdo con la IA — la IA nunca borra nada sola.
+   esperado — por las dudas no se aprueba solo) → pasa a **`blocked`**
+   (no `pending`: `pending` significa "sin confirmar todavía", `blocked`
+   significa "la IA ya confirmó que vulnera las normas"), con
+   `comments.moderation_reason` explicando por qué (ej. "insulto grave
+   hacia otro usuario"). Un admin igual puede aprobarlo a mano si no
+   está de acuerdo con la IA (`CommentService::approve()`) — la IA
+   nunca borra nada sola.
 4. Si la llamada a la IA falla (rate limit, key mala, etc.), el
    comentario se queda `pending` sin romper nada.
 
-`comments.moderation_reason` se muestra como tooltip/texto en el badge
-"Pendiente" del panel — reemplaza "Pendiente" genérico por "IA: insulto
-grave hacia otro usuario" cuando la IA ya lo revisó.
+**Un `blocked` SÍ aparece en el hilo público** (a diferencia de
+`pending`, que queda completamente afuera) — `listForArticle()` incluye
+`visible` y `blocked` por igual. El frontend público lo recibe con
+`is_blocked: true` y el `body` real completo, y lo muestra como
+placeholder "Comentario no permitido" con opción de revelarlo igual,
+mismo mecanismo que `is_spoiler` (plan completo en
+`FRONTEND-HANDOFF-COMMENT-MODERATION.md`, en la raíz del repo).
+`comments.moderation_reason` nunca se expone en la API pública, solo en
+el panel admin (tooltip/texto del badge "Bloqueado").
 
-Prompt pensado para ser permisivo con sarcasmo/enojo normal de fan/lenguaje
-informal — solo bloquea insultos graves, discurso de odio, acoso, spam o
-contenido sexual explícito.
+Prompt: el criterio real es el **destinatario** del comentario, no el
+tono. Bronca/sarcasmo contra la noticia, un personaje, un estudio o una
+obra se permite tal cual (ej. "este anime es una porquería"). Hostilidad
+dirigida a otro usuario o al autor de la nota se bloquea aunque sea
+corta o informal (ej. "te odio", "callate") — eso es acoso, no lenguaje
+informal. (La primera versión del prompt era demasiado permisiva acá:
+un caso real en producción, "Calla gilaso te odio", pasó de largo hasta
+que se corrigió el criterio.)
 
 ### Aprendizaje: la Capa 2 le "enseña" a la Capa 1
 

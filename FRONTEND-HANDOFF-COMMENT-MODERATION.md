@@ -1,31 +1,45 @@
-# Plan: qué mostrar cuando un comentario queda oculto por moderación
+# Plan: comentarios bloqueados por moderación — qué mostrar
 
-Handoff para la sesión de frontend público. El backend ya está listo — esto es solo la parte visual.
+Handoff para la sesión de frontend público. El backend ya está listo — esto es la parte visual.
 
-## Contexto (por qué hace falta esto)
+## Qué cambió del lado del backend
 
-Ahora un comentario puede quedar `pending` (oculto al público) por el filtro automático o por la IA. Hoy simplemente no aparece en el listado — para el resto de los usuarios eso está bien (no hace falta que sepan que existió). Pero el **autor** del comentario, si entra de nuevo a la noticia, tampoco ve rastro de lo que escribió, lo cual es confuso ("¿se guardó o no?").
+Antes, un comentario problemático quedaba `pending` y desaparecía del todo. Ahora hay dos estados distintos:
 
-## Qué pedir al backend (ya expuesto, no hace falta nada nuevo)
+- **`pending`**: recién retenido por el filtro automático, todavía sin confirmar. Sigue sin aparecer en el listado — como si no existiera, para nadie (ni para el autor en el hilo de otros, aunque a él sí se le puede avisar que quedó en revisión, ver más abajo).
+- **`blocked`**: la IA ya confirmó que vulnera las normas de la comunidad. **Este SÍ aparece en el hilo** — `GET /noticias/{slug}/comentarios` lo devuelve igual que cualquier comentario visible, en su lugar correspondiente (por fecha), con el texto real incluido.
 
-`POST /noticias/{slug}/comentarios` (crear comentario) ya devuelve el `CommentResource` completo del comentario recién creado, incluyendo su estado real. Si hace falta agregar un campo `status` visible ahí (hoy no está expuesto al público, solo en el panel admin), pedirlo aparte — es un cambio de una línea de mi lado.
+## Campo nuevo en la respuesta
 
-## Qué mostrar en el frontend
+Cada comentario (`CommentResource`) ahora trae:
 
-1. **Al enviar un comentario que queda retenido**: en vez de agregarlo silenciosamente a la lista (como si se hubiera publicado), mostrar un toast/aviso tipo:
-   > "Tu comentario fue enviado y está en revisión. Puede tardar un momento en publicarse."
+```jsonc
+{
+  "id": 12,
+  "body": "el texto real del comentario, siempre viaja completo",
+  "is_spoiler": false,
+  "is_blocked": true,   // <-- nuevo
+  "is_pending": false,
+  // ...el resto igual que antes
+}
+```
 
-   Esto evita el "¿se guardó o no?" — el usuario sabe que pasó algo, sin que se le diga explícitamente "nuestro filtro sospecha que es spam/insulto" (eso genera discusiones innecesarias).
+## Qué mostrar
 
-2. **Si termina bloqueado por violar las normas** (no es un simple "está en cola", la IA ya lo marcó): no hace falta un mensaje distinto en tiempo real (el usuario ya se fue de la pantalla para cuando la IA responde, corre en segundo plano). Alcanza con lo del punto 1.
+**Igual patrón que ya usan con `is_spoiler`** (tapado por defecto, con opción de revelar) — mismo mecanismo, campo distinto:
 
-3. **Opcional, más elaborado**: si en el futuro se agrega un "Mis comentarios" en el perfil del usuario, ahí sí tendría sentido mostrar el estado real (visible / en revisión) de cada uno propio. No es necesario para ahora.
+- Si `is_blocked: true`, en vez del texto normal mostrar un placeholder tipo:
+  > 🚫 **Comentario no permitido** — infringe las normas de la comunidad. [Ver de todos modos]
+
+- Si el usuario hace click en "Ver de todos modos", mostrar el `body` real (ya está en la respuesta, no hace falta pedir nada más al backend).
+- El resto del comentario (avatar, nombre, fecha, likes, botón de responder) se muestra normal — solo el texto queda tapado por defecto.
+- Si es la raíz de un hilo con respuestas, las respuestas normales de otros usuarios se siguen mostrando bajo él sin problema (no se corta el hilo).
+
+## Al enviar un comentario nuevo (`is_pending`)
+
+Esto no cambió: si `is_pending: true` en la respuesta del POST, mostrar un aviso tipo "Tu comentario está en revisión" en vez de agregarlo a la lista como si ya estuviera publicado — un `pending` recién enviado no va a aparecer si el usuario recarga la página hasta que se resuelva (puede terminar `visible` o `blocked`).
 
 ## Qué NO hacer
 
-- No mostrar el motivo exacto que dio la IA al autor (eso es información interna del panel de moderación, no para el usuario final).
-- No mostrar nada distinto a otros usuarios — para ellos, un comentario retenido simplemente no existe.
-
-## Resumen en una línea
-
-Al comentar, mostrar el comentario en la UI como "enviado" con un aviso de "en revisión" en vez de agregarlo directo a la lista visible — así el usuario sabe que se guardó, sin importar si termina publicándose solo o quedando bloqueado.
+- No mostrarle al autor ni a nadie el motivo exacto que dio la IA (`moderation_reason` ni siquiera se expone en la API pública, solo en el panel admin).
+- No tratar `blocked` igual que `pending` — `blocked` se muestra (tapado), `pending` no se muestra en absoluto.
