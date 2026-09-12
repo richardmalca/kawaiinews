@@ -253,6 +253,12 @@ export function useArticleComments({ articleSlug, onRequireAuth }: UseArticleCom
 
                 const created = await promise;
 
+                if (created.is_pending) {
+                    toast.info('Tu comentario ha sido enviado y se encuentra en revisión.');
+                    setReplyingTo(null);
+                    return true;
+                }
+
                 if (replyToCommentId) {
                     setComments((prev) =>
                         prev.map((c) => {

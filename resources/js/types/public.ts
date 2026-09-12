@@ -104,6 +104,8 @@ export type PublicComment = {
     id: number;
     body: string;
     is_spoiler: boolean;
+    is_pending?: boolean;
+    is_blocked?: boolean;
     created_at?: string;
     created_at_iso?: string;
     is_edited: boolean;

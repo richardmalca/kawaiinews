@@ -8,6 +8,7 @@ import {
     Heart,
     MessageCircle,
     MoreHorizontal,
+    ShieldAlert,
     Trash2,
 } from 'lucide-react';
 import type { PublicComment } from '@/types';
@@ -51,6 +52,7 @@ export function ArticleCommentItem({
     onRequireAuth,
 }: ArticleCommentItemProps) {
     const [revealedSpoiler, setRevealedSpoiler] = useState(!comment.is_spoiler);
+    const [revealedBlocked, setRevealedBlocked] = useState(!comment.is_blocked);
     const [isEditing, setIsEditing] = useState(false);
     const [editBody, setEditBody] = useState(comment.body);
     const [editSpoiler, setEditSpoiler] = useState(comment.is_spoiler);
@@ -261,7 +263,23 @@ export function ArticleCommentItem({
                             </div>
                         ) : (
                             <div className="mt-1.5 text-xs sm:text-sm text-neutral-800 dark:text-neutral-200">
-                                {comment.is_spoiler && !revealedSpoiler ? (
+                                {comment.is_blocked && !revealedBlocked ? (
+                                    <div className="rounded-xl border border-red-200/70 bg-red-50/60 p-2.5 dark:border-red-950/60 dark:bg-red-950/20">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 dark:text-red-400">
+                                                <ShieldAlert className="h-4 w-4 shrink-0" />
+                                                <span>Comentario no permitido — infringe las normas de la comunidad.</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setRevealedBlocked(true)}
+                                                className="text-xs font-medium text-red-600 underline hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                            >
+                                                Ver de todos modos
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : comment.is_spoiler && !revealedSpoiler ? (
                                     <div className="relative overflow-hidden rounded-xl border border-amber-200/60 bg-amber-50/50 p-2.5 dark:border-amber-900/40 dark:bg-amber-950/20">
                                         <div className="blur-xs select-none">
                                             {comment.body}
