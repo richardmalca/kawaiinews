@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
-import { Download, Sparkles, X, Check, Copy, Share2 } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Sparkles, Check, Copy, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ShareStoryArticle {
     title: string;
@@ -20,16 +21,12 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
     const [copied, setCopied] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
-    if (!open) return null;
-
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
     const categoryName =
         typeof article.category === 'string'
             ? article.category
             : article.category?.label ?? article.category?.name ?? 'Anime';
     const bgImage = article.featured_image || FALLBACK_IMAGES.hero;
-
-    const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
     const handleCopyUrl = async () => {
         try {
@@ -42,7 +39,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
         }
     };
 
-    const generateCanvasBlob = async (): Promise<{ blob: Blob; dataUrl: string } | null> => {
+    const generateCanvasBlob = async (): Promise<Blob | null> => {
         const canvas = document.createElement('canvas');
         canvas.width = 1080;
         canvas.height = 1920;
@@ -82,7 +79,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
                     }
                     img.onload = () => resolve(true);
                     img.onerror = () => resolve(false);
-                    setTimeout(() => resolve(false), 3500);
+                    setTimeout(() => resolve(false), 3000);
                 });
 
                 if (imgLoaded) {
@@ -199,11 +196,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
         ctx.textAlign = 'center';
         ctx.fillText('kawaiinews.com', 540, 1800);
 
-        const dataUrl = canvas.toDataURL('image/png');
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!blob) return null;
-
-        return { blob, dataUrl };
+        return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
     };
 
     const handleSaveOrShare = async () => {
@@ -212,15 +205,12 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
         const toastId = toast.loading('Generando imagen para Story...');
 
         try {
-            const result = await generateCanvasBlob();
-            if (!result) {
+            const blob = await generateCanvasBlob();
+            if (!blob) {
                 toast.error('No se pudo generar la imagen', { id: toastId });
                 setIsExporting(false);
                 return;
             }
-
-            const { blob, dataUrl } = result;
-            setGeneratedImageUrl(dataUrl);
 
             const file = new File([blob], `kawaiinews-story-${Date.now()}.png`, { type: 'image/png' });
 
@@ -247,8 +237,6 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
             const a = document.createElement('a');
             a.download = `kawaiinews-story-${Date.now()}.png`;
             a.href = blobUrl;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
@@ -256,10 +244,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
                 URL.revokeObjectURL(blobUrl);
             }, 1000);
 
-            toast.success('Imagen lista. Si estás en móvil, mantén presionada la imagen para Guardar en Fotos', {
-                id: toastId,
-                duration: 5000,
-            });
+            toast.success('Imagen descargada con éxito', { id: toastId });
         } catch {
             toast.error('Error al procesar la imagen', { id: toastId });
         } finally {
@@ -268,92 +253,69 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in overflow-y-auto">
-            <div className="relative my-auto w-full max-w-sm max-h-[92vh] flex flex-col rounded-3xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setGeneratedImageUrl(null);
-                        onOpenChange(false);
-                    }}
-                    className="absolute right-4 top-4 z-20 rounded-full p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition"
-                >
-                    <X className="h-5 w-5" />
-                </button>
-
-                <div className="mb-3 shrink-0">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[340px] sm:max-w-sm rounded-3xl border-neutral-200/80 bg-white p-5 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+                <DialogHeader className="mb-1 text-left">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-rose-500">
                         Social Card (9:16)
                     </span>
-                    <h3 className="text-base font-bold text-neutral-900 dark:text-white">
+                    <DialogTitle className="text-base font-bold text-neutral-900 dark:text-white">
                         Comparte en tus Historias
-                    </h3>
-                </div>
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Previsualiza y comparte esta noticia en formato vertical para historias.
+                    </DialogDescription>
+                </DialogHeader>
 
-                <div className="min-h-0 flex-1 overflow-y-auto py-1">
-                    {generatedImageUrl ? (
-                        <div className="space-y-2">
-                            <div className="relative mx-auto aspect-[9/16] w-full max-w-[230px] sm:max-w-[240px] overflow-hidden rounded-3xl border border-rose-500/40 bg-neutral-950 shadow-2xl">
-                                <img
-                                    src={generatedImageUrl}
-                                    alt="Story generada"
-                                    className="h-full w-full object-cover"
-                                />
-                            </div>
-                            <p className="text-center text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                                💡 Mantén presionada la imagen para <strong>Guardar en Fotos</strong>
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="relative mx-auto aspect-[9/16] w-full max-w-[230px] sm:max-w-[240px] overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950 p-4 text-white shadow-2xl">
-                            <img
-                                src={bgImage}
-                                alt=""
-                                className="absolute inset-0 h-full w-full object-cover opacity-60 transition-transform duration-700 hover:scale-105"
-                                onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.hero)}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-black/70 pointer-events-none" />
+                <div className="py-1">
+                    <div className="relative mx-auto aspect-[9/16] w-full max-w-[220px] overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-white shadow-xl">
+                        <img
+                            src={bgImage}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover opacity-60"
+                            onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.hero)}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-black/70 pointer-events-none" />
 
-                            <div className="relative z-10 flex h-full flex-col justify-between">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-600 text-white shadow-md">
-                                            <Sparkles className="h-3.5 w-3.5" />
-                                        </div>
-                                        <span className="text-xs font-black tracking-tight text-white">
-                                            Kawaii<span className="text-rose-400">News</span>
-                                        </span>
+                        <div className="relative z-10 flex h-full flex-col justify-between">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-600 text-white shadow-xs">
+                                        <Sparkles className="h-3 w-3" />
                                     </div>
-                                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase text-white/80 backdrop-blur-xs">
-                                        Story
+                                    <span className="text-xs font-black tracking-tight text-white">
+                                        Kawaii<span className="text-rose-400">News</span>
                                     </span>
                                 </div>
+                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase text-white/80">
+                                    Story
+                                </span>
+                            </div>
 
-                                <div className="space-y-2">
-                                    <span className="inline-block rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-xs">
-                                        {categoryName}
-                                    </span>
-                                    <h4 className="text-xs sm:text-sm font-black leading-snug text-white line-clamp-3 sm:line-clamp-4 drop-shadow-sm">
-                                        {article.title}
-                                    </h4>
-                                    {article.excerpt && (
-                                        <p className="text-[10px] sm:text-[11px] leading-relaxed text-neutral-300 line-clamp-2">
-                                            {article.excerpt}
-                                        </p>
-                                    )}
-                                </div>
+                            <div className="space-y-1.5">
+                                <span className="inline-block rounded-md bg-rose-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
+                                    {categoryName}
+                                </span>
+                                <h4 className="text-xs font-black leading-snug text-white line-clamp-3">
+                                    {article.title}
+                                </h4>
+                                {article.excerpt && (
+                                    <p className="text-[10px] text-neutral-300 line-clamp-2">
+                                        {article.excerpt}
+                                    </p>
+                                )}
+                            </div>
 
-                                <div className="rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-center backdrop-blur-md">
-                                    <span className="text-[10px] font-bold tracking-wide text-neutral-100">
-                                        kawaiinews.com
-                                    </span>
-                                </div>
+                            <div className="rounded-xl border border-white/20 bg-white/10 px-2 py-1 text-center backdrop-blur-xs">
+                                <span className="text-[9px] font-bold text-neutral-200">
+                                    kawaiinews.com
+                                </span>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                <div className="mt-3.5 flex shrink-0 gap-2">
+                <div className="mt-3 flex gap-2">
                     <button
                         type="button"
                         onClick={handleSaveOrShare}
@@ -381,7 +343,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
                         <span>{copied ? 'Copiado' : 'Enlace'}</span>
                     </button>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
