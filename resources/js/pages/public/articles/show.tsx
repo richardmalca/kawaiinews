@@ -1,7 +1,7 @@
 import { SeoHead } from '@/components/common/seo-head';
 import { useReadingProgress } from '@/hooks/use-reading-progress';
 import PublicLayout from '@/layouts/public-layout';
-import { formatArticleAsPlainText } from '@/lib/utils';
+import { FALLBACK_IMAGES, formatArticleAsPlainText, handleImageFallback } from '@/lib/utils';
 import { TrendingSidebar } from '@/pages/public/home/components/trending-sidebar';
 import type { PublicArticle, PublicCategorySummary } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -240,15 +240,22 @@ export default function ShowArticle({
                     <ArticleHeader article={item} />
 
                     {item.featured_image && (
-                        <div className="my-6 flex justify-center">
-                            <figure className="inline-block overflow-hidden rounded-2xl border border-neutral-200/60 bg-neutral-100 shadow-xs dark:border-neutral-800/60 dark:bg-neutral-900">
+                        <div className="relative my-6 overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60">
+                            <div className="relative aspect-video max-h-[460px] w-full overflow-hidden">
+                                <img
+                                    src={item.featured_image}
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-40 dark:opacity-30 pointer-events-none"
+                                />
                                 <img
                                     src={item.featured_image}
                                     alt={item.title}
-                                    className="max-h-[300px] w-auto max-w-full object-contain sm:max-h-[340px]"
+                                    className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
                                     loading="eager"
+                                    onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.hero)}
                                 />
-                            </figure>
+                            </div>
                         </div>
                     )}
 
