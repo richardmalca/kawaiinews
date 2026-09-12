@@ -266,7 +266,11 @@ export default function ShowArticle({
                         onShare={recordShare}
                     />
 
-                    <ArticleReactionsPicker articleSlug={item.slug} />
+                    <ArticleReactionsPicker
+                        articleSlug={item.slug}
+                        initialReactions={item.reactions}
+                        initialUserReaction={item.user_reaction}
+                    />
 
                     <AdBanner format="leaderboard" />
 

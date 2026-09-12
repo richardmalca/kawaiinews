@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Shared;
 
+use App\Models\ArticleReaction;
+use App\Services\Public\ArticleInteractionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -47,6 +49,12 @@ class NewsArticleResource extends JsonResource
             'comments_count' => (int) ($this->comments_count ?? $this->comments()->count()),
             'has_liked' => $request->user() ? $request->user()->hasLiked($this->resource) : false,
             'has_favorited' => $request->user() ? $request->user()->hasFavorited($this->resource) : false,
+            'reactions' => app(ArticleInteractionService::class)->getReactionsSummary($this->resource),
+            'user_reaction' => $request->user()
+                ? ArticleReaction::where('user_id', $request->user()->id)
+                    ->where('news_article_id', $this->id)
+                    ->value('reaction')
+                : null,
         ];
     }
 

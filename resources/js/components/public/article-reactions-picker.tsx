@@ -1,10 +1,13 @@
-﻿import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { openChooseUsernameModal } from '@/lib/username-rules';
+import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
 
 interface ArticleReactionsPickerProps {
     articleSlug: string;
+    initialReactions?: Record<string, number>;
+    initialUserReaction?: string | null;
 }
 
 const REACTIONS = [
@@ -15,29 +18,26 @@ const REACTIONS = [
     { id: 'think', emoji: '🤔', label: 'Curioso' },
 ] as const;
 
-export function ArticleReactionsPicker({ articleSlug }: ArticleReactionsPickerProps) {
+export function ArticleReactionsPicker({
+    articleSlug,
+    initialReactions,
+    initialUserReaction = null,
+}: ArticleReactionsPickerProps) {
     const { auth } = usePage().props;
     const isAuthenticated = Boolean(auth.user);
     const hasUsername = Boolean(auth.user?.username);
 
-    const storageKey = `kawaii_rx_${articleSlug}`;
-    const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
+    const [selectedReaction, setSelectedReaction] = useState<string | null>(initialUserReaction);
     const [counts, setCounts] = useState<Record<string, number>>({
-        fire: 12,
-        heart: 18,
-        shock: 7,
-        cry: 3,
-        think: 9,
+        fire: initialReactions?.fire ?? 0,
+        heart: initialReactions?.heart ?? 0,
+        shock: initialReactions?.shock ?? 0,
+        cry: initialReactions?.cry ?? 0,
+        think: initialReactions?.think ?? 0,
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-            setSelectedReaction(saved);
-        }
-    }, [storageKey]);
-
-    const handleReact = (id: string) => {
+    const handleReact = async (id: string) => {
         if (!isAuthenticated) {
             router.visit('/login');
             return;
@@ -48,28 +48,70 @@ export function ArticleReactionsPicker({ articleSlug }: ArticleReactionsPickerPr
             return;
         }
 
-        if (selectedReaction === id) {
-            setSelectedReaction(null);
-            localStorage.removeItem(storageKey);
-            setCounts((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 1) - 1) }));
-            toast('Reacción retirada');
-            return;
+        if (isSubmitting) return;
+
+        const prevReaction = selectedReaction;
+        const prevCounts = { ...counts };
+
+        let nextReaction: string | null = null;
+        const nextCounts = { ...counts };
+
+        if (prevReaction === id) {
+            nextReaction = null;
+            nextCounts[id] = Math.max(0, (nextCounts[id] || 1) - 1);
+        } else {
+            nextReaction = id;
+            nextCounts[id] = (nextCounts[id] || 0) + 1;
+            if (prevReaction) {
+                nextCounts[prevReaction] = Math.max(0, (nextCounts[prevReaction] || 1) - 1);
+            }
         }
 
-        const prev = selectedReaction;
-        setSelectedReaction(id);
-        localStorage.setItem(storageKey, id);
-
-        setCounts((old) => {
-            const next = { ...old, [id]: (old[id] || 0) + 1 };
-            if (prev) {
-                next[prev] = Math.max(0, (next[prev] || 1) - 1);
-            }
-            return next;
-        });
+        setSelectedReaction(nextReaction);
+        setCounts(nextCounts);
+        setIsSubmitting(true);
 
         const reactionObj = REACTIONS.find((r) => r.id === id);
-        toast.success(`Reaccionaste: ${reactionObj?.label || ''} ${reactionObj?.emoji || ''}`);
+
+        try {
+            const res = await fetch(`/noticias/${articleSlug}/reaccionar`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': readCsrfToken(),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reaction: id }),
+            });
+
+            if (!res.ok) {
+                setSelectedReaction(prevReaction);
+                setCounts(prevCounts);
+                toast.error('No se pudo guardar la reacción');
+                return;
+            }
+
+            const data = (await res.json()) as {
+                reaction: string | null;
+                reactions: Record<string, number>;
+            };
+
+            setSelectedReaction(data.reaction);
+            setCounts((current) => ({ ...current, ...data.reactions }));
+
+            if (data.reaction) {
+                toast.success(`Reaccionaste: ${reactionObj?.label || ''} ${reactionObj?.emoji || ''}`);
+            } else {
+                toast('Reacción retirada');
+            }
+        } catch {
+            setSelectedReaction(prevReaction);
+            setCounts(prevCounts);
+            toast.error('Error de conexión al enviar reacción');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

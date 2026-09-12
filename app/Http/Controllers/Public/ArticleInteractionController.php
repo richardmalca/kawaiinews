@@ -46,4 +46,17 @@ class ArticleInteractionController extends Controller
             )
         );
     }
+
+    public function toggleReaction(Request $request, string $slug): JsonResponse
+    {
+        $validated = $request->validate([
+            'reaction' => 'required|string|in:fire,heart,shock,cry,think',
+        ]);
+
+        $article = $this->newsService->findPublishedBySlug($slug);
+
+        return response()->json(
+            $this->articleInteractionService->toggleReaction($request->user(), $article, $validated['reaction'])
+        );
+    }
 }

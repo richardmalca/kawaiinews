@@ -148,6 +148,8 @@ export type NewsArticle = {
     comments_count?: number;
     has_liked?: boolean;
     has_favorited?: boolean;
+    reactions?: Record<string, number>;
+    user_reaction?: string | null;
     author?: {
         id: number;
         name: string;

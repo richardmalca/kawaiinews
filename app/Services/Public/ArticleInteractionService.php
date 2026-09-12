@@ -2,6 +2,7 @@
 
 namespace App\Services\Public;
 
+use App\Models\ArticleReaction;
 use App\Models\NewsArticle;
 use App\Models\Share;
 use App\Models\User;
@@ -58,5 +59,55 @@ class ArticleInteractionService
             'shared' => true,
             'total_shares' => $article->shares()->count(),
         ];
+    }
+
+    /**
+     * @return array{reaction: ?string, reactions: array<string, int>}
+     */
+    public function toggleReaction(User $user, NewsArticle $article, string $reaction): array
+    {
+        $existing = ArticleReaction::where('user_id', $user->id)
+            ->where('news_article_id', $article->id)
+            ->first();
+
+        if ($existing && $existing->reaction === $reaction) {
+            $existing->delete();
+            $currentReaction = null;
+        } elseif ($existing) {
+            $existing->update(['reaction' => $reaction]);
+            $currentReaction = $reaction;
+        } else {
+            ArticleReaction::create([
+                'user_id' => $user->id,
+                'news_article_id' => $article->id,
+                'reaction' => $reaction,
+            ]);
+            $currentReaction = $reaction;
+        }
+
+        return [
+            'reaction' => $currentReaction,
+            'reactions' => $this->getReactionsSummary($article),
+        ];
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getReactionsSummary(NewsArticle $article): array
+    {
+        $allowed = ['fire', 'heart', 'shock', 'cry', 'think'];
+        $raw = ArticleReaction::where('news_article_id', $article->id)
+            ->selectRaw('reaction, count(*) as count')
+            ->groupBy('reaction')
+            ->pluck('count', 'reaction')
+            ->toArray();
+
+        $summary = [];
+        foreach ($allowed as $key) {
+            $summary[$key] = (int) ($raw[$key] ?? 0);
+        }
+
+        return $summary;
     }
 }

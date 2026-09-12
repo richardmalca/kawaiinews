@@ -75,6 +75,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('noticias/{slug}/favorito', [ArticleInteractionController::class, 'toggleFavorite'])
         ->middleware('throttle:45,1')
         ->name('public.articles.favorite');
+    Route::post('noticias/{slug}/reaccionar', [ArticleInteractionController::class, 'toggleReaction'])
+        ->middleware('throttle:45,1')
+        ->name('public.articles.react');
 
     Route::post('noticias/{slug}/comentarios', [CommentController::class, 'store'])
         ->middleware('throttle:20,1')
