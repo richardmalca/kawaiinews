@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Download, Sparkles, Check, Copy, Share2 } from 'lucide-react';
+import { Download, Sparkles, Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface ShareStoryArticle {
     title: string;
@@ -316,11 +317,11 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
                 </div>
 
                 <div className="mt-3 flex gap-2">
-                    <button
+                    <Button
                         type="button"
                         onClick={handleSaveOrShare}
                         disabled={isExporting}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-500 active:scale-95 transition disabled:opacity-50"
+                        className="flex-1 h-10 rounded-xl bg-rose-600 font-bold text-white hover:bg-rose-500 active:scale-95 transition"
                     >
                         {isExporting ? (
                             <>
@@ -333,15 +334,16 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
                                 <span>Guardar en dispositivo</span>
                             </>
                         )}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
+                        variant="outline"
                         onClick={handleCopyUrl}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-xs font-bold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition"
+                        className="h-10 rounded-xl border-neutral-300 bg-white font-bold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition"
                     >
                         {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                         <span>{copied ? 'Copiado' : 'Enlace'}</span>
-                    </button>
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
