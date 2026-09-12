@@ -17,6 +17,7 @@ export function ArticleMetaFooter({ article, sharesCount, onShare }: ArticleMeta
                     text={article.excerpt}
                     category={article.category}
                     url={article.canonical_url}
+                    featuredImage={article.featured_image}
                     sharesCount={sharesCount ?? article.shares_count}
                     onShare={onShare}
                 />

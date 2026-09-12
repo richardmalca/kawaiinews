@@ -1,4 +1,5 @@
 import { CategoryBadge } from '@/components/public/category-badge';
+import { QuickFavoriteButton } from '@/components/public/quick-favorite-button';
 import {
     FALLBACK_IMAGES,
     estimateReadingTime,
@@ -42,6 +43,13 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                                 <Flame className="h-3.5 w-3.5 animate-pulse fill-amber-300 text-amber-300" />
                                 <span>Destacado</span>
                             </span>
+                        </div>
+                        <div className="absolute top-4 right-4 z-10">
+                            <QuickFavoriteButton
+                                slug={article.slug}
+                                initialFavorited={article.has_favorited}
+                                initialCount={favoritesCount}
+                            />
                         </div>
                     </div>
 

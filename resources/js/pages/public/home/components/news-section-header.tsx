@@ -1,6 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import type { PublicCategorySummary } from '@/types';
-import { Check, Filter, Newspaper, Plus, Users } from 'lucide-react';
+import { Check, Filter, LayoutGrid, List, Newspaper, Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
@@ -11,6 +11,8 @@ interface NewsSectionHeaderProps {
     search?: string | null;
     isFollowingCategory?: boolean;
     categoryFollowersCount?: number;
+    viewMode?: 'grid' | 'compact';
+    onViewModeChange?: (mode: 'grid' | 'compact') => void;
 }
 
 export function NewsSectionHeader({
@@ -19,6 +21,8 @@ export function NewsSectionHeader({
     search,
     isFollowingCategory = false,
     categoryFollowersCount = 0,
+    viewMode = 'grid',
+    onViewModeChange,
 }: NewsSectionHeaderProps) {
     const { auth } = usePage().props;
     const isAuthenticated = Boolean(auth.user);
@@ -117,6 +121,35 @@ export function NewsSectionHeader({
             </div>
 
             <div className="flex items-center gap-2.5">
+                {onViewModeChange && (
+                    <div className="flex items-center rounded-xl border border-neutral-200/80 bg-neutral-100/70 p-0.5 dark:border-neutral-800 dark:bg-neutral-900/60">
+                        <button
+                            type="button"
+                            onClick={() => onViewModeChange('grid')}
+                            title="Vista en cuadrícula"
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                                viewMode === 'grid'
+                                    ? 'bg-white text-rose-600 shadow-xs dark:bg-neutral-800 dark:text-rose-400'
+                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                            }`}
+                        >
+                            <LayoutGrid className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onViewModeChange('compact')}
+                            title="Vista compacta"
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                                viewMode === 'compact'
+                                    ? 'bg-white text-rose-600 shadow-xs dark:bg-neutral-800 dark:text-rose-400'
+                                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                            }`}
+                        >
+                            <List className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                )}
+
                 {selectedCategory && (
                     <button
                         type="button"

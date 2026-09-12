@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useShare } from '@/hooks/use-share';
-import { Check, Copy, MessageCircle, Send, Share2, Smartphone } from 'lucide-react';
+import { Check, Copy, MessageCircle, Send, Share2, Smartphone, Sparkles } from 'lucide-react';
+import { ShareStoryModal } from '@/components/public/share-story-modal';
 
 interface ShareButtonsProps {
     title: string;
     text?: string | null;
     category?: string;
     url?: string;
+    featuredImage?: string | null;
     sharesCount?: number;
     onShare?: (channel: 'whatsapp' | 'twitter' | 'facebook' | 'telegram' | 'native' | 'link') => void;
 }
@@ -15,9 +18,11 @@ export function ShareButtons({
     text,
     category,
     url,
+    featuredImage,
     sharesCount,
     onShare,
 }: ShareButtonsProps) {
+    const [isStoryOpen, setIsStoryOpen] = useState(false);
     const {
         copied,
         whatsappUrl,
@@ -128,6 +133,27 @@ export function ShareButtons({
                     </>
                 )}
             </button>
+
+            <button
+                type="button"
+                onClick={() => setIsStoryOpen(true)}
+                title="Compartir como Story"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-50 px-2.5 text-xs font-bold text-rose-600 transition-colors hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60"
+            >
+                <Sparkles className="h-3.5 w-3.5 text-rose-500" />
+                <span>Story</span>
+            </button>
+
+            <ShareStoryModal
+                open={isStoryOpen}
+                onOpenChange={setIsStoryOpen}
+                article={{
+                    title,
+                    excerpt: text ?? null,
+                    category: category ?? 'Anime',
+                    featured_image: featuredImage ?? null,
+                }}
+            />
         </div>
     );
 }

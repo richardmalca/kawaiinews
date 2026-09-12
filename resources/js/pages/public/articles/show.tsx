@@ -29,6 +29,7 @@ import { RelatedArticles } from './components/related-articles';
 import { useArticleInteractions } from './hooks/use-article-interactions';
 import { LoginDialog } from '@/components/public/login-dialog';
 import { AdBanner } from '@/components/public/ad-banner';
+import { ArticleReactionsPicker } from '@/components/public/article-reactions-picker';
 
 interface ShowArticleProps {
     article: { data: PublicArticle };
@@ -264,6 +265,8 @@ export default function ShowArticle({
                         sharesCount={sharesCount}
                         onShare={recordShare}
                     />
+
+                    <ArticleReactionsPicker articleSlug={item.slug} />
 
                     <AdBanner format="leaderboard" />
 

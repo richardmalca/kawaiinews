@@ -1,4 +1,5 @@
 import { CategoryBadge } from '@/components/public/category-badge';
+import { QuickFavoriteButton } from '@/components/public/quick-favorite-button';
 import {
     FALLBACK_IMAGES,
     estimateReadingTime,
@@ -38,6 +39,13 @@ export function NewsCard({ article }: NewsCardProps) {
                     />
                     <div className="absolute top-3 left-3">
                         <CategoryBadge category={article.category} />
+                    </div>
+                    <div className="absolute top-3 right-3 z-10">
+                        <QuickFavoriteButton
+                            slug={article.slug}
+                            initialFavorited={article.has_favorited}
+                            initialCount={favoritesCount}
+                        />
                     </div>
                 </div>
 
