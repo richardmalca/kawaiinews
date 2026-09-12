@@ -285,7 +285,7 @@ export function ArticleAudioPlayer({
             )}
 
             {isInteracting && (
-                <div className="animate-in slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 shadow-2xl backdrop-blur-md duration-300 dark:border-neutral-800/80 dark:bg-neutral-950/95">
+                <div className="animate-in slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 pb-[env(safe-area-inset-bottom,0px)] shadow-2xl backdrop-blur-md duration-300 dark:border-neutral-800/80 dark:bg-neutral-950/95">
                     <div className="relative h-1 w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
                         <div
                             className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 transition-all duration-150"

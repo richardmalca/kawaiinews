@@ -3,7 +3,7 @@ import { Heart, Sparkles } from 'lucide-react';
 
 export function PublicFooter() {
     return (
-        <footer className="border-t border-neutral-200 bg-white text-xs text-neutral-600 dark:border-neutral-900 dark:bg-neutral-950 dark:text-neutral-400">
+        <footer className="border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom,0px)] text-xs text-neutral-600 dark:border-neutral-900 dark:bg-neutral-950 dark:text-neutral-400">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
                     <div>

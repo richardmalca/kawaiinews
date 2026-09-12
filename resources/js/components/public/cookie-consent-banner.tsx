@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { Cookie, X } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export function CookieConsentBanner() {
     return (
         <aside
             aria-label="Aviso de cookies"
-            className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-lg animate-in fade-in slide-in-from-bottom-5 duration-300 sm:left-6 sm:right-auto sm:max-w-md"
+            className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-40 mx-auto max-w-lg animate-in fade-in slide-in-from-bottom-5 duration-300 sm:left-6 sm:right-auto sm:max-w-md"
         >
             <div className="rounded-3xl border border-neutral-200/90 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-neutral-800/90 dark:bg-neutral-900/95">
                 <div className="flex items-start gap-3">
