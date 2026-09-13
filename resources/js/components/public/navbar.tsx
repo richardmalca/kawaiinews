@@ -166,19 +166,22 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 <img
                                     src={siteLogoUrl}
                                     alt={name || 'KawaiiNews'}
-                                    className="h-8 md:h-9 w-auto max-w-[160px] object-contain transition-transform group-hover:scale-105"
+                                    className="h-8 w-8 md:h-9 md:w-9 rounded-xl object-contain transition-transform group-hover:scale-105"
                                 />
                             ) : (
-                                <>
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
-                                        <Sparkles className="h-5 w-5 text-white" />
-                                    </div>
-                                    <span className="bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-xl font-black tracking-tight text-transparent dark:from-white dark:via-neutral-200 dark:to-neutral-400">
-                                        Kawaii
-                                        <span className="text-rose-500">News</span>
-                                    </span>
-                                </>
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
+                                    <Sparkles className="h-5 w-5 text-white" />
+                                </div>
                             )}
+                            <span className="bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-xl font-black tracking-tight text-transparent dark:from-white dark:via-neutral-200 dark:to-neutral-400">
+                                {name ? (
+                                    name
+                                ) : (
+                                    <>
+                                        Kawaii<span className="text-rose-500">News</span>
+                                    </>
+                                )}
+                            </span>
                         </Link>
 
                         <nav className="hidden items-center gap-1 md:flex">
@@ -405,18 +408,22 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                                 <img
                                                     src={siteLogoUrl}
                                                     alt={name || 'KawaiiNews'}
-                                                    className="h-8 w-auto max-w-[150px] object-contain"
+                                                    className="h-8 w-8 rounded-xl object-contain"
                                                 />
                                             ) : (
-                                                <>
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-md text-white">
-                                                         <Sparkles className="h-4 w-4" />
-                                                    </div>
-                                                    <SheetTitle className="text-lg font-black tracking-tight">
-                                                        Kawaii<span className="text-rose-500">News</span>
-                                                    </SheetTitle>
-                                                </>
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-md text-white">
+                                                     <Sparkles className="h-4 w-4" />
+                                                </div>
                                             )}
+                                            <SheetTitle className="text-lg font-black tracking-tight">
+                                                {name ? (
+                                                    name
+                                                ) : (
+                                                    <>
+                                                        Kawaii<span className="text-rose-500">News</span>
+                                                    </>
+                                                )}
+                                            </SheetTitle>
                                         </div>
                                     </SheetHeader>
 

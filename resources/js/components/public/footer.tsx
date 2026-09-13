@@ -14,19 +14,22 @@ export function PublicFooter() {
                                 <img
                                     src={siteLogoUrl}
                                     alt={name || 'KawaiiNews'}
-                                    className="h-8 w-auto max-w-[150px] object-contain"
+                                    className="h-7 w-7 rounded-lg object-contain"
                                 />
                             ) : (
-                                <>
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-sm">
-                                        <Sparkles className="h-4 w-4" />
-                                    </div>
-                                    <span className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
-                                        Kawaii
-                                        <span className="text-rose-500">News</span>
-                                    </span>
-                                </>
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-sm">
+                                    <Sparkles className="h-4 w-4" />
+                                </div>
                             )}
+                            <span className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+                                {name ? (
+                                    name
+                                ) : (
+                                    <>
+                                        Kawaii<span className="text-rose-500">News</span>
+                                    </>
+                                )}
+                            </span>
                         </div>
                         <p className="max-w-sm text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                             Tu portal de noticias sobre anime, manga, gaming y
