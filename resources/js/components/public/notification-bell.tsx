@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, MessageSquare, UserPlus } from 'lucide-react';
+import { Bell, Check, CheckCheck, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
@@ -11,7 +11,18 @@ export interface AppNotificationItem {
         replier_name?: string;
         replier_username?: string;
         replier_avatar?: string | null;
+        article_id?: number;
         article_title?: string;
+        article_slug?: string;
+        article_excerpt?: string;
+        featured_image?: string | null;
+        category?: string;
+        author_id?: number;
+        author_name?: string;
+        author_username?: string;
+        author_avatar?: string | null;
+        reason?: 'author' | 'category' | 'tag' | string;
+        reason_label?: string | null;
         reply_preview?: string;
         follower_name?: string;
         follower_username?: string;
@@ -206,6 +217,7 @@ export function NotificationBell() {
                                 const isUnread = !item.read_at;
                                 const isReply = item.data.type === 'comment_reply';
                                 const isFollow = item.data.type === 'user_follow';
+                                const isNewArticle = item.data.type === 'new_article';
 
                                 return (
                                     <div
@@ -219,14 +231,20 @@ export function NotificationBell() {
                                     >
                                         <div className="relative shrink-0 mt-0.5">
                                             <div className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 font-bold text-xs">
-                                                {(item.data.replier_avatar || item.data.follower_avatar) ? (
+                                                {isNewArticle && item.data.featured_image ? (
                                                     <img
-                                                        src={(item.data.replier_avatar || item.data.follower_avatar) as string}
+                                                        src={item.data.featured_image}
+                                                        alt="Portada"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
+                                                    <img
+                                                        src={(item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (
-                                                    (item.data.replier_name || item.data.follower_name || 'K').charAt(0).toUpperCase()
+                                                    (item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
                                                 )}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-950 shadow-xs">
@@ -235,6 +253,9 @@ export function NotificationBell() {
                                                 )}
                                                 {isFollow && (
                                                     <UserPlus className="h-2.5 w-2.5 text-sky-500" />
+                                                )}
+                                                {isNewArticle && (
+                                                    <Newspaper className="h-2.5 w-2.5 text-rose-500" />
                                                 )}
                                             </div>
                                         </div>
@@ -260,7 +281,40 @@ export function NotificationBell() {
                                                         comenzó a seguirte.
                                                     </>
                                                 )}
-                                                {!isReply && !isFollow && (
+                                                {isNewArticle && (
+                                                    <>
+                                                        {item.data.reason === 'author' && item.data.author_name ? (
+                                                            <span>
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    {item.data.author_name}
+                                                                </span>{' '}
+                                                                publicó una nueva noticia:{' '}
+                                                            </span>
+                                                        ) : item.data.reason === 'category' ? (
+                                                            <span>
+                                                                Nueva noticia en{' '}
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    {item.data.category || item.data.reason_label}
+                                                                </span>
+                                                                :{' '}
+                                                            </span>
+                                                        ) : item.data.reason === 'tag' ? (
+                                                            <span>
+                                                                Nueva noticia en tag{' '}
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    #{item.data.reason_label}
+                                                                </span>
+                                                                :{' '}
+                                                            </span>
+                                                        ) : (
+                                                            <span>Nueva noticia publicada:{' '}</span>
+                                                        )}
+                                                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                                            {item.data.article_title}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                {!isReply && !isFollow && !isNewArticle && (
                                                     <span>Nueva notificación</span>
                                                 )}
                                             </p>
@@ -268,6 +322,12 @@ export function NotificationBell() {
                                             {item.data.reply_preview && (
                                                 <p className="text-[11px] text-neutral-500 dark:text-neutral-400 italic line-clamp-1">
                                                     "{item.data.reply_preview}"
+                                                </p>
+                                            )}
+
+                                            {isNewArticle && item.data.article_excerpt && (
+                                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                                                    {item.data.article_excerpt}
                                                 </p>
                                             )}
 

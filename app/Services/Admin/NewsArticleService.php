@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Jobs\SendNewArticleNotificationsJob;
 use App\Models\AiProvider;
 use App\Models\NewsArticle;
 use App\Models\NewsCluster;
@@ -98,6 +99,8 @@ class NewsArticleService
             $slug = $this->uniqueSlug($slug, $newsArticle->id);
         }
 
+        $wasPublished = $newsArticle->exists && $newsArticle->getOriginal('status') === 'published';
+
         $newsArticle->fill([
             'title' => $data['title'],
             'slug' => $slug,
@@ -116,6 +119,10 @@ class NewsArticleService
 
         $newsArticle->tags()->sync($this->resolveTagIds($tags));
 
+        if ($newsArticle->status === 'published' && ! $wasPublished) {
+            SendNewArticleNotificationsJob::dispatch($newsArticle->id);
+        }
+
         PublicNewsCacheVersion::bump();
 
         return $newsArticle;
@@ -131,6 +138,10 @@ class NewsArticleService
                 ? ($newsArticle->published_at ?? now())
                 : $newsArticle->published_at,
         ]);
+
+        if ($newsStatus === 'published') {
+            SendNewArticleNotificationsJob::dispatch($newsArticle->id);
+        }
 
         PublicNewsCacheVersion::bump();
 
