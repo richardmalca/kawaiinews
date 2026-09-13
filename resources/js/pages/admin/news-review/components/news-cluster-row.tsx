@@ -1,23 +1,36 @@
 import { Link } from '@inertiajs/react';
 import {
     Check,
+    EllipsisVertical,
     ExternalLink,
     HelpCircle,
+    Merge,
     Pencil,
     Youtube,
     X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useAcceptNewsCluster } from '@/pages/admin/news-review/hooks/use-accept-news-cluster';
+import { useMergeNewsCluster } from '@/pages/admin/news-review/hooks/use-merge-news-cluster';
 import { useRejectNewsCluster } from '@/pages/admin/news-review/hooks/use-reject-news-cluster';
 import { edit } from '@/routes/admin/news-articles';
 import type { NewsCluster } from '@/types/admin';
 
 type Props = {
     cluster: NewsCluster;
+    selected: boolean;
+    onToggleSelected: (clusterId: number, selected: boolean) => void;
+    mergeCandidates: NewsCluster[];
 };
 
 const credibilityVariant: Record<
@@ -61,14 +74,30 @@ function RumorBadge({ cluster }: { cluster: NewsCluster }) {
     );
 }
 
-export default function NewsClusterRow({ cluster }: Props) {
+export default function NewsClusterRow({
+    cluster,
+    selected,
+    onToggleSelected,
+    mergeCandidates,
+}: Props) {
     const { acceptCluster, processing: accepting } = useAcceptNewsCluster();
     const { rejectCluster, processing: rejecting } = useRejectNewsCluster();
-    const processing = accepting || rejecting;
+    const { mergeCluster, processing: merging } = useMergeNewsCluster();
+    const processing = accepting || rejecting || merging;
     const isAccepted = cluster.status === 'accepted';
 
     return (
-        <TableRow>
+        <TableRow data-state={selected ? 'selected' : undefined}>
+            <TableCell>
+                <Checkbox
+                    checked={selected}
+                    disabled={isAccepted}
+                    onCheckedChange={(checked) =>
+                        onToggleSelected(cluster.id, checked === true)
+                    }
+                    aria-label={`Seleccionar "${cluster.title}"`}
+                />
+            </TableCell>
             <TableCell className="max-w-48 sm:max-w-xs">
                 <p
                     className="flex items-center gap-1.5 truncate font-medium"
@@ -185,6 +214,43 @@ export default function NewsClusterRow({ cluster }: Props) {
                             )}
                             <span className="sr-only">Descartar</span>
                         </Button>
+                        {mergeCandidates.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={processing}
+                                        title="Fusionar con otra noticia duplicada"
+                                    >
+                                        <EllipsisVertical className="h-4 w-4" />
+                                        <span className="sr-only">
+                                            Más acciones
+                                        </span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {mergeCandidates.map((candidate) => (
+                                        <DropdownMenuItem
+                                            key={candidate.id}
+                                            onSelect={() =>
+                                                mergeCluster(
+                                                    cluster.id,
+                                                    candidate.id,
+                                                )
+                                            }
+                                        >
+                                            <Merge className="h-4 w-4" />
+                                            <span className="line-clamp-1">
+                                                Fusionar con "
+                                                {candidate.title}"
+                                            </span>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
                 )}
             </TableCell>

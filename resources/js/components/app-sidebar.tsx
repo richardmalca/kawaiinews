@@ -2,6 +2,8 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BrainCircuit,
     DatabaseBackup,
+    DollarSign,
+    History,
     LayoutGrid,
     Library,
     MessagesSquare,
@@ -23,7 +25,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/admin';
+import { index as activityLogIndex } from '@/routes/admin/activity-log';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
+import { index as aiUsageIndex } from '@/routes/admin/ai-usage';
 import { index as backupIndex } from '@/routes/admin/backup';
 import { index as commentsIndex } from '@/routes/admin/comments';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
@@ -34,7 +38,7 @@ import { index as usersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { auth } = usePage().props;
+    const { auth, moderationAlerts } = usePage().props;
     const isSuperadmin = auth.user?.roles.includes('superadmin');
     const canManageUsers = isSuperadmin || auth.user?.roles.includes('admin');
 
@@ -67,6 +71,11 @@ export function AppSidebar() {
                   href: newsSourcesIndex(),
                   icon: Rss,
               },
+              {
+                  title: 'Costo de IA',
+                  href: aiUsageIndex(),
+                  icon: DollarSign,
+              },
           ]
         : [];
 
@@ -76,6 +85,9 @@ export function AppSidebar() {
                   title: 'Revisar noticias',
                   href: newsReviewIndex(),
                   icon: Search,
+                  badge:
+                      moderationAlerts?.high_credibility_rumors || undefined,
+                  badgeTone: 'warning',
               },
               {
                   title: 'Noticias',
@@ -91,6 +103,7 @@ export function AppSidebar() {
                   title: 'Comentarios',
                   href: commentsIndex(),
                   icon: MessagesSquare,
+                  badge: moderationAlerts?.blocked_comments || undefined,
               },
           ]
         : [];
@@ -101,6 +114,11 @@ export function AppSidebar() {
                   title: 'Backups',
                   href: backupIndex(),
                   icon: DatabaseBackup,
+              },
+              {
+                  title: 'Actividad',
+                  href: activityLogIndex(),
+                  icon: History,
               },
           ]
         : [];

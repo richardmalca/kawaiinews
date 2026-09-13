@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\NewsCluster;
 use App\Services\Admin\NewsArticleService;
 use App\Services\Admin\NewsClusterService;
+use App\Support\ActivityLogger;
 use App\Support\JobRunStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,6 +33,13 @@ class AcceptNewsClusterJob implements ShouldQueue
         try {
             $newsClusterService->accept($this->newsCluster);
             $article = $newsArticleService->createFromCluster($this->newsCluster, $this->authorId);
+
+            ActivityLogger::log(
+                'news_cluster.accepted',
+                $this->newsCluster,
+                "Aceptó \"{$this->newsCluster->title}\" y generó el borrador \"{$article->title}\"",
+                $this->authorId,
+            );
 
             JobRunStatus::complete($this->runId, ['article_id' => $article->id]);
         } catch (Throwable $exception) {

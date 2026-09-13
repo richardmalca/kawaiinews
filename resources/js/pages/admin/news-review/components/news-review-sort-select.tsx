@@ -11,13 +11,23 @@ import type { NewsReviewSort } from '@/types/admin';
 
 type Props = {
     value: NewsReviewSort;
+    category: string | null;
+    search: string | null;
 };
 
-export default function NewsReviewSortSelect({ value }: Props) {
+export default function NewsReviewSortSelect({
+    value,
+    category,
+    search,
+}: Props) {
     const handleChange = (sort: string) => {
         router.get(
             index().url,
-            { sort },
+            {
+                sort,
+                ...(category ? { category } : {}),
+                ...(search ? { search } : {}),
+            },
             {
                 preserveState: true,
                 preserveScroll: true,

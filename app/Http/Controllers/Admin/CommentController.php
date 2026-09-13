@@ -7,6 +7,7 @@ use App\Http\Resources\Admin\AdminCommentResource;
 use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Services\Public\CommentService;
+use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -61,6 +62,8 @@ class CommentController extends Controller
         // controller.
         $this->commentService->approve($comment);
 
+        ActivityLogger::log('comment.approved', $comment, "Aprobó un comentario de {$comment->user?->name}");
+
         return back();
     }
 
@@ -68,7 +71,11 @@ class CommentController extends Controller
     {
         Gate::authorize('delete', $comment);
 
+        $authorName = $comment->user?->name;
+
         $this->commentService->delete($comment);
+
+        ActivityLogger::log('comment.deleted', description: "Eliminó un comentario de {$authorName}");
 
         return back();
     }

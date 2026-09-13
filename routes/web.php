@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AiProviderController;
+use App\Http\Controllers\Admin\AiUsageController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController;
@@ -80,7 +82,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('public.articles.react');
 
     Route::post('noticias/{slug}/comentarios', [CommentController::class, 'store'])
-        ->middleware('throttle:20,1')
+        ->middleware(['throttle:20,1', 'throttle:comments-per-ip'])
         ->name('public.comments.store');
     Route::patch('comentarios/{comment}', [CommentController::class, 'update'])
         ->middleware('throttle:20,1')
@@ -146,6 +148,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->middleware('throttle:ai-costly')
                 ->name('news-review.accept');
             Route::post('news-review/{newsCluster}/reject', [NewsReviewController::class, 'reject'])->name('news-review.reject');
+            Route::post('news-review/{newsCluster}/restore', [NewsReviewController::class, 'restore'])->name('news-review.restore');
+            Route::post('news-review/{newsCluster}/merge', [NewsReviewController::class, 'merge'])->name('news-review.merge');
 
             Route::resource('news-articles', NewsArticleController::class)
                 ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
@@ -183,6 +187,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('backup/restore', [DatabaseBackupController::class, 'restore'])
                 ->middleware('throttle:6,1')
                 ->name('backup.restore');
+
+            Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+            Route::get('ai-usage', [AiUsageController::class, 'index'])->name('ai-usage.index');
         });
     });
 

@@ -6,6 +6,8 @@ use App\Models\AiProvider;
 use App\Models\Comment;
 use App\Models\LearnedBannedPhrase;
 use App\Models\User;
+use App\Support\AiUsageLogger;
+use App\Support\SidebarAlerts;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
@@ -64,6 +66,8 @@ class CommentModerationService
                 ->withPrompt($this->buildPrompt($comment->body))
                 ->asText();
 
+            AiUsageLogger::record('moderation', $provider->provider, $provider->default_model, $response->usage, $comment);
+
             [$verdict, $reason, $phrase] = $this->parseVerdict($response->text);
 
             if ($verdict === 'OK') {
@@ -80,6 +84,7 @@ class CommentModerationService
                     'status' => 'blocked',
                     'moderation_reason' => $reason ?: 'Vulnera las normas de la comunidad',
                 ]);
+                SidebarAlerts::bustBlockedCommentsCount();
 
                 if ($phrase) {
                     $this->learnBannedPhrase($phrase, $comment);

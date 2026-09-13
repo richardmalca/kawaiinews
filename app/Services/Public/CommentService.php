@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
 use App\Notifications\CommentRepliedNotification;
+use App\Support\SidebarAlerts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 
@@ -192,7 +193,13 @@ class CommentService
      */
     public function approve(Comment $comment): Comment
     {
+        $wasBlocked = $comment->status === 'blocked';
+
         $comment->update(['status' => 'visible', 'moderation_reason' => null]);
+
+        if ($wasBlocked) {
+            SidebarAlerts::bustBlockedCommentsCount();
+        }
 
         return $comment;
     }

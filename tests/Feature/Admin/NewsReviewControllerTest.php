@@ -2,6 +2,7 @@
 
 use App\Models\NewsArticle;
 use App\Models\NewsCluster;
+use App\Models\ScrapedItem;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 
@@ -74,6 +75,69 @@ test('review queue can be filtered by category', function () {
         ->has('clusters', 2)
         ->where('category', 'gaming')
     );
+});
+
+test('review queue can be searched by title', function () {
+    NewsCluster::factory()->create(['status' => 'pending', 'title' => 'Se anuncia la temporada 2 de Frieren']);
+    NewsCluster::factory()->create(['status' => 'pending', 'title' => 'Nuevo tráiler de Chainsaw Man']);
+
+    $response = $this->get(route('admin.news-review.index', ['search' => 'frieren']));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('clusters', 1)
+        ->where('search', 'frieren')
+        ->where('clusters.0.title', 'Se anuncia la temporada 2 de Frieren')
+    );
+});
+
+test('rejecting a cluster responds with json instead of redirecting, so the admin can reject several in a row without navigating away', function () {
+    $cluster = NewsCluster::factory()->create(['status' => 'pending']);
+
+    $response = $this->postJson(route('admin.news-review.reject', $cluster));
+
+    $response->assertOk()->assertJson(['status' => 'ok']);
+    expect($cluster->fresh()->status)->toBe('rejected');
+});
+
+test('a rejected cluster can be restored back to pending (undo)', function () {
+    $cluster = NewsCluster::factory()->create(['status' => 'rejected']);
+
+    $response = $this->postJson(route('admin.news-review.restore', $cluster));
+
+    $response->assertOk()->assertJson(['status' => 'ok']);
+    expect($cluster->fresh()->status)->toBe('pending');
+});
+
+test('restoring a cluster that was not rejected does nothing', function () {
+    $cluster = NewsCluster::factory()->create(['status' => 'accepted']);
+
+    $this->postJson(route('admin.news-review.restore', $cluster))->assertOk();
+
+    expect($cluster->fresh()->status)->toBe('accepted');
+});
+
+test('merging two clusters moves the sources into the target and rejects the source', function () {
+    $source = NewsCluster::factory()->create(['status' => 'pending', 'sources_count' => 1, 'relevance_score' => 5]);
+    $target = NewsCluster::factory()->create(['status' => 'pending', 'sources_count' => 1, 'relevance_score' => 10]);
+    $sourceItem = ScrapedItem::factory()->create(['news_cluster_id' => $source->id]);
+    ScrapedItem::factory()->create(['news_cluster_id' => $target->id]);
+
+    $response = $this->postJson(route('admin.news-review.merge', $source), ['target_id' => $target->id]);
+
+    $response->assertOk()->assertJson(['status' => 'ok']);
+    expect($source->fresh()->status)->toBe('rejected')
+        ->and($sourceItem->fresh()->news_cluster_id)->toBe($target->id)
+        ->and($target->fresh())
+        ->sources_count->toBe(2)
+        ->relevance_score->toBe(10.0);
+});
+
+test('merging into itself is rejected', function () {
+    $cluster = NewsCluster::factory()->create(['status' => 'pending']);
+
+    $this->postJson(route('admin.news-review.merge', $cluster), ['target_id' => $cluster->id])
+        ->assertStatus(422);
 });
 
 test('review queue can be sorted by newest and oldest, falling back to first_seen_at without scraped items', function () {

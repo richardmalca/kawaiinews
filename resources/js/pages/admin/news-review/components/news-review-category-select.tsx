@@ -7,19 +7,35 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { index } from '@/routes/admin/news-review';
+import type { NewsReviewSort } from '@/types/admin';
 
 type Props = {
     value: string | null;
     categories: string[];
+    sort: NewsReviewSort;
+    search: string | null;
 };
 
-export default function NewsReviewCategorySelect({ value, categories }: Props) {
+export default function NewsReviewCategorySelect({
+    value,
+    categories,
+    sort,
+    search,
+}: Props) {
     const handleChange = (category: string) => {
-        router.get(index().url, category === 'all' ? {} : { category }, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['clusters', 'category', 'meta'],
-        });
+        router.get(
+            index().url,
+            {
+                sort,
+                ...(search ? { search } : {}),
+                ...(category === 'all' ? {} : { category }),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['clusters', 'category', 'meta'],
+            },
+        );
     };
 
     return (

@@ -57,5 +57,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('ai-costly', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?? $request->ip());
         });
+
+        // Además del throttle normal por usuario logueado: si de una misma
+        // IP salen muchos comentarios (varias cuentas creadas para spamear,
+        // o una cuenta comprometida), esto corta independientemente de
+        // cuántas cuentas distintas estén usando esa IP.
+        RateLimiter::for('comments-per-ip', function (Request $request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
     }
 }

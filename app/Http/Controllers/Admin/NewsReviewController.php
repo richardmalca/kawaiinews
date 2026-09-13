@@ -11,11 +11,11 @@ use App\Jobs\ScrapeNewsSourcesJob;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
 use App\Services\Admin\NewsClusterService;
+use App\Support\ActivityLogger;
 use App\Support\JobRunStatus;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,9 +30,10 @@ class NewsReviewController extends Controller
     {
         $sort = $request->string('sort', 'relevance')->value();
         $category = $request->string('category')->value() ?: null;
+        $search = $request->string('search')->value() ?: null;
         $page = max(1, $request->integer('page', 1));
 
-        $clusters = $this->newsClusterService->reviewQueue($sort, $category, self::PER_PAGE, $page);
+        $clusters = $this->newsClusterService->reviewQueue($sort, $category, self::PER_PAGE, $page, $search);
 
         return Inertia::render('admin/news-review/index', [
             'clusters' => NewsClusterResource::collection($clusters->items())->resolve(),
@@ -40,6 +41,7 @@ class NewsReviewController extends Controller
             'hasPublishVerdicts' => NewsCluster::where('status', 'pending')->where('ai_verdict', 'publish')->exists(),
             'sort' => $sort,
             'category' => $category,
+            'search' => $search,
             'categories' => array_keys(config('news_sources_catalog')),
             'meta' => [
                 'current_page' => $clusters->currentPage(),
@@ -142,10 +144,39 @@ class NewsReviewController extends Controller
         return response()->json(['run_id' => $runId]);
     }
 
-    public function reject(NewsCluster $newsCluster): RedirectResponse
+    public function reject(NewsCluster $newsCluster): JsonResponse
     {
         $this->newsClusterService->reject($newsCluster);
 
-        return to_route('admin.news-review.index');
+        ActivityLogger::log('news_cluster.rejected', $newsCluster, "Descartó \"{$newsCluster->title}\"");
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function restore(NewsCluster $newsCluster): JsonResponse
+    {
+        $this->newsClusterService->restore($newsCluster);
+
+        ActivityLogger::log('news_cluster.restored', $newsCluster, "Deshizo el descarte de \"{$newsCluster->title}\"");
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function merge(NewsCluster $newsCluster, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'target_id' => ['required', 'integer', 'exists:news_clusters,id'],
+        ]);
+
+        abort_if((int) $data['target_id'] === $newsCluster->id, 422, 'No se puede fusionar un cluster consigo mismo.');
+
+        $target = NewsCluster::findOrFail($data['target_id']);
+        $sourceTitle = $newsCluster->title;
+
+        $this->newsClusterService->merge($newsCluster, $target);
+
+        ActivityLogger::log('news_cluster.merged', $target, "Fusionó \"{$sourceTitle}\" con \"{$target->title}\"");
+
+        return response()->json(['status' => 'ok']);
     }
 }

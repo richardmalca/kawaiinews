@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\SidebarAlerts;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -46,6 +47,26 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'moderationAlerts' => $this->moderationAlerts($request),
+        ];
+    }
+
+    /**
+     * Cuántos comentarios están bloqueados por la Capa 2 de IA ahora mismo,
+     * para el badge de "Comentarios" en el sidebar — así el admin se entera
+     * de que hay algo esperando revisión sin tener que entrar al panel.
+     *
+     * @return array{blocked_comments: int}|null
+     */
+    private function moderationAlerts(Request $request): ?array
+    {
+        if (! $request->user()?->hasRole('superadmin')) {
+            return null;
+        }
+
+        return [
+            'blocked_comments' => SidebarAlerts::blockedCommentsCount(),
+            'high_credibility_rumors' => SidebarAlerts::highCredibilityRumorsCount(),
         ];
     }
 }

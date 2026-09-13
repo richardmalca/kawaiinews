@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\AiProvider;
 use App\Models\NewsCluster;
+use App\Support\AiUsageLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -16,12 +17,13 @@ class NewsClusterService
 
     private const EARLIEST_PUBLISHED_AT_SQL = '(select min(published_at) from scraped_items where scraped_items.news_cluster_id = news_clusters.id)';
 
-    public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1): LengthAwarePaginator
+    public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1, ?string $search = null): LengthAwarePaginator
     {
         $query = NewsCluster::query()
             ->selectRaw('news_clusters.*, '.self::EARLIEST_PUBLISHED_AT_SQL.' as earliest_published_at')
             ->whereIn('status', ['pending', 'accepted'])
             ->when($category, fn ($q) => $q->where('category', $category))
+            ->when($search, fn ($q) => $q->where('title', 'like', '%'.$search.'%'))
             ->with(['scrapedItems.newsSource', 'article']);
 
         match ($sort) {
@@ -70,6 +72,40 @@ class NewsClusterService
     public function reject(NewsCluster $newsCluster): void
     {
         $newsCluster->update(['status' => 'rejected']);
+    }
+
+    /**
+     * Deshace un rechazo reciente, devolviendo el cluster a la bandeja
+     * (`pending`). Solo tiene sentido si sigue `rejected` — si mientras
+     * tanto se lo volvió a procesar de otra forma, no lo tocamos.
+     */
+    public function restore(NewsCluster $newsCluster): void
+    {
+        if ($newsCluster->status !== 'rejected') {
+            return;
+        }
+
+        $newsCluster->update(['status' => 'pending']);
+    }
+
+    /**
+     * Fusiona dos clusters que en realidad son la misma noticia (el scraper
+     * a veces los separa si el título varía mucho entre fuentes). Mueve las
+     * fuentes de `$source` a `$target` y descarta `$source` (queda como
+     * `rejected`, recuperable con restore() si fue un error).
+     */
+    public function merge(NewsCluster $source, NewsCluster $target): NewsCluster
+    {
+        $source->scrapedItems()->update(['news_cluster_id' => $target->id]);
+
+        $target->update([
+            'sources_count' => $target->scrapedItems()->distinct('news_source_id')->count('news_source_id'),
+            'relevance_score' => max($target->relevance_score, $source->relevance_score),
+        ]);
+
+        $this->reject($source);
+
+        return $target->fresh();
     }
 
     public function accept(NewsCluster $newsCluster): NewsCluster
@@ -184,6 +220,8 @@ class NewsClusterService
             ->withClientOptions(['timeout' => 120])
             ->withPrompt($prompt)
             ->asText();
+
+        AiUsageLogger::record('analyze', $activeProvider->provider, $activeProvider->default_model, $response->usage);
 
         return $this->applyAiVerdicts($response->text, $batch);
     }

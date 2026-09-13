@@ -12,6 +12,10 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            moderationAlerts: {
+                blocked_comments: number;
+                high_credibility_rumors: number;
+            } | null;
             [key: string]: unknown;
         };
     }
