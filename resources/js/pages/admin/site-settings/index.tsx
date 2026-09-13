@@ -29,6 +29,9 @@ type SiteSettings = {
     keywords: string[];
     theme_color: string | null;
     twitter_handle: string | null;
+    facebook_url: string | null;
+    instagram_url: string | null;
+    tiktok_url: string | null;
     logo_url: string | null;
     favicon_url: string | null;
     favicon_192_url: string | null;
@@ -55,6 +58,13 @@ export default function SiteSettingsIndex({ settings }: Props) {
     const [twitterHandle, setTwitterHandle] = useState(
         settings.twitter_handle ?? '',
     );
+    const [facebookUrl, setFacebookUrl] = useState(
+        settings.facebook_url ?? '',
+    );
+    const [instagramUrl, setInstagramUrl] = useState(
+        settings.instagram_url ?? '',
+    );
+    const [tiktokUrl, setTiktokUrl] = useState(settings.tiktok_url ?? '');
 
     const logoUpload = useSiteImageUpload(
         siteSettingsRoutes.logo.update().url,
@@ -77,7 +87,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
 
     const removeLogo = () => {
         const promise = new Promise<void>((resolve, reject) => {
-            router.delete(siteSettingsRoutes.logo.update().url, {
+            router.delete(siteSettingsRoutes.logo.destroy().url, {
                 preserveScroll: true,
                 onSuccess: () => resolve(),
                 onError: () => reject(),
@@ -101,6 +111,9 @@ export default function SiteSettingsIndex({ settings }: Props) {
             keywords,
             theme_color: themeColor,
             twitter_handle: twitterHandle,
+            facebook_url: facebookUrl,
+            instagram_url: instagramUrl,
+            tiktok_url: tiktokUrl,
         });
     };
 
@@ -224,26 +237,11 @@ export default function SiteSettingsIndex({ settings }: Props) {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium">
-                                        Redes y tema
+                                        Apariencia
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="grid gap-4 sm:grid-cols-2">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="twitter-handle">
-                                            Usuario de Twitter/X
-                                        </Label>
-                                        <Input
-                                            id="twitter-handle"
-                                            placeholder="tu_usuario"
-                                            value={twitterHandle}
-                                            onChange={(event) =>
-                                                setTwitterHandle(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
+                                <CardContent>
+                                    <div className="grid max-w-xs gap-2">
                                         <Label htmlFor="theme-color">
                                             Color de tema
                                         </Label>
@@ -286,6 +284,99 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 Guardar
                             </Button>
                         </form>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-medium">
+                                    Redes sociales
+                                </CardTitle>
+                                <CardDescription>
+                                    Los perfiles oficiales del sitio. Se usan
+                                    para relacionar el sitio con sus cuentas
+                                    de cara a Google (además de mostrarse
+                                    donde tu sesión de frontend decida
+                                    ponerlos, como el footer).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="twitter-handle">
+                                        X (Twitter)
+                                    </Label>
+                                    <Input
+                                        id="twitter-handle"
+                                        placeholder="tu_usuario"
+                                        value={twitterHandle}
+                                        onChange={(event) =>
+                                            setTwitterHandle(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="instagram-url">
+                                        Instagram
+                                    </Label>
+                                    <Input
+                                        id="instagram-url"
+                                        type="url"
+                                        placeholder="https://instagram.com/tu_usuario"
+                                        value={instagramUrl}
+                                        onChange={(event) =>
+                                            setInstagramUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.instagram_url}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="facebook-url">
+                                        Facebook
+                                    </Label>
+                                    <Input
+                                        id="facebook-url"
+                                        type="url"
+                                        placeholder="https://facebook.com/tu_pagina"
+                                        value={facebookUrl}
+                                        onChange={(event) =>
+                                            setFacebookUrl(event.target.value)
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.facebook_url}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok-url">
+                                        TikTok
+                                    </Label>
+                                    <Input
+                                        id="tiktok-url"
+                                        type="url"
+                                        placeholder="https://tiktok.com/@tu_usuario"
+                                        value={tiktokUrl}
+                                        onChange={(event) =>
+                                            setTiktokUrl(event.target.value)
+                                        }
+                                    />
+                                    <InputError message={errors.tiktok_url} />
+                                </div>
+                                <Button
+                                    type="submit"
+                                    form="site-settings-form"
+                                    variant="outline"
+                                    className="w-fit"
+                                    disabled={processing}
+                                >
+                                    {processing && <Spinner />}
+                                    Guardar redes
+                                </Button>
+                            </CardContent>
+                        </Card>
 
                         <Card>
                             <CardHeader>

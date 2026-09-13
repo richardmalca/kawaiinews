@@ -45,6 +45,46 @@ test('a superadmin can update the site name, seo title, description and keywords
     expect(ActivityLog::where('action', 'site_settings.updated')->exists())->toBeTrue();
 });
 
+test('a superadmin can save social links separately from the identity fields', function () {
+    $response = $this->put(route('admin.site-settings.update'), [
+        'name' => 'KawaiiNews',
+        'twitter_handle' => '@kawaiinews',
+        'facebook_url' => 'https://facebook.com/kawaiinews',
+        'instagram_url' => 'https://instagram.com/kawaiinews',
+        'tiktok_url' => 'https://tiktok.com/@kawaiinews',
+    ]);
+
+    $response->assertRedirect();
+
+    $settings = SiteSetting::current();
+    expect($settings->twitter_handle)->toBe('@kawaiinews')
+        ->and($settings->facebook_url)->toBe('https://facebook.com/kawaiinews')
+        ->and($settings->instagram_url)->toBe('https://instagram.com/kawaiinews')
+        ->and($settings->tiktok_url)->toBe('https://tiktok.com/@kawaiinews');
+});
+
+test('a social url that is not a valid url gets rejected', function () {
+    $this->put(route('admin.site-settings.update'), [
+        'name' => 'KawaiiNews',
+        'facebook_url' => 'not-a-url',
+    ])->assertSessionHasErrors('facebook_url');
+});
+
+test('socialLinks() collects every configured profile as a full url', function () {
+    $settings = SiteSetting::current();
+    $settings->update([
+        'twitter_handle' => '@kawaiinews',
+        'facebook_url' => 'https://facebook.com/kawaiinews',
+        'instagram_url' => null,
+        'tiktok_url' => null,
+    ]);
+
+    expect($settings->fresh()->socialLinks())->toBe([
+        'https://x.com/kawaiinews',
+        'https://facebook.com/kawaiinews',
+    ]);
+});
+
 test('seoTitle() falls back to the short name when no seo title is set', function () {
     $settings = SiteSetting::current();
     $settings->update(['name' => 'KawaiiNews', 'seo_title' => null]);

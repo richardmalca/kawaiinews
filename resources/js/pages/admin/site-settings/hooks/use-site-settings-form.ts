@@ -10,6 +10,9 @@ type SiteSettingsData = {
     keywords: string[];
     theme_color: string;
     twitter_handle: string;
+    facebook_url: string;
+    instagram_url: string;
+    tiktok_url: string;
 };
 
 export function useSiteSettingsForm() {

@@ -24,6 +24,9 @@ class UpdateSiteSettingRequest extends FormRequest
             'keywords.*' => ['string', 'max:40'],
             'theme_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'twitter_handle' => ['nullable', 'string', 'max:30'],
+            'facebook_url' => ['nullable', 'url', 'max:255'],
+            'instagram_url' => ['nullable', 'url', 'max:255'],
+            'tiktok_url' => ['nullable', 'url', 'max:255'],
         ];
     }
 }

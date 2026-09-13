@@ -114,6 +114,22 @@
         <meta name="twitter:image" content="{{ $serverImage }}">
         <meta name="twitter:image:alt" content="{{ $serverTitle }}">
 
+        @php
+            $organizationSchema = [
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => $siteSettings->name,
+                'url' => url('/'),
+            ];
+            if ($siteSettings->logoUrl()) {
+                $organizationSchema['logo'] = $siteSettings->logoUrl();
+            }
+            if ($siteSettings->socialLinks()) {
+                $organizationSchema['sameAs'] = $siteSettings->socialLinks();
+            }
+        @endphp
+        <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         <x-inertia::head>

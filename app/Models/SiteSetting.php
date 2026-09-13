@@ -20,8 +20,11 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $og_image_path
  * @property string|null $theme_color
  * @property string|null $twitter_handle
+ * @property string|null $facebook_url
+ * @property string|null $instagram_url
+ * @property string|null $tiktok_url
  */
-#[Fillable(['name', 'seo_title', 'description', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle'])]
+#[Fillable(['name', 'seo_title', 'description', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url'])]
 class SiteSetting extends Model
 {
     private const CACHE_KEY = 'site-settings:singleton';
@@ -73,6 +76,23 @@ class SiteSetting extends Model
     public function seoTitle(): string
     {
         return $this->seo_title ?: $this->name;
+    }
+
+    /**
+     * URLs de redes sociales completas (no solo el handle de X), para el
+     * `sameAs` del JSON-LD de Organization — así Google puede relacionar el
+     * sitio con sus perfiles oficiales.
+     *
+     * @return array<int, string>
+     */
+    public function socialLinks(): array
+    {
+        return array_values(array_filter([
+            $this->twitter_handle ? 'https://x.com/'.ltrim($this->twitter_handle, '@') : null,
+            $this->facebook_url,
+            $this->instagram_url,
+            $this->tiktok_url,
+        ]));
     }
 
     public function logoUrl(): ?string
