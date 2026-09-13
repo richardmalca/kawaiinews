@@ -1,4 +1,4 @@
-﻿import { Bookmark } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { toast } from 'sonner';
@@ -92,17 +92,17 @@ export function QuickFavoriteButton({
             disabled={isLoading}
             title={favorited ? 'Eliminar de favoritos' : 'Guardar en favoritos'}
             aria-label="Guardar en favoritos"
-            className={`inline-flex items-center justify-center transition-all duration-200 active:scale-90 ${className}`}
+            className={`inline-flex items-center justify-center rounded-full border border-white/25 bg-black/45 p-2 text-white shadow-md backdrop-blur-md transition-all duration-200 hover:bg-black/65 hover:scale-105 active:scale-90 dark:border-white/20 dark:bg-black/50 ${className}`}
         >
             <Bookmark
                 className={`h-4 w-4 transition-colors ${
                     favorited
-                        ? 'fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400'
-                        : 'text-neutral-500 hover:text-amber-500 dark:text-neutral-400 dark:hover:text-amber-400'
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-white/90 hover:text-amber-300'
                 }`}
             />
             {showCount && (
-                <span className="ml-1 text-[11px] font-semibold">{count}</span>
+                <span className="ml-1 text-[11px] font-bold text-white">{count}</span>
             )}
         </button>
     );

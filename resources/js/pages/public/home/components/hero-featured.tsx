@@ -27,17 +27,23 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
         >
             <article>
                 <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
-                    <div className="relative h-72 overflow-hidden lg:col-span-7 lg:h-[420px]">
+                    <div className="relative min-h-[280px] h-72 sm:h-80 overflow-hidden bg-neutral-950 lg:col-span-7 lg:min-h-[420px] lg:h-full">
+                        <img
+                            src={imageSrc}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-35 pointer-events-none"
+                        />
                         <img
                             src={imageSrc}
                             alt={article.title}
-                            className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                            className="relative h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-103"
                             loading="eager"
                             onError={(e) =>
                                 handleImageFallback(e, FALLBACK_IMAGES.hero)
                             }
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-black/80 dark:from-neutral-950 dark:via-neutral-950/20 dark:lg:to-neutral-950" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-black/60 dark:from-neutral-950 dark:via-neutral-950/20 dark:lg:to-neutral-950/80 pointer-events-none" />
                         <div className="absolute top-4 left-4">
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-600/90 px-3 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-md">
                                 <Flame className="h-3.5 w-3.5 animate-pulse fill-amber-300 text-amber-300" />
