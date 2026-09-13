@@ -30,6 +30,20 @@ class ActivityLogController extends Controller
                 'last_page' => $logs->lastPage(),
                 'total' => $logs->total(),
             ],
+            'kpis' => $this->kpis(),
         ]);
+    }
+
+    /**
+     * @return array{total: int, today: int, this_week: int, active_users: int}
+     */
+    private function kpis(): array
+    {
+        return [
+            'total' => ActivityLog::count(),
+            'today' => ActivityLog::whereDate('created_at', today())->count(),
+            'this_week' => ActivityLog::where('created_at', '>=', now()->startOfWeek())->count(),
+            'active_users' => ActivityLog::whereNotNull('user_id')->distinct('user_id')->count('user_id'),
+        ];
     }
 }

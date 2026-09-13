@@ -31,6 +31,21 @@ test('the activity log page lists recent entries, newest first', function () {
     );
 });
 
+test('the activity log page exposes kpis: total, today, this week and active users', function () {
+    ActivityLog::factory()->create(['user_id' => $this->admin->id, 'created_at' => now()]);
+    ActivityLog::factory()->create(['user_id' => $this->admin->id, 'created_at' => now()->subDay()]);
+    ActivityLog::factory()->create(['user_id' => null, 'created_at' => now()->subWeeks(2)]);
+
+    $response = $this->get(route('admin.activity-log.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('kpis.total', 3)
+        ->where('kpis.today', 1)
+        ->where('kpis.active_users', 1)
+    );
+});
+
 test('rejecting a news cluster is recorded in the activity log', function () {
     $cluster = NewsCluster::factory()->create(['status' => 'pending', 'title' => 'Se anuncia algo']);
 
