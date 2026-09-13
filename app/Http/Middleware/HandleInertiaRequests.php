@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SiteSetting;
 use App\Support\SidebarAlerts;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -36,9 +37,12 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $siteSettings = SiteSetting::current();
+
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => $siteSettings->name,
+            'siteLogoUrl' => $siteSettings->logoUrl(),
             'auth' => [
                 'user' => $request->user() ? [
                     ...$request->user()->toArray(),

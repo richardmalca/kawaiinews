@@ -30,18 +30,32 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        @php
+            $siteSettings = \App\Models\SiteSetting::current();
+        @endphp
+
+        @if ($siteSettings->faviconUrl())
+            <link rel="icon" href="{{ $siteSettings->faviconUrl() }}" sizes="32x32" type="image/png">
+        @else
+            <link rel="icon" href="/favicon.ico" sizes="any">
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        @endif
+        @if ($siteSettings->favicon192Url())
+            <link rel="icon" href="{{ $siteSettings->favicon192Url() }}" sizes="192x192" type="image/png">
+        @endif
+        <link rel="apple-touch-icon" href="{{ $siteSettings->appleTouchIconUrl() ?? '/apple-touch-icon.png' }}">
+        @if ($siteSettings->theme_color)
+            <meta name="theme-color" content="{{ $siteSettings->theme_color }}">
+        @endif
 
         @fonts
 
         @php
             $serverArticle = $page['props']['article']['data'] ?? $page['props']['article'] ?? null;
             $serverTitle = isset($serverArticle['title'])
-                ? $serverArticle['title'] . ' - KawaiiNews'
-                : config('app.name', 'KawaiiNews');
-            $serverDescription = $serverArticle['excerpt'] ?? 'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
+                ? $serverArticle['title'] . ' - ' . $siteSettings->name
+                : $siteSettings->name;
+            $serverDescription = $serverArticle['excerpt'] ?? $siteSettings->description ?? 'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
 
             $rawImage = $serverArticle['featured_image'] ?? null;
             if ($rawImage) {
@@ -54,7 +68,7 @@
                     $serverImage = $rawImage;
                 }
             } else {
-                $serverImage = asset('og-default.png');
+                $serverImage = $siteSettings->ogImageUrl() ?? asset('og-default.png');
             }
 
             if (request()->isSecure() && str_starts_with($serverImage, 'http://')) {
@@ -76,7 +90,7 @@
             }
         @endphp
 
-        <meta property="og:site_name" content="KawaiiNews">
+        <meta property="og:site_name" content="{{ $siteSettings->name }}">
         <meta property="og:type" content="{{ $serverArticle ? 'article' : 'website' }}">
         <meta property="og:title" content="{{ $serverTitle }}">
         <meta property="og:description" content="{{ $serverDescription }}">
@@ -89,7 +103,12 @@
         <meta property="og:image:alt" content="{{ $serverTitle }}">
         <meta property="og:locale" content="es_LA">
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:site" content="@KawaiiNews">
+        @if ($siteSettings->twitter_handle)
+            <meta name="twitter:site" content="{{ '@' . ltrim($siteSettings->twitter_handle, '@') }}">
+        @endif
+        @if ($siteSettings->keywords)
+            <meta name="keywords" content="{{ implode(', ', $siteSettings->keywords) }}">
+        @endif
         <meta name="twitter:title" content="{{ $serverTitle }}">
         <meta name="twitter:description" content="{{ $serverDescription }}">
         <meta name="twitter:image" content="{{ $serverImage }}">

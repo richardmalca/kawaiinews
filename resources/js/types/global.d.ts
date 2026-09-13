@@ -10,6 +10,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            siteLogoUrl: string | null;
             auth: Auth;
             sidebarOpen: boolean;
             moderationAlerts: {

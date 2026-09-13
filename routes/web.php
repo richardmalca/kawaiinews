@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
+use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\ArticleController;
@@ -190,6 +191,13 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
 
             Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
             Route::get('ai-usage', [AiUsageController::class, 'index'])->name('ai-usage.index');
+
+            Route::get('site-settings', [SiteSettingController::class, 'edit'])->name('site-settings.edit');
+            Route::put('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
+            Route::post('site-settings/logo', [SiteSettingController::class, 'updateLogo'])->name('site-settings.logo.update');
+            Route::delete('site-settings/logo', [SiteSettingController::class, 'destroyLogo'])->name('site-settings.logo.destroy');
+            Route::post('site-settings/favicon', [SiteSettingController::class, 'updateFavicon'])->name('site-settings.favicon.update');
+            Route::post('site-settings/og-image', [SiteSettingController::class, 'updateOgImage'])->name('site-settings.og-image.update');
         });
     });
 

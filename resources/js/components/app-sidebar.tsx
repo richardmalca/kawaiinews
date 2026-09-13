@@ -10,6 +10,7 @@ import {
     Newspaper,
     Rss,
     Search,
+    Settings,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -29,6 +30,7 @@ import { index as activityLogIndex } from '@/routes/admin/activity-log';
 import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
 import { index as aiUsageIndex } from '@/routes/admin/ai-usage';
 import { index as backupIndex } from '@/routes/admin/backup';
+import { edit as siteSettingsEdit } from '@/routes/admin/site-settings';
 import { index as commentsIndex } from '@/routes/admin/comments';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
@@ -119,6 +121,11 @@ export function AppSidebar() {
                   title: 'Actividad',
                   href: activityLogIndex(),
                   icon: History,
+              },
+              {
+                  title: 'Configuración del sitio',
+                  href: siteSettingsEdit(),
+                  icon: Settings,
               },
           ]
         : [];
