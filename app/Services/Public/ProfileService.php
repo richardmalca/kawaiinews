@@ -42,6 +42,29 @@ class ProfileService
             'is_following' => $viewer ? $viewer->isFollowing($profileUser) : false,
             'is_self' => $viewer?->is($profileUser) ?? false,
             'shares_visible' => $profileUser->show_shares_on_profile,
+            'published_articles' => ($isAuthor || $profileUser->publishedArticlesCount() > 0)
+                ? $profileUser->authoredArticles()
+                    ->where('status', 'published')
+                    ->withCount(['likers as likes_count'])
+                    ->latest('published_at')
+                    ->limit(20)
+                    ->get()
+                    ->map(function (NewsArticle $article) {
+                        return [
+                            'id' => $article->id,
+                            'title' => $article->title,
+                            'slug' => $article->slug,
+                            'category' => $article->category,
+                            'excerpt' => $article->excerpt,
+                            'featured_image' => $article->featured_image,
+                            'likes_count' => (int) ($article->likes_count ?? 0),
+                            'views_count' => (int) ($article->views_count ?? 0),
+                            'published_at' => $article->published_at?->diffForHumans(),
+                            'published_date' => $article->published_at?->translatedFormat('d M, Y'),
+                        ];
+                    })
+                    ->values()
+                : [],
             'shares' => $profileUser->show_shares_on_profile
                 ? $profileUser->shares()
                     ->with('newsArticle:id,title,slug,category,excerpt,featured_image')
@@ -81,31 +104,23 @@ class ProfileService
                     })
                     ->values()
                 : [],
-            'comments' => $profileUser->comments()
-                ->with('newsArticle:id,title,slug,category,featured_image')
-                ->latest()
-                ->limit(20)
-                ->get()
-                ->filter(fn ($c) => $c->newsArticle !== null)
-                ->map(function ($comment) {
-                    $article = $comment->newsArticle;
-
-                    return [
-                        'id' => $comment->id,
-                        'body' => $comment->body,
-                        'is_spoiler' => (bool) $comment->is_spoiler,
-                        'created_at' => $comment->created_at?->diffForHumans(),
-                        'created_date' => $comment->created_at?->translatedFormat('d M, Y'),
-                        'article' => [
+            'likes' => ($viewer?->is($profileUser) ?? false)
+                ? $profileUser->getLikedItems(NewsArticle::class)
+                    ->where('status', 'published')
+                    ->take(20)
+                    ->get()
+                    ->map(function (NewsArticle $article) {
+                        return [
                             'id' => $article->id,
                             'title' => $article->title,
                             'slug' => $article->slug,
                             'category' => $article->category,
+                            'excerpt' => $article->excerpt,
                             'featured_image' => $article->featured_image,
-                        ],
-                    ];
-                })
-                ->values(),
+                        ];
+                    })
+                    ->values()
+                : [],
         ];
     }
 }

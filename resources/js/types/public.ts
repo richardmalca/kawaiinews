@@ -52,6 +52,18 @@ export type PublicUserProfile = {
     is_following: boolean;
     is_self: boolean;
     shares_visible: boolean;
+    published_articles?: {
+        id: number;
+        title: string;
+        slug: string;
+        category?: string;
+        excerpt?: string | null;
+        featured_image: string | null;
+        likes_count: number;
+        views_count: number;
+        published_at?: string;
+        published_date?: string;
+    }[];
     shares: {
         id: number;
         title: string;
@@ -63,6 +75,14 @@ export type PublicUserProfile = {
         shared_date?: string;
     }[];
     favorites?: {
+        id: number;
+        title: string;
+        slug: string;
+        category?: string;
+        excerpt?: string | null;
+        featured_image: string | null;
+    }[];
+    likes?: {
         id: number;
         title: string;
         slug: string;
