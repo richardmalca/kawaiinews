@@ -113,9 +113,10 @@ class CommentService
 
         $usernames = array_unique($matches[1]);
 
-        $users = User::whereIn('username', $usernames)
-            ->where('id', '!=', $author->id)
-            ->when($repliedUserId, fn ($query) => $query->where('id', '!=', $repliedUserId))
+        $users = $author->followedUsers()
+            ->whereIn('username', $usernames)
+            ->where('users.id', '!=', $author->id)
+            ->when($repliedUserId, fn ($query) => $query->where('users.id', '!=', $repliedUserId))
             ->get();
 
         foreach ($users as $mentionedUser) {

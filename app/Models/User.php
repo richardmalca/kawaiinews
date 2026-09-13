@@ -102,6 +102,21 @@ class User extends Authenticatable implements PasskeyUser
         )->withTimestamps();
     }
 
+    /**
+     * Usuarios a los que este usuario sigue.
+     */
+    public function followedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            related: User::class,
+            table: config('follow.followables_table', 'followables'),
+            foreignPivotKey: config('follow.user_foreign_key', 'user_id'),
+            relatedPivotKey: 'followable_id',
+        )
+            ->wherePivot('followable_type', $this->getMorphClass())
+            ->wherePivotNotNull('accepted_at');
+    }
+
     public function isFollowingCategory(string $category): bool
     {
         return DB::table('category_user')

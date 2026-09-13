@@ -68,4 +68,29 @@ class FollowController extends Controller
             'followers_count' => $followersCount,
         ]);
     }
+
+    public function followedUsersSuggestions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $query = trim((string) $request->input('q', ''));
+
+        $followed = $user->followedUsers()
+            ->when($query !== '', function ($q) use ($query) {
+                $q->where(function ($sub) use ($query) {
+                    $sub->where('username', 'like', "{$query}%")
+                        ->orWhere('name', 'like', "%{$query}%");
+                });
+            })
+            ->limit(10)
+            ->get(['users.id', 'users.name', 'users.username', 'users.avatar', 'users.custom_avatar', 'users.avatar_source'])
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'username' => $u->username,
+                'avatar' => $u->active_avatar_url,
+                'badge' => $u->community_badge,
+            ]);
+
+        return response()->json($followed);
+    }
 }

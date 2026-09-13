@@ -66,6 +66,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('categoria/{category}/seguir', [FollowController::class, 'toggleCategory'])
         ->middleware('throttle:30,1')
         ->name('public.category.follow');
+    Route::get('usuarios-seguidos/sugerencias', [FollowController::class, 'followedUsersSuggestions'])
+        ->middleware('throttle:60,1')
+        ->name('public.followed_users.suggestions');
 
     Route::get('notificaciones', [NotificationController::class, 'index'])
         ->name('public.notifications.index');

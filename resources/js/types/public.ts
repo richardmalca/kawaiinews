@@ -114,6 +114,14 @@ export type CommunityBadge = {
     color: string;
 };
 
+export type FollowedUserSuggestion = {
+    id: number;
+    name: string;
+    username: string;
+    avatar?: string | null;
+    badge?: CommunityBadge | null;
+};
+
 export type PublicCommentAuthor = {
     id: number;
     name: string;
