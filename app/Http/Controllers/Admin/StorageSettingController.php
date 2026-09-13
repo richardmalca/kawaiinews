@@ -4,18 +4,25 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateStorageSettingRequest;
+use App\Jobs\MigrateMediaStorageJob;
 use App\Models\StorageSetting;
+use App\Services\Admin\MediaLibraryService;
 use App\Services\Admin\StorageSettingService;
 use App\Support\ActivityLogger;
+use App\Support\JobRunStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StorageSettingController extends Controller
 {
-    public function __construct(private readonly StorageSettingService $storageSettingService) {}
+    public function __construct(
+        private readonly StorageSettingService $storageSettingService,
+        private readonly MediaLibraryService $mediaLibraryService,
+    ) {}
 
     public function edit(): Response
     {
@@ -36,6 +43,7 @@ class StorageSettingController extends Controller
                 'active_for_backups' => $settings->active_for_backups,
                 'last_verified_at' => $settings->last_verified_at?->diffForHumans(),
             ],
+            'mediaLocation' => $this->mediaLibraryService->countByLocation(),
         ]);
     }
 
@@ -65,6 +73,26 @@ class StorageSettingController extends Controller
         );
 
         return back();
+    }
+
+    public function migrateMedia(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'direction' => ['required', Rule::in(['remote', 'local'])],
+        ]);
+
+        $runId = JobRunStatus::start();
+
+        MigrateMediaStorageJob::dispatch($runId, $data['direction']);
+
+        ActivityLogger::log(
+            'storage_settings.media_migration_started',
+            description: $data['direction'] === 'remote'
+                ? 'Empezó a pasar los archivos guardados a Wasabi/S3'
+                : 'Empezó a traer los archivos de vuelta a este servidor',
+        );
+
+        return response()->json(['run_id' => $runId]);
     }
 
     public function toggleBackups(Request $request): RedirectResponse

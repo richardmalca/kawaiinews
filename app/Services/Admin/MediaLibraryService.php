@@ -19,6 +19,7 @@ use Prism\Prism\Facades\Prism;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class MediaLibraryService
 {
@@ -72,6 +73,94 @@ class MediaLibraryService
         }
 
         return null;
+    }
+
+    /**
+     * Cuántos archivos de imagen/audio hay guardados en este servidor y
+     * cuántos en el almacenamiento externo, para mostrarle al admin qué
+     * tiene dónde antes de ofrecerle mover algo.
+     *
+     * @return array{local: int, remote: int}
+     */
+    public function countByLocation(): array
+    {
+        $localPrefix = Storage::disk('public')->url('');
+        $local = 0;
+        $remote = 0;
+
+        $storageSettings = StorageSetting::current();
+        $remotePrefix = $storageSettings->isConfigured()
+            ? RemoteStorage::disk($storageSettings)->url('')
+            : null;
+
+        foreach (Media::whereIn('type', ['image', 'audio'])->pluck('url') as $url) {
+            if (Str::startsWith($url, $localPrefix)) {
+                $local++;
+            } elseif ($remotePrefix && Str::startsWith($url, $remotePrefix)) {
+                $remote++;
+            }
+        }
+
+        return ['local' => $local, 'remote' => $remote];
+    }
+
+    /**
+     * Mueve todos los archivos de imagen y audio guardados de un lugar al
+     * otro (de este servidor al almacenamiento externo, o al revés),
+     * actualizando el link guardado de cada uno para que siga
+     * funcionando. Los que ya estén en el destino se cuentan aparte, no
+     * se tocan de nuevo.
+     *
+     * @return array{moved: int, already_there: int, failed: int}
+     */
+    public function migrateAll(string $direction): array
+    {
+        $storageSettings = StorageSetting::current();
+
+        if (! $storageSettings->isConfigured()) {
+            throw new RuntimeException('Todavía no cargaste los datos del almacenamiento externo.');
+        }
+
+        $targetDisk = $direction === 'remote' ? RemoteStorage::disk($storageSettings) : Storage::disk('public');
+        $targetPrefix = $targetDisk->url('');
+
+        $moved = 0;
+        $alreadyThere = 0;
+        $failed = 0;
+
+        foreach (Media::whereIn('type', ['image', 'audio'])->cursor() as $media) {
+            if (Str::startsWith($media->url, $targetPrefix)) {
+                $alreadyThere++;
+
+                continue;
+            }
+
+            $resolved = $this->diskForUrl($media->url);
+
+            if (! $resolved) {
+                // No es un archivo nuestro (por ejemplo, una imagen de IA
+                // que se guardó como un link externo) — no hay nada que
+                // mover acá, no cuenta como un error.
+                continue;
+            }
+
+            [$sourceDisk, $path] = $resolved;
+
+            try {
+                $contents = $sourceDisk->get($path);
+                $newPath = ($media->type === 'audio' ? 'audio/' : 'media/').basename($path);
+
+                $targetDisk->put($newPath, $contents, 'public');
+                $sourceDisk->delete($path);
+                $media->update(['url' => $targetDisk->url($newPath)]);
+
+                $moved++;
+            } catch (Throwable) {
+                $failed++;
+            }
+        }
+
+        return ['moved' => $moved, 'already_there' => $alreadyThere, 'failed' => $failed];
     }
 
     private function resolveImageProvider(): ?AiProvider

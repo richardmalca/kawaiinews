@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\GenerateMediaJob;
+use App\Jobs\MigrateMediaStorageJob;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\StorageSetting;
@@ -95,6 +96,84 @@ test('an uploaded image is optimized to webp and resized down if oversized', fun
     $stored = imagecreatefromstring(Storage::disk('public')->get($path));
     expect(imagesx($stored))->toBeLessThanOrEqual(1920)
         ->and(imagesy($stored))->toBeLessThanOrEqual(1920);
+});
+
+test('countByLocation reports how many files are local and how many are remote', function () {
+    Storage::fake('public');
+    // Con una url propia: el fake local por defecto arma la misma pinta de
+    // url para cualquier disco ("/storage/..."), así que sin esto no hay
+    // forma de distinguir un archivo local de uno remoto en la prueba.
+    Storage::fake(RemoteStorage::DISK_NAME, ['url' => 'https://e.test/b']);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+    ]);
+
+    $localUrl = Storage::disk('public')->url('media/local.webp');
+    $remoteUrl = Storage::disk(RemoteStorage::DISK_NAME)->url('media/remote.webp');
+
+    Media::factory()->create(['type' => 'image', 'url' => $localUrl]);
+    Media::factory()->create(['type' => 'image', 'url' => $remoteUrl]);
+    Media::factory()->create(['type' => 'image', 'url' => $remoteUrl]);
+
+    $counts = app(MediaLibraryService::class)->countByLocation();
+
+    expect($counts)->toBe(['local' => 1, 'remote' => 2]);
+});
+
+test('migrateAll moves local files to the remote disk and updates their url', function () {
+    Storage::fake('public');
+    Storage::fake(RemoteStorage::DISK_NAME, ['url' => 'https://e.test/b']);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+    ]);
+
+    Storage::disk('public')->put('media/photo.webp', 'contenido');
+    $media = Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url('media/photo.webp'),
+    ]);
+
+    $result = app(MediaLibraryService::class)->migrateAll('remote');
+
+    expect($result)->toBe(['moved' => 1, 'already_there' => 0, 'failed' => 0]);
+    Storage::disk('public')->assertMissing('media/photo.webp');
+    expect($media->fresh()->url)->toStartWith(Storage::disk(RemoteStorage::DISK_NAME)->url(''));
+});
+
+test('migrateAll skips files already on the target and reports them separately', function () {
+    Storage::fake('public');
+    Storage::fake(RemoteStorage::DISK_NAME);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+    ]);
+
+    Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url('media/already-local.webp'),
+    ]);
+
+    $result = app(MediaLibraryService::class)->migrateAll('local');
+
+    expect($result)->toBe(['moved' => 0, 'already_there' => 1, 'failed' => 0]);
+});
+
+test('a superadmin can trigger a media migration and poll its result', function () {
+    Storage::fake('public');
+    Storage::fake(RemoteStorage::DISK_NAME);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+    ]);
+
+    Queue::fake();
+
+    $response = $this->postJson(route('admin.storage-settings.media.migrate'), ['direction' => 'remote']);
+
+    $response->assertOk()->assertJsonStructure(['run_id']);
+    Queue::assertPushed(MigrateMediaStorageJob::class, fn ($job) => $job->direction === 'remote');
 });
 
 test('audio upload rejects non audio files', function () {

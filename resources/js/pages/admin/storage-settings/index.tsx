@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useMigrateMedia } from '@/pages/admin/storage-settings/hooks/use-migrate-media';
 import { useStorageSettingsForm } from '@/pages/admin/storage-settings/hooks/use-storage-settings-form';
 import { useTestStorageConnection } from '@/pages/admin/storage-settings/hooks/use-test-storage-connection';
 import storageSettingsRoutes from '@/routes/admin/storage-settings';
@@ -36,15 +37,25 @@ type StorageSettings = {
     last_verified_at: string | null;
 };
 
-type Props = {
-    settings: StorageSettings;
+type MediaLocation = {
+    local: number;
+    remote: number;
 };
 
-export default function StorageSettingsIndex({ settings }: Props) {
+type Props = {
+    settings: StorageSettings;
+    mediaLocation: MediaLocation;
+};
+
+export default function StorageSettingsIndex({
+    settings,
+    mediaLocation,
+}: Props) {
     const { errors } = usePage().props;
     const { save, processing } = useStorageSettingsForm();
     const { testConnection, processing: testing } =
         useTestStorageConnection();
+    const { migrate, processing: migrating } = useMigrateMedia();
 
     const [accessKey, setAccessKey] = useState(settings.access_key ?? '');
     const [secretKey, setSecretKey] = useState('');
@@ -303,6 +314,64 @@ export default function StorageSettingsIndex({ settings }: Props) {
                                 />
                                 <Label htmlFor="active-media">Activar</Label>
                             </div>
+
+                            {(mediaLocation.local > 0 ||
+                                mediaLocation.remote > 0) && (
+                                <div className="mt-4 space-y-3 border-t pt-4">
+                                    <p className="text-muted-foreground text-sm">
+                                        Ahora mismo tenés{' '}
+                                        {mediaLocation.local} imagen
+                                        {mediaLocation.local === 1
+                                            ? ''
+                                            : 'es'}{' '}
+                                        o audio guardados en este servidor, y{' '}
+                                        {mediaLocation.remote} en el
+                                        almacenamiento externo.
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {mediaLocation.local > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={
+                                                    migrating ||
+                                                    !settings.is_configured
+                                                }
+                                                onClick={() =>
+                                                    migrate('remote')
+                                                }
+                                            >
+                                                {migrating && <Spinner />}
+                                                Llevar todo al
+                                                almacenamiento externo
+                                            </Button>
+                                        )}
+                                        {mediaLocation.remote > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={migrating}
+                                                onClick={() =>
+                                                    migrate('local')
+                                                }
+                                            >
+                                                {migrating && <Spinner />}
+                                                Traer todo de vuelta a
+                                                este servidor
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <p className="text-muted-foreground text-xs">
+                                        Esto puede tardar un rato si tenés
+                                        muchos archivos. Podés seguir usando
+                                        el panel mientras se hace, y nada
+                                        deja de funcionar mientras tanto.
+                                    </p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 

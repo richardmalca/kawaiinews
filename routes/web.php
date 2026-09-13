@@ -205,6 +205,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('storage-settings.test-connection');
             Route::post('storage-settings/media', [StorageSettingController::class, 'toggleMedia'])->name('storage-settings.media.toggle');
             Route::post('storage-settings/backups', [StorageSettingController::class, 'toggleBackups'])->name('storage-settings.backups.toggle');
+            Route::post('storage-settings/migrate-media', [StorageSettingController::class, 'migrateMedia'])
+                ->middleware('throttle:3,1')
+                ->name('storage-settings.media.migrate');
 
             Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
             Route::get('ai-usage', [AiUsageController::class, 'index'])->name('ai-usage.index');
