@@ -1,4 +1,4 @@
-﻿import type { PublicCategorySummary } from '@/types';
+import type { PublicCategorySummary } from '@/types';
 import { LegalLayout } from './legal-layout';
 
 interface LegalProps {
@@ -45,19 +45,22 @@ export default function TermsPage({ categories }: LegalProps) {
 
                 <section className="space-y-3">
                     <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                        3. Naturaleza del contenido editorial
+                        3. Naturaleza del contenido editorial y autoría
                     </h2>
                     <p>
                         Las noticias que publicamos en KawaiiNews son elaboradas, redactadas o curadas a partir de fuentes informativas y notas de prensa de Japón, Estados Unidos y el mundo. Siempre procuramos citar las fuentes originales correspondientes con respeto y rigor editorial.
+                    </p>
+                    <p>
+                        En caso de redactores o usuarios autorizados que publiquen artículos o noticias aceptadas en KawaiiNews: al publicar dicho contenido informativo en la plataforma, concedes a KawaiiNews una licencia perpetua, no exclusiva y transferible para alojar, difundir, adaptar, editar y mantener dicho material informativo. En caso de eliminación posterior de la cuenta del autor, los artículos y noticias aprobadas se preservarán y pasarán al equipo editorial (en estado de borrador o revisión) para garantizar la integridad histórica y periodística del archivo del portal, pudiendo ser reescritos o actualizados por el equipo de KawaiiNews.
                     </p>
                 </section>
 
                 <section className="space-y-3">
                     <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                        4. Cuentas y moderación
+                        4. Cuentas, moderación y cancelación
                     </h2>
                     <p>
-                        Nos reservamos el derecho de moderar, ocultar o eliminar comentarios que violen estas normas, así como suspender o restringir el acceso a cuentas que incurran de manera reiterada en spam, insultos o actividades maliciosas.
+                        Nos reservamos el derecho de moderar, ocultar o eliminar comentarios que violen estas normas, así como suspender o restringir el acceso a cuentas que incurran de manera reiterada en spam, insultos o actividades maliciosas. Los usuarios pueden eliminar voluntariamente su cuenta en cualquier momento desde su panel de ajustes de perfil.
                     </p>
                 </section>
 

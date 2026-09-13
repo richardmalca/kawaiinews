@@ -68,20 +68,23 @@ export default function PrivacyPage({ categories }: LegalProps) {
 
                 <section className="space-y-3">
                     <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                        4. ¿Cómo borrar tu cuenta y tus datos?
+                        4. ¿Cómo borrar tu cuenta y qué ocurre con tus datos?
                     </h2>
                     <p>
-                        Tienes derecho a eliminar tu cuenta en el momento que quieras, de manera directa y automática.
-                    </p>
-                    <p>
-                        Puedes hacerlo directamente ingresando a tus{' '}
+                        Tienes derecho a eliminar tu cuenta en cualquier momento, de manera directa e irreversible. Puedes hacerlo desde tus{' '}
                         <Link
                             href="/perfil/ajustes"
                             className="font-semibold text-rose-600 underline hover:text-rose-500 dark:text-rose-400"
                         >
                             Ajustes de Perfil (Zona de peligro)
                         </Link>
-                        . Al confirmar la eliminación, tu usuario, correo y sesiones se borrarán permanentemente de nuestra base de datos.
+                        .
+                    </p>
+                    <p>
+                        <strong>Al confirmar la eliminación:</strong> se borrarán de forma definitiva tu perfil público (@usuario), avatar, banner, correo electrónico, sesiones activas, lista privada de favoritos, reacciones ("me gusta") y comentarios en la comunidad.
+                    </p>
+                    <p>
+                        <strong>Noticias y artículos publicados:</strong> Si eres autor o redactor y has publicado noticias aprobadas en KawaiiNews, dichas notas informativas no se eliminarán del archivo histórico para preservar la integridad periodística del portal; en su lugar, pasarán a estado de borrador o moderación editorial para que el equipo pueda actualizarlas o reescribirlas conforme a nuestros Términos de Servicio.
                     </p>
                 </section>
 

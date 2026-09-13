@@ -55,11 +55,14 @@ class ProfileSettingsController extends Controller
     public function edit(Request $request, string $username): Response
     {
         $this->authorizeOwner($request, $username);
+        $user = $request->user();
 
         return Inertia::render('public/profile/settings/edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
             'categories' => $this->newsService->getCategoriesSummary(),
+            'hasGoogleAuth' => ! empty($user->google_id),
+            'authoredArticlesCount' => $user->authoredArticles()->count(),
         ]);
     }
 
@@ -103,6 +106,10 @@ class ProfileSettingsController extends Controller
     public function destroy(ProfileSettingsDeleteRequest $request, string $username): RedirectResponse
     {
         $user = $request->user();
+
+        $user->authoredArticles()->update([
+            'status' => 'draft',
+        ]);
 
         Auth::logout();
 

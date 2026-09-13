@@ -13,10 +13,14 @@ interface ProfileSettingsEditProps {
     mustVerifyEmail: boolean;
     status?: string;
     categories?: Record<string, PublicCategorySummary>;
+    hasGoogleAuth?: boolean;
+    authoredArticlesCount?: number;
 }
 
 export default function ProfileSettingsEdit({
     categories,
+    hasGoogleAuth = false,
+    authoredArticlesCount = 0,
 }: ProfileSettingsEditProps) {
     const { auth } = usePage().props;
     const user = auth.user;
@@ -43,8 +47,10 @@ export default function ProfileSettingsEdit({
         delete: destroyAccount,
         processing: deleting,
         errors: deleteErrors,
+        reset: resetDelete,
     } = useForm({
         password: '',
+        confirmation: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -54,7 +60,9 @@ export default function ProfileSettingsEdit({
 
     const handleDeleteAccount = (e: React.FormEvent) => {
         e.preventDefault();
-        destroyAccount(`/perfil/${user.username}/ajustes`);
+        destroyAccount(`/perfil/${user.username}/ajustes`, {
+            onError: () => {},
+        });
     };
 
     return (
@@ -133,10 +141,24 @@ export default function ProfileSettingsEdit({
                 <SettingsDangerZone
                     deleteConfirm={deleteConfirm}
                     deleting={deleting}
-                    passwordValue={deleteData.password}
-                    passwordError={deleteErrors.password}
-                    onToggleConfirm={setDeleteConfirm}
-                    onPasswordChange={(val) => setDeleteData('password', val)}
+                    username={user.username || ''}
+                    hasGoogleAuth={hasGoogleAuth}
+                    authoredArticlesCount={authoredArticlesCount}
+                    inputValue={hasGoogleAuth ? deleteData.confirmation : deleteData.password}
+                    inputError={hasGoogleAuth ? deleteErrors.confirmation : deleteErrors.password}
+                    onToggleConfirm={(val) => {
+                        setDeleteConfirm(val);
+                        if (!val) {
+                            resetDelete();
+                        }
+                    }}
+                    onInputChange={(val) => {
+                        if (hasGoogleAuth) {
+                            setDeleteData('confirmation', val);
+                        } else {
+                            setDeleteData('password', val);
+                        }
+                    }}
                     onDeleteSubmit={handleDeleteAccount}
                 />
             </div>
