@@ -4,10 +4,13 @@ import {
     ImageOff,
     Newspaper,
     Plus,
+    Search,
     SquareCheckBig,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -30,6 +33,7 @@ type Props = {
     articles: NewsArticle[];
     meta: Meta;
     category: string | null;
+    search: string | null;
     categories: string[];
     kpis: AdminNewsArticlesKpis;
 };
@@ -38,21 +42,61 @@ export default function NewsArticlesIndex({
     articles,
     meta,
     category,
+    search: initialSearch,
     categories,
     kpis,
 }: Props) {
+    const [search, setSearch] = useState(initialSearch ?? '');
+
+    // Debounce: no buscamos en cada tecla, solo cuando el usuario deja de
+    // escribir un rato.
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (search === (initialSearch ?? '')) {
+                return;
+            }
+
+            router.get(
+                index().url,
+                {
+                    ...(category ? { category } : {}),
+                    ...(search ? { search } : {}),
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    only: ['articles', 'meta', 'search'],
+                },
+            );
+        }, 400);
+
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search]);
+
     const handleCategoryChange = (value: string) => {
-        router.get(index().url, value === 'all' ? {} : { category: value }, {
-            preserveState: true,
-            preserveScroll: true,
-            only: ['articles', 'meta', 'category'],
-        });
+        router.get(
+            index().url,
+            {
+                ...(search ? { search } : {}),
+                ...(value === 'all' ? {} : { category: value }),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['articles', 'meta', 'category'],
+            },
+        );
     };
 
     const goToPage = (page: number) => {
         router.get(
             index().url,
-            { ...(category ? { category } : {}), page },
+            {
+                ...(category ? { category } : {}),
+                ...(search ? { search } : {}),
+                page,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -72,6 +116,15 @@ export default function NewsArticlesIndex({
                         description="Administra las noticias creadas a partir de la bandeja de revisión"
                     />
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="relative w-full sm:max-w-xs">
+                            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
+                            <Input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Buscar por título..."
+                                className="pl-8"
+                            />
+                        </div>
                         <Select
                             value={category ?? 'all'}
                             onValueChange={handleCategoryChange}

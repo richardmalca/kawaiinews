@@ -65,6 +65,20 @@ test('articles index can be filtered by category', function () {
     );
 });
 
+test('articles index can be searched by title', function () {
+    NewsArticle::factory()->create(['title' => 'Se anuncia la temporada 2 de Frieren']);
+    NewsArticle::factory()->create(['title' => 'Nuevo tráiler de Chainsaw Man']);
+
+    $response = $this->get(route('admin.news-articles.index', ['search' => 'frieren']));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('articles', 1)
+        ->where('search', 'frieren')
+        ->where('articles.0.title', 'Se anuncia la temporada 2 de Frieren')
+    );
+});
+
 test('the create form renders with the category catalog and available tags', function () {
     $response = $this->get(route('admin.news-articles.create'));
 

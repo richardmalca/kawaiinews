@@ -9,6 +9,7 @@ use App\Http\Resources\Shared\NewsArticleResource;
 use App\Models\NewsArticle;
 use App\Models\Tag;
 use App\Services\Admin\NewsArticleService;
+use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,9 +22,11 @@ class NewsArticleController extends Controller
     public function index(Request $request): Response
     {
         $category = $request->string('category')->value() ?: null;
+        $search = $request->string('search')->value() ?: null;
 
         $articles = NewsArticle::with('tags')
             ->when($category, fn ($query) => $query->where('category', $category))
+            ->when($search, fn ($query) => $query->where('title', 'like', '%'.$search.'%'))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -36,6 +39,7 @@ class NewsArticleController extends Controller
                 'total' => $articles->total(),
             ],
             'category' => $category,
+            'search' => $search,
             'categories' => array_keys(config('news_sources_catalog')),
             'kpis' => $this->newsArticleService->adminKpis($category),
         ]);
@@ -57,6 +61,8 @@ class NewsArticleController extends Controller
 
         $newsArticle = $this->newsArticleService->createManual($data, $tags, $request->user()->id);
 
+        ActivityLogger::log('news_article.created', $newsArticle, "Creó \"{$newsArticle->title}\"");
+
         return to_route('admin.news-articles.edit', $newsArticle);
     }
 
@@ -77,6 +83,8 @@ class NewsArticleController extends Controller
 
         $this->newsArticleService->save($newsArticle, $data, $tags);
 
+        ActivityLogger::log('news_article.updated', $newsArticle, "Editó \"{$newsArticle->title}\"");
+
         return to_route('admin.news-articles.edit', $newsArticle);
     }
 
@@ -84,12 +92,22 @@ class NewsArticleController extends Controller
     {
         $this->newsArticleService->toggleStatus($newsArticle);
 
+        ActivityLogger::log(
+            'news_article.status_toggled',
+            $newsArticle,
+            "Cambió \"{$newsArticle->title}\" a {$newsArticle->status}"
+        );
+
         return back();
     }
 
     public function destroy(NewsArticle $newsArticle): RedirectResponse
     {
+        $title = $newsArticle->title;
+
         $this->newsArticleService->delete($newsArticle);
+
+        ActivityLogger::log('news_article.deleted', description: "Eliminó \"{$title}\"");
 
         return to_route('admin.news-articles.index');
     }
