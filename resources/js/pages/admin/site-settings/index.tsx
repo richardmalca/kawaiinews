@@ -460,18 +460,18 @@ export default function SiteSettingsIndex({ settings }: Props) {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="images" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm font-medium">
-                                    Logo
-                                </CardTitle>
-                                <CardDescription>
-                                    Se usa en el panel de administración.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center gap-4">
+                    <TabsContent value="images">
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium">
+                                        Logo
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Se usa en el panel de administración.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
                                     <div className="border-input bg-muted flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded border">
                                         {settings.logo_url ? (
                                             <img
@@ -483,7 +483,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                             <Images className="text-muted-foreground h-6 w-6" />
                                         )}
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-2">
                                         <Button
                                             type="button"
                                             variant="outline"
@@ -526,146 +526,150 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                             </Button>
                                         )}
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm font-medium">
-                                    Favicon
-                                </CardTitle>
-                                <CardDescription>
-                                    Subí una sola imagen cuadrada (idealmente
-                                    512x512 o más) — se generan
-                                    automáticamente los tamaños 32x32,
-                                    192x192 (Android) y 180x180
-                                    (apple-touch-icon).
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center gap-4">
-                                    {settings.favicon_url && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium">
+                                        Favicon
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Una imagen cuadrada (idealmente
+                                        512x512+) — se generan solos los
+                                        tamaños 32x32, 192x192 (Android) y
+                                        180x180 (apple-touch-icon).
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        {settings.favicon_url && (
+                                            <img
+                                                src={settings.favicon_url}
+                                                alt="Favicon 32x32"
+                                                className="border-input h-8 w-8 rounded border"
+                                                title="32x32"
+                                            />
+                                        )}
+                                        {settings.favicon_192_url && (
+                                            <img
+                                                src={settings.favicon_192_url}
+                                                alt="Favicon 192x192"
+                                                className="border-input h-12 w-12 rounded border"
+                                                title="192x192"
+                                            />
+                                        )}
+                                        {settings.apple_touch_icon_url && (
+                                            <img
+                                                src={
+                                                    settings.apple_touch_icon_url
+                                                }
+                                                alt="apple-touch-icon"
+                                                className="border-input h-12 w-12 rounded-lg border"
+                                                title="apple-touch-icon 180x180"
+                                            />
+                                        )}
+                                        {!settings.favicon_url && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Usando el favicon estático del
+                                                proyecto.
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={faviconUpload.processing}
+                                        asChild
+                                    >
+                                        <label className="w-fit cursor-pointer">
+                                            {faviconUpload.processing ? (
+                                                <Spinner />
+                                            ) : (
+                                                <Upload className="h-4 w-4" />
+                                            )}
+                                            Subir favicon
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(event) => {
+                                                    const file =
+                                                        event.target
+                                                            .files?.[0];
+                                                    if (file) {
+                                                        faviconUpload.upload(
+                                                            file,
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium">
+                                        Imagen de OpenGraph
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Se muestra al compartir un link del
+                                        sitio (WhatsApp, X, Facebook,
+                                        Discord...) cuando la página no tiene
+                                        una imagen propia. Se recorta a
+                                        1200x630.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {settings.og_image_url ? (
                                         <img
-                                            src={settings.favicon_url}
-                                            alt="Favicon 32x32"
-                                            className="border-input h-8 w-8 rounded border"
-                                            title="32x32"
+                                            src={settings.og_image_url}
+                                            alt="Imagen de OpenGraph"
+                                            className="border-input aspect-[1200/630] w-full rounded border object-cover"
                                         />
-                                    )}
-                                    {settings.favicon_192_url && (
-                                        <img
-                                            src={settings.favicon_192_url}
-                                            alt="Favicon 192x192"
-                                            className="border-input h-12 w-12 rounded border"
-                                            title="192x192"
-                                        />
-                                    )}
-                                    {settings.apple_touch_icon_url && (
-                                        <img
-                                            src={settings.apple_touch_icon_url}
-                                            alt="apple-touch-icon"
-                                            className="border-input h-12 w-12 rounded-lg border"
-                                            title="apple-touch-icon 180x180"
-                                        />
-                                    )}
-                                    {!settings.favicon_url && (
+                                    ) : (
                                         <p className="text-muted-foreground text-sm">
-                                            Todavía usa el favicon estático
-                                            del proyecto.
+                                            Usando la imagen por defecto del
+                                            proyecto (og-default.png).
                                         </p>
                                     )}
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={faviconUpload.processing}
-                                    asChild
-                                >
-                                    <label className="w-fit cursor-pointer">
-                                        {faviconUpload.processing ? (
-                                            <Spinner />
-                                        ) : (
-                                            <Upload className="h-4 w-4" />
-                                        )}
-                                        Subir favicon
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={(event) => {
-                                                const file =
-                                                    event.target.files?.[0];
-                                                if (file) {
-                                                    faviconUpload.upload(
-                                                        file,
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm font-medium">
-                                    Imagen de OpenGraph por defecto
-                                </CardTitle>
-                                <CardDescription>
-                                    La imagen que se muestra al compartir un
-                                    link del sitio (WhatsApp, X, Facebook,
-                                    Discord...) cuando la página no tiene una
-                                    imagen propia. Se recorta a 1200x630.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {settings.og_image_url ? (
-                                    <img
-                                        src={settings.og_image_url}
-                                        alt="Imagen de OpenGraph"
-                                        className="border-input aspect-[1200/630] w-full max-w-sm rounded border object-cover"
-                                    />
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">
-                                        Todavía usa la imagen por defecto del
-                                        proyecto (og-default.png).
-                                    </p>
-                                )}
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={ogImageUpload.processing}
-                                    asChild
-                                >
-                                    <label className="w-fit cursor-pointer">
-                                        {ogImageUpload.processing ? (
-                                            <Spinner />
-                                        ) : (
-                                            <Upload className="h-4 w-4" />
-                                        )}
-                                        Subir imagen
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={(event) => {
-                                                const file =
-                                                    event.target.files?.[0];
-                                                if (file) {
-                                                    ogImageUpload.upload(
-                                                        file,
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </Button>
-                            </CardContent>
-                        </Card>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={ogImageUpload.processing}
+                                        asChild
+                                    >
+                                        <label className="w-fit cursor-pointer">
+                                            {ogImageUpload.processing ? (
+                                                <Spinner />
+                                            ) : (
+                                                <Upload className="h-4 w-4" />
+                                            )}
+                                            Subir imagen
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(event) => {
+                                                    const file =
+                                                        event.target
+                                                            .files?.[0];
+                                                    if (file) {
+                                                        ogImageUpload.upload(
+                                                            file,
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="social">
