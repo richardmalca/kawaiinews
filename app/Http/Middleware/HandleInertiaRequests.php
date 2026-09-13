@@ -43,6 +43,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => $siteSettings->name,
             'siteLogoUrl' => $siteSettings->logoUrl(),
+            'siteSeoTitle' => $siteSettings->seoTitle(),
+            'siteDescription' => $siteSettings->description,
+            'siteOgImageUrl' => $siteSettings->ogImageUrl(),
             // Dominio real de la app (nunca un string hardcodeado): así
             // cualquier página, pública o admin, arma links/emails/textos
             // sin tipear el dominio a mano y sin desincronizarse si cambia.

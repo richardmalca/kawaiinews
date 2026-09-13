@@ -50,15 +50,14 @@ export default function Home({
         ? articleList.filter((a) => a.id !== featuredArticle.id)
         : articleList;
 
-    let pageTitle = 'KawaiiNews - Noticias de Anime, Manga y Gaming';
-    let pageDescription =
-        'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
+    let pageTitle: string | undefined = undefined;
+    let pageDescription: string | undefined = undefined;
     if (search) {
-        pageTitle = `Búsqueda: "${search}" - KawaiiNews`;
-        pageDescription = `Resultados de búsqueda para "${search}" en KawaiiNews.`;
+        pageTitle = `Búsqueda: "${search}"`;
+        pageDescription = `Resultados de búsqueda para "${search}".`;
     } else if (selectedCategory && categories[selectedCategory]) {
-        pageTitle = `${categories[selectedCategory].label} - KawaiiNews`;
-        pageDescription = `Las mejores noticias y novedades de ${categories[selectedCategory].label} en KawaiiNews.`;
+        pageTitle = categories[selectedCategory].label;
+        pageDescription = `Las mejores noticias y novedades de ${categories[selectedCategory].label}.`;
     }
 
     return (

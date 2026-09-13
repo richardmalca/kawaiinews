@@ -1,6 +1,13 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { usePage } from '@inertiajs/react';
 import { Chrome, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface LoginDialogProps {
     open: boolean;
@@ -15,6 +22,7 @@ export function LoginDialog({
     title = 'Únete a KawaiiNews',
     description = 'Inicia sesión con tu cuenta de Google para dar me gusta, guardar noticias y personalizar tu perfil de lector.',
 }: LoginDialogProps) {
+    const { name, siteLogoUrl } = usePage().props;
     const returnUrl = typeof window !== 'undefined' ? window.location.href : '/';
     const googleLoginUrl = `/auth/google?return_to=${encodeURIComponent(returnUrl)}`;
 
@@ -22,8 +30,16 @@ export function LoginDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md rounded-3xl border-neutral-200/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8 dark:border-neutral-800/80 dark:bg-neutral-900/95">
                 <DialogHeader className="items-center text-center">
-                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:text-rose-400">
-                        <Sparkles className="h-6 w-6" />
+                    <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500 ring-8 ring-rose-500/5 dark:bg-rose-500/20 dark:text-rose-400 overflow-hidden">
+                        {siteLogoUrl ? (
+                            <img
+                                src={siteLogoUrl}
+                                alt={name || 'Logo'}
+                                className="h-10 w-10 object-contain"
+                            />
+                        ) : (
+                            <Sparkles className="h-6 w-6" />
+                        )}
                     </div>
                     <DialogTitle className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl dark:text-neutral-100">
                         {title}

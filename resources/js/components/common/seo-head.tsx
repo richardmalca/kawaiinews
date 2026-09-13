@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import type { PublicArticle, PublicUserProfile } from '@/types';
 import { useEffect } from 'react';
 
@@ -23,13 +23,19 @@ export function SeoHead({
     profile,
     noIndex = false,
 }: SeoHeadProps) {
-    const siteName = 'KawaiiNews';
+    const { name: sharedName, siteSeoTitle, siteDescription, siteOgImageUrl, siteLogoUrl } = usePage().props;
+    const siteName = sharedName || 'KawaiiNews';
     const defaultDescription =
+        siteDescription ||
         'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
     const defaultImage =
-        typeof window !== 'undefined'
+        siteOgImageUrl ||
+        (typeof window !== 'undefined'
             ? `${window.location.origin}/og-default.png`
-            : '/og-default.png';
+            : '/og-default.png');
+    const publisherLogo =
+        siteLogoUrl ||
+        defaultImage;
 
     const computedTitle = article
         ? `${article.title} - ${siteName}`
@@ -39,7 +45,7 @@ export function SeoHead({
             ? title.includes(siteName)
                 ? title
                 : `${title} - ${siteName}`
-            : `${siteName} - Noticias de Anime, Manga y Gaming`;
+            : siteSeoTitle || `${siteName} - Noticias de Anime, Manga y Gaming`;
 
     const computedDescription =
         article?.excerpt ||
@@ -99,7 +105,7 @@ export function SeoHead({
                   name: siteName,
                   logo: {
                       '@type': 'ImageObject',
-                      url: defaultImage,
+                      url: publisherLogo,
                   },
               },
               articleSection: article.category,

@@ -1,20 +1,32 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Heart, Sparkles } from 'lucide-react';
 
 export function PublicFooter() {
+    const { name, siteLogoUrl } = usePage().props;
+
     return (
         <footer className="border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom,0px)] text-xs text-neutral-600 dark:border-neutral-900 dark:bg-neutral-950 dark:text-neutral-400">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div className="mb-8 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
                     <div>
                         <div className="mb-3 flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-sm">
-                                <Sparkles className="h-4 w-4" />
-                            </div>
-                            <span className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
-                                Kawaii
-                                <span className="text-rose-500">News</span>
-                            </span>
+                            {siteLogoUrl ? (
+                                <img
+                                    src={siteLogoUrl}
+                                    alt={name || 'KawaiiNews'}
+                                    className="h-8 w-auto max-w-[150px] object-contain"
+                                />
+                            ) : (
+                                <>
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-sm">
+                                        <Sparkles className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
+                                        Kawaii
+                                        <span className="text-rose-500">News</span>
+                                    </span>
+                                </>
+                            )}
                         </div>
                         <p className="max-w-sm text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                             Tu portal de noticias sobre anime, manga, gaming y
