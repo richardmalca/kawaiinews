@@ -47,6 +47,7 @@ export type PublicUserProfile = {
     avatar_source?: 'google' | 'custom';
     is_author: boolean;
     published_articles_count: number | null;
+    total_articles_likes_count?: number | null;
     followers_count: number;
     following_count: number;
     is_following: boolean;

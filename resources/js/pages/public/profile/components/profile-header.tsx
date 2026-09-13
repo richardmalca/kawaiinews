@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Newspaper, Settings, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
+import { Heart, Newspaper, Settings, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
 import type { PublicUserProfile } from '@/types';
 
 interface ProfileHeaderProps {
@@ -117,13 +117,23 @@ export function ProfileHeader({
                         <span>siguiendo</span>
                     </div>
 
-                    {profile.is_author && typeof profile.published_articles_count === 'number' && (
+                    {typeof profile.published_articles_count === 'number' && (
                         <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                             <Newspaper className="h-4 w-4 text-rose-500" />
                             <span className="text-sm font-black text-neutral-950 dark:text-white">
                                 {profile.published_articles_count}
                             </span>
                             <span>noticias publicadas</span>
+                        </div>
+                    )}
+
+                    {typeof profile.total_articles_likes_count === 'number' && (
+                        <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                            <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
+                            <span className="text-sm font-black text-neutral-950 dark:text-white">
+                                {profile.total_articles_likes_count}
+                            </span>
+                            <span>me gusta recibidos</span>
                         </div>
                     )}
                 </div>

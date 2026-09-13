@@ -136,4 +136,17 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->authoredArticles()->where('status', 'published')->count();
     }
+
+    public function totalArticlesLikesCount(): int
+    {
+        return (int) DB::table('likes')
+            ->where('likeable_type', NewsArticle::class)
+            ->whereIn('likeable_id', function ($query) {
+                $query->select('id')
+                    ->from('news_articles')
+                    ->where('author_id', $this->id)
+                    ->where('status', 'published');
+            })
+            ->count();
+    }
 }
