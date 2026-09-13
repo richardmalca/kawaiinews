@@ -1,5 +1,12 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { ImageOff, Images, Upload } from 'lucide-react';
+import {
+    Image as ImageIcon,
+    ImageOff,
+    Images,
+    Palette,
+    Share2,
+    Upload,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
@@ -15,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-article-tags-input';
 import GoogleSerpPreview from '@/pages/admin/site-settings/components/google-serp-preview';
@@ -101,9 +109,11 @@ export default function SiteSettingsIndex({ settings }: Props) {
         });
     };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
+    // Un solo save() para todos los campos de texto (el backend los guarda
+    // juntos) pero disparado por botones sueltos en cada tab, no por un
+    // <form> compartido: las tabs (Radix) desmontan el contenido inactivo,
+    // así que un <form> que envuelva todo se rompería al cambiar de tab.
+    const handleSave = () => {
         save({
             name,
             seo_title: seoTitle,
@@ -127,13 +137,27 @@ export default function SiteSettingsIndex({ settings }: Props) {
                     description="Nombre, logo, favicon e imagen que se usan en el sitio y al compartir un link en redes"
                 />
 
-                <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                    <div className="space-y-6">
-                        <form
-                            onSubmit={handleSubmit}
-                            id="site-settings-form"
-                            className="space-y-6"
-                        >
+                <Tabs defaultValue="identity">
+                    <TabsList>
+                        <TabsTrigger value="identity">
+                            Identidad y SEO
+                        </TabsTrigger>
+                        <TabsTrigger value="images">
+                            <ImageIcon />
+                            Imágenes
+                        </TabsTrigger>
+                        <TabsTrigger value="social">
+                            <Share2 />
+                            Redes sociales
+                        </TabsTrigger>
+                        <TabsTrigger value="appearance">
+                            <Palette />
+                            Apariencia
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="identity">
+                        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium">
@@ -231,153 +255,44 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                         buscadores y herramientas sí las
                                         leen.
                                     </p>
+
+                                    <Button
+                                        type="button"
+                                        disabled={processing}
+                                        onClick={handleSave}
+                                    >
+                                        {processing && <Spinner />}
+                                        Guardar
+                                    </Button>
                                 </CardContent>
                             </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-sm font-medium">
-                                        Apariencia
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid max-w-xs gap-2">
-                                        <Label htmlFor="theme-color">
-                                            Color de tema
-                                        </Label>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                id="theme-color"
-                                                type="color"
-                                                className="h-9 w-14 p-1"
-                                                value={themeColor}
-                                                onChange={(event) =>
-                                                    setThemeColor(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            <Input
-                                                value={themeColor}
-                                                onChange={(event) =>
-                                                    setThemeColor(
-                                                        event.target.value,
-                                                    )
-                                                }
-                                                className="font-mono"
-                                            />
-                                        </div>
-                                        <p className="text-muted-foreground text-xs">
-                                            Color de la barra del navegador en
-                                            celular (Android/iOS).
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <div className="lg:sticky lg:top-4 lg:self-start">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-sm font-medium">
+                                            Vista previa en Google
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Se actualiza en vivo a medida que
+                                            escribís (aproximado, Google
+                                            decide el corte real).
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <GoogleSerpPreview
+                                            title={seoTitle || name}
+                                            description={description}
+                                            url={settings.canonical_url}
+                                            faviconUrl={settings.favicon_url}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </TabsContent>
 
-                            <Button
-                                type="submit"
-                                form="site-settings-form"
-                                disabled={processing}
-                            >
-                                {processing && <Spinner />}
-                                Guardar
-                            </Button>
-                        </form>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm font-medium">
-                                    Redes sociales
-                                </CardTitle>
-                                <CardDescription>
-                                    Los perfiles oficiales del sitio. Se usan
-                                    para relacionar el sitio con sus cuentas
-                                    de cara a Google (además de mostrarse
-                                    donde tu sesión de frontend decida
-                                    ponerlos, como el footer).
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid gap-4 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="twitter-handle">
-                                        X (Twitter)
-                                    </Label>
-                                    <Input
-                                        id="twitter-handle"
-                                        placeholder="tu_usuario"
-                                        value={twitterHandle}
-                                        onChange={(event) =>
-                                            setTwitterHandle(
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="instagram-url">
-                                        Instagram
-                                    </Label>
-                                    <Input
-                                        id="instagram-url"
-                                        type="url"
-                                        placeholder="https://instagram.com/tu_usuario"
-                                        value={instagramUrl}
-                                        onChange={(event) =>
-                                            setInstagramUrl(
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={errors.instagram_url}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="facebook-url">
-                                        Facebook
-                                    </Label>
-                                    <Input
-                                        id="facebook-url"
-                                        type="url"
-                                        placeholder="https://facebook.com/tu_pagina"
-                                        value={facebookUrl}
-                                        onChange={(event) =>
-                                            setFacebookUrl(event.target.value)
-                                        }
-                                    />
-                                    <InputError
-                                        message={errors.facebook_url}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="tiktok-url">
-                                        TikTok
-                                    </Label>
-                                    <Input
-                                        id="tiktok-url"
-                                        type="url"
-                                        placeholder="https://tiktok.com/@tu_usuario"
-                                        value={tiktokUrl}
-                                        onChange={(event) =>
-                                            setTiktokUrl(event.target.value)
-                                        }
-                                    />
-                                    <InputError message={errors.tiktok_url} />
-                                </div>
-                                <Button
-                                    type="submit"
-                                    form="site-settings-form"
-                                    variant="outline"
-                                    className="w-fit"
-                                    disabled={processing}
-                                >
-                                    {processing && <Spinner />}
-                                    Guardar redes
-                                </Button>
-                            </CardContent>
-                        </Card>
-
+                    <TabsContent value="images" className="space-y-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-sm font-medium">
@@ -583,31 +498,155 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 </Button>
                             </CardContent>
                         </Card>
-                    </div>
+                    </TabsContent>
 
-                    <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+                    <TabsContent value="social">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-sm font-medium">
-                                    Vista previa en Google
+                                    Redes sociales
                                 </CardTitle>
                                 <CardDescription>
-                                    Se actualiza en vivo a medida que
-                                    escribís (aproximado, Google decide el
-                                    corte real).
+                                    Los perfiles oficiales del sitio. Se usan
+                                    para relacionar el sitio con sus cuentas
+                                    de cara a Google (además de mostrarse
+                                    donde tu sesión de frontend decida
+                                    ponerlos, como el footer).
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <GoogleSerpPreview
-                                    title={seoTitle || name}
-                                    description={description}
-                                    url={settings.canonical_url}
-                                    faviconUrl={settings.favicon_url}
-                                />
+                            <CardContent className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="twitter-handle">
+                                        X (Twitter)
+                                    </Label>
+                                    <Input
+                                        id="twitter-handle"
+                                        placeholder="tu_usuario"
+                                        value={twitterHandle}
+                                        onChange={(event) =>
+                                            setTwitterHandle(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="instagram-url">
+                                        Instagram
+                                    </Label>
+                                    <Input
+                                        id="instagram-url"
+                                        type="url"
+                                        placeholder="https://instagram.com/tu_usuario"
+                                        value={instagramUrl}
+                                        onChange={(event) =>
+                                            setInstagramUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.instagram_url}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="facebook-url">
+                                        Facebook
+                                    </Label>
+                                    <Input
+                                        id="facebook-url"
+                                        type="url"
+                                        placeholder="https://facebook.com/tu_pagina"
+                                        value={facebookUrl}
+                                        onChange={(event) =>
+                                            setFacebookUrl(event.target.value)
+                                        }
+                                    />
+                                    <InputError
+                                        message={errors.facebook_url}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="tiktok-url">
+                                        TikTok
+                                    </Label>
+                                    <Input
+                                        id="tiktok-url"
+                                        type="url"
+                                        placeholder="https://tiktok.com/@tu_usuario"
+                                        value={tiktokUrl}
+                                        onChange={(event) =>
+                                            setTiktokUrl(event.target.value)
+                                        }
+                                    />
+                                    <InputError message={errors.tiktok_url} />
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    className="w-fit"
+                                    disabled={processing}
+                                    onClick={handleSave}
+                                >
+                                    {processing && <Spinner />}
+                                    Guardar
+                                </Button>
                             </CardContent>
                         </Card>
-                    </div>
-                </div>
+                    </TabsContent>
+
+                    <TabsContent value="appearance">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-medium">
+                                    Apariencia
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid max-w-xs gap-2">
+                                    <Label htmlFor="theme-color">
+                                        Color de tema
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="theme-color"
+                                            type="color"
+                                            className="h-9 w-14 p-1"
+                                            value={themeColor}
+                                            onChange={(event) =>
+                                                setThemeColor(
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <Input
+                                            value={themeColor}
+                                            onChange={(event) =>
+                                                setThemeColor(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="font-mono"
+                                        />
+                                    </div>
+                                    <p className="text-muted-foreground text-xs">
+                                        Color de la barra del navegador en
+                                        celular (Android/iOS).
+                                    </p>
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    disabled={processing}
+                                    onClick={handleSave}
+                                >
+                                    {processing && <Spinner />}
+                                    Guardar
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
         </>
     );
