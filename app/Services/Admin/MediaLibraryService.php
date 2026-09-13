@@ -24,6 +24,8 @@ class MediaLibraryService
 {
     private const AUDIO_MAX_CHARS = 3500;
 
+    public function __construct(private readonly ImageOptimizerService $imageOptimizer) {}
+
     /**
      * Disco donde se guardan los archivos nuevos: Wasabi/S3 si está
      * configurado y activado para medios en Configuración de almacenamiento,
@@ -122,7 +124,16 @@ class MediaLibraryService
     public function storeUpload(UploadedFile $file, ?int $newsArticleId = null): Media
     {
         $disk = $this->mediaDisk();
-        $path = $disk->putFile('media', $file, 'public');
+        $optimized = $this->imageOptimizer->optimize(file_get_contents($file->getRealPath()), $file->getMimeType());
+
+        if ($optimized !== null) {
+            $path = 'media/'.uniqid('img-', true).'.webp';
+            $disk->put($path, $optimized, 'public');
+        } else {
+            // GIF (para no perder la animación) u otro caso que el
+            // optimizador no supo procesar: se guarda tal cual llegó.
+            $path = $disk->putFile('media', $file, 'public');
+        }
 
         return Media::create([
             'url' => $disk->url($path),
@@ -187,8 +198,10 @@ class MediaLibraryService
 
         if ($image->hasBase64()) {
             $disk = $this->mediaDisk();
-            $path = 'media/'.uniqid('ai-', true).'.png';
-            $disk->put($path, base64_decode($image->base64), 'public');
+            $decoded = base64_decode($image->base64);
+            $optimized = $this->imageOptimizer->optimize($decoded, 'image/png');
+            $path = 'media/'.uniqid('ai-', true).($optimized !== null ? '.webp' : '.png');
+            $disk->put($path, $optimized ?? $decoded, 'public');
 
             return Media::create([
                 'url' => $disk->url($path),

@@ -11,6 +11,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->seed(RoleSeeder::class);
@@ -76,6 +77,24 @@ test('an image is stored on the remote disk when storage is active for media', f
     expect($remoteFiles)->not->toBeEmpty();
     Storage::disk(RemoteStorage::DISK_NAME)->assertExists($remoteFiles[0]);
     Storage::disk('public')->assertDirectoryEmpty('media');
+});
+
+test('an uploaded image is optimized to webp and resized down if oversized', function () {
+    Storage::fake('public');
+
+    $file = UploadedFile::fake()->image('cover.jpg', 3000, 1500);
+
+    $response = $this->postJson(route('admin.media.store'), ['file' => $file]);
+
+    $response->assertOk();
+
+    $media = Media::latest('id')->first();
+    expect($media->url)->toEndWith('.webp');
+
+    $path = Str::after($media->url, Storage::disk('public')->url(''));
+    $stored = imagecreatefromstring(Storage::disk('public')->get($path));
+    expect(imagesx($stored))->toBeLessThanOrEqual(1920)
+        ->and(imagesy($stored))->toBeLessThanOrEqual(1920);
 });
 
 test('audio upload rejects non audio files', function () {
