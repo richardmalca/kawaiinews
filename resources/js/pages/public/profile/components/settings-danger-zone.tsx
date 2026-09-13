@@ -66,7 +66,7 @@ export function SettingsDangerZone({
             </div>
 
             <AlertDialog open={deleteConfirm} onOpenChange={onToggleConfirm}>
-                <AlertDialogContent className="flex max-h-[85vh] w-[95vw] max-w-xl flex-col overflow-hidden rounded-3xl border-neutral-200/90 bg-white/98 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-2xl dark:border-neutral-800/90 dark:bg-neutral-900/98">
+                <AlertDialogContent className="flex max-h-[85vh] w-[95vw] !max-w-4xl flex-col overflow-hidden rounded-3xl border-neutral-200/90 bg-white/98 p-0 shadow-2xl backdrop-blur-2xl dark:border-neutral-800/90 dark:bg-neutral-900/98 data-[size=default]:!max-w-4xl data-[size=default]:sm:!max-w-4xl">
                     <form onSubmit={onDeleteSubmit} className="flex max-h-[85vh] flex-col">
                         {/* Modal Header (Fixed) */}
                         <div className="border-b border-neutral-100 px-6 py-5 sm:px-8 dark:border-neutral-800/60">
