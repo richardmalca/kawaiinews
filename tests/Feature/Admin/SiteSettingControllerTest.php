@@ -26,9 +26,10 @@ test('the site settings page renders the current settings', function () {
     );
 });
 
-test('a superadmin can update the site name, description and keywords', function () {
+test('a superadmin can update the site name, seo title, description and keywords', function () {
     $response = $this->put(route('admin.site-settings.update'), [
         'name' => 'Mi Portal Otaku',
+        'seo_title' => 'Mi Portal Otaku - Noticias de Anime, Manga y Videojuegos',
         'description' => 'Las últimas noticias de anime',
         'keywords' => ['anime', 'manga', 'gaming'],
     ]);
@@ -37,10 +38,22 @@ test('a superadmin can update the site name, description and keywords', function
 
     $settings = SiteSetting::current();
     expect($settings->name)->toBe('Mi Portal Otaku')
+        ->and($settings->seo_title)->toBe('Mi Portal Otaku - Noticias de Anime, Manga y Videojuegos')
         ->and($settings->description)->toBe('Las últimas noticias de anime')
         ->and($settings->keywords)->toBe(['anime', 'manga', 'gaming']);
 
     expect(ActivityLog::where('action', 'site_settings.updated')->exists())->toBeTrue();
+});
+
+test('seoTitle() falls back to the short name when no seo title is set', function () {
+    $settings = SiteSetting::current();
+    $settings->update(['name' => 'KawaiiNews', 'seo_title' => null]);
+
+    expect($settings->fresh()->seoTitle())->toBe('KawaiiNews');
+
+    $settings->update(['seo_title' => 'KawaiiNews - Anime, Manga y Videojuegos']);
+
+    expect($settings->fresh()->seoTitle())->toBe('KawaiiNews - Anime, Manga y Videojuegos');
 });
 
 test('uploading a logo stores it and exposes its url', function () {

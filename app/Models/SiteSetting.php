@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 /**
  * @property int $id
  * @property string $name
+ * @property string|null $seo_title
  * @property string|null $description
  * @property array<int, string>|null $keywords
  * @property string|null $logo_path
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $theme_color
  * @property string|null $twitter_handle
  */
-#[Fillable(['name', 'description', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle'])]
+#[Fillable(['name', 'seo_title', 'description', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle'])]
 class SiteSetting extends Model
 {
     private const CACHE_KEY = 'site-settings:singleton';
@@ -62,6 +63,16 @@ class SiteSetting extends Model
     {
         static::saved(fn () => Cache::forget(self::CACHE_KEY));
         static::deleted(fn () => Cache::forget(self::CACHE_KEY));
+    }
+
+    /**
+     * El título completo para SEO (home, páginas sin título propio). Si
+     * todavía no se cargó uno, cae al nombre corto para no dejar el
+     * <title> vacío.
+     */
+    public function seoTitle(): string
+    {
+        return $this->seo_title ?: $this->name;
     }
 
     public function logoUrl(): ?string

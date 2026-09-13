@@ -90,6 +90,7 @@ class SiteSettingController extends Controller
     {
         return [
             'name' => $settings->name,
+            'seo_title' => $settings->seo_title,
             'description' => $settings->description,
             'keywords' => $settings->keywords ?? [],
             'theme_color' => $settings->theme_color,

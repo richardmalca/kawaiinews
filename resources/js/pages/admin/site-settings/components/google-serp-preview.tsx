@@ -1,5 +1,5 @@
 type Props = {
-    name: string;
+    title: string;
     description: string;
     url: string;
     faviconUrl: string | null;
@@ -12,13 +12,13 @@ const TITLE_LIMIT = 60;
 const DESCRIPTION_LIMIT = 155;
 
 export default function GoogleSerpPreview({
-    name,
+    title: titleProp,
     description,
     url,
     faviconUrl,
 }: Props) {
     const displayUrl = url.replace(/^https?:\/\//, '');
-    const title = name || 'Nombre del sitio';
+    const title = titleProp || 'Título del sitio';
     const desc =
         description ||
         'Agregá una descripción para que Google la muestre acá debajo del título.';

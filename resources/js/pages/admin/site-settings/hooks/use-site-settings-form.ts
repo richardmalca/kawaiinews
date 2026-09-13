@@ -5,6 +5,7 @@ import { update } from '@/routes/admin/site-settings';
 
 type SiteSettingsData = {
     name: string;
+    seo_title: string;
     description: string;
     keywords: string[];
     theme_color: string;

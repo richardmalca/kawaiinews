@@ -24,6 +24,7 @@ import siteSettingsRoutes from '@/routes/admin/site-settings';
 
 type SiteSettings = {
     name: string;
+    seo_title: string | null;
     description: string | null;
     keywords: string[];
     theme_color: string | null;
@@ -45,6 +46,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
     const { save, processing } = useSiteSettingsForm();
 
     const [name, setName] = useState(settings.name);
+    const [seoTitle, setSeoTitle] = useState(settings.seo_title ?? '');
     const [description, setDescription] = useState(settings.description ?? '');
     const [keywords, setKeywords] = useState<string[]>(settings.keywords);
     const [themeColor, setThemeColor] = useState(
@@ -94,6 +96,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
 
         save({
             name,
+            seo_title: seoTitle,
             description,
             keywords,
             theme_color: themeColor,
@@ -124,8 +127,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                         Identidad
                                     </CardTitle>
                                     <CardDescription>
-                                        Nombre y descripción del sitio: se
-                                        usan como título/descripción por
+                                        Se usan como título/descripción por
                                         defecto en Google y al compartir en
                                         redes cuando una noticia puntual no
                                         tiene los suyos propios.
@@ -134,7 +136,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 <CardContent className="space-y-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="site-name">
-                                            Nombre del sitio
+                                            Nombre / marca
                                         </Label>
                                         <Input
                                             id="site-name"
@@ -144,7 +146,44 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                                 setName(event.target.value)
                                             }
                                         />
+                                        <p className="text-muted-foreground text-xs">
+                                            El nombre corto: aparece en el
+                                            sidebar del panel y al final de
+                                            cada noticia ("Título - {name ||
+                                            'Nombre'}").
+                                        </p>
                                         <InputError message={errors.name} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="site-seo-title">
+                                            Título para Google
+                                        </Label>
+                                        <Input
+                                            id="site-seo-title"
+                                            placeholder={
+                                                name ||
+                                                'Ej: KawaiiNews - Noticias de Anime, Manga y Videojuegos'
+                                            }
+                                            value={seoTitle}
+                                            maxLength={70}
+                                            onChange={(event) =>
+                                                setSeoTitle(
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            El título completo que se ve en
+                                            los resultados de búsqueda y al
+                                            compartir la portada (no una
+                                            noticia puntual). Si lo dejás
+                                            vacío, se usa el nombre de
+                                            arriba.
+                                        </p>
+                                        <InputError
+                                            message={errors.seo_title}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
@@ -469,7 +508,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                             </CardHeader>
                             <CardContent>
                                 <GoogleSerpPreview
-                                    name={name}
+                                    title={seoTitle || name}
                                     description={description}
                                     url={settings.canonical_url}
                                     faviconUrl={settings.favicon_url}

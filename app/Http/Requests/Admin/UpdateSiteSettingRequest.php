@@ -18,6 +18,7 @@ class UpdateSiteSettingRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:60'],
+            'seo_title' => ['nullable', 'string', 'max:70'],
             'description' => ['nullable', 'string', 'max:200'],
             'keywords' => ['nullable', 'array', 'max:15'],
             'keywords.*' => ['string', 'max:40'],

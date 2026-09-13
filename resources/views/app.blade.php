@@ -54,7 +54,7 @@
             $serverArticle = $page['props']['article']['data'] ?? $page['props']['article'] ?? null;
             $serverTitle = isset($serverArticle['title'])
                 ? $serverArticle['title'] . ' - ' . $siteSettings->name
-                : $siteSettings->name;
+                : $siteSettings->seoTitle();
             $serverDescription = $serverArticle['excerpt'] ?? $siteSettings->description ?? 'Tu portal definitivo de noticias de anime, manga, videojuegos y cultura otaku al instante.';
 
             $rawImage = $serverArticle['featured_image'] ?? null;
