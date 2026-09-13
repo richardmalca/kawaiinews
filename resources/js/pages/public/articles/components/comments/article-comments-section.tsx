@@ -84,47 +84,49 @@ export function ArticleCommentsSection({ articleSlug, onRequireAuth }: ArticleCo
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4 sm:space-y-6">
-                    {comments.map((comment) => (
-                        <div key={comment.id} className="space-y-2 sm:space-y-2.5">
-                            {/* Root Comment */}
-                            <ArticleCommentItem
-                                comment={comment}
-                                isReply={false}
-                                replyingCommentId={replyingTo?.id}
-                                isSubmitting={isSubmitting}
-                                onReplyClick={(c) => setReplyingTo(c)}
-                                onCancelReply={() => setReplyingTo(null)}
-                                onSubmitReply={addComment}
-                                onToggleLike={toggleLikeComment}
-                                onUpdateComment={updateComment}
-                                onDeleteComment={deleteComment}
-                                onRequireAuth={onRequireAuth}
-                            />
+                <>
+                    <div className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+                        {comments.map((comment) => (
+                            <div key={comment.id} className="py-1">
+                                {/* Root Comment */}
+                                <ArticleCommentItem
+                                    comment={comment}
+                                    isReply={false}
+                                    replyingCommentId={replyingTo?.id}
+                                    isSubmitting={isSubmitting}
+                                    onReplyClick={(c) => setReplyingTo(c)}
+                                    onCancelReply={() => setReplyingTo(null)}
+                                    onSubmitReply={addComment}
+                                    onToggleLike={toggleLikeComment}
+                                    onUpdateComment={updateComment}
+                                    onDeleteComment={deleteComment}
+                                    onRequireAuth={onRequireAuth}
+                                />
 
-                            {/* Replies (Aplanadas visualmente bajo la raíz, margen compacto en móvil) */}
-                            {comment.replies && comment.replies.length > 0 && (
-                                <div className="ml-2.5 sm:ml-6 space-y-2 sm:space-y-2.5">
-                                    {comment.replies.map((reply) => (
-                                        <ArticleCommentItem
-                                            key={reply.id}
-                                            comment={reply}
-                                            isReply={true}
-                                            replyingCommentId={replyingTo?.id}
-                                            isSubmitting={isSubmitting}
-                                            onReplyClick={(c) => setReplyingTo(c)}
-                                            onCancelReply={() => setReplyingTo(null)}
-                                            onSubmitReply={addComment}
-                                            onToggleLike={toggleLikeComment}
-                                            onUpdateComment={updateComment}
-                                            onDeleteComment={deleteComment}
-                                            onRequireAuth={onRequireAuth}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                {/* Replies */}
+                                {comment.replies && comment.replies.length > 0 && (
+                                    <div className="space-y-1">
+                                        {comment.replies.map((reply) => (
+                                            <ArticleCommentItem
+                                                key={reply.id}
+                                                comment={reply}
+                                                isReply={true}
+                                                replyingCommentId={replyingTo?.id}
+                                                isSubmitting={isSubmitting}
+                                                onReplyClick={(c) => setReplyingTo(c)}
+                                                onCancelReply={() => setReplyingTo(null)}
+                                                onSubmitReply={addComment}
+                                                onToggleLike={toggleLikeComment}
+                                                onUpdateComment={updateComment}
+                                                onDeleteComment={deleteComment}
+                                                onRequireAuth={onRequireAuth}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
 
                     {/* Load More Button */}
                     {hasMore && (
@@ -140,7 +142,7 @@ export function ArticleCommentsSection({ articleSlug, onRequireAuth }: ArticleCo
                             </button>
                         </div>
                     )}
-                </div>
+                </>
             )}
         </section>
     );

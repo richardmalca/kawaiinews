@@ -93,27 +93,31 @@ export function ArticleCommentItem({
     return (
         <div
             id={`comentario-${comment.id}`}
-            className={`group relative scroll-mt-36 sm:scroll-mt-32 transition-all duration-500 rounded-2xl ${isReply ? 'mt-2 pl-2 sm:pl-3.5 border-l-[1.5px] sm:border-l-2 border-rose-100 dark:border-rose-950/60' : ''}`}
+            className={`group relative scroll-mt-36 sm:scroll-mt-32 transition-all duration-300 py-2.5 sm:py-3 ${
+                isReply
+                    ? 'ml-4 sm:ml-7 pl-3 sm:pl-4 border-l-2 border-rose-200/80 dark:border-rose-900/50'
+                    : 'border-b border-neutral-100 dark:border-neutral-800/60 last:border-b-0'
+            }`}
         >
-            <div className="flex items-start gap-2 sm:gap-3">
+            <div className="flex items-start gap-2.5 sm:gap-3">
                 {/* Avatar */}
-                <div className="shrink-0">
+                <div className="shrink-0 pt-0.5">
                     {authorUsername ? (
                         <Link href={`/perfil/${authorUsername}`} className="block transition-transform hover:scale-105">
                             {authorAvatar ? (
                                 <img
                                     src={authorAvatar}
                                     alt={authorName}
-                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
+                                    className="h-7 w-7 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
                                 />
                             ) : (
-                                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-rose-100 font-bold text-[10px] sm:text-xs text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 font-bold text-[11px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                                     {authorName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                         </Link>
                     ) : (
-                        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-neutral-200 font-bold text-[10px] sm:text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-200 font-bold text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                             {authorName.charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -121,54 +125,52 @@ export function ArticleCommentItem({
 
                 {/* Content Box */}
                 <div className="min-w-0 flex-1">
-                    <div className="rounded-xl sm:rounded-2xl border border-neutral-200/70 bg-white/70 p-2.5 sm:p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800/70 dark:bg-neutral-900/40">
-                        {/* Header: Author & Meta */}
-                        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs">
-                                {authorUsername ? (
-                                    <Link
-                                        href={`/perfil/${authorUsername}`}
-                                        className="font-bold text-[11px] sm:text-xs text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400"
-                                    >
-                                        {authorName}
-                                    </Link>
-                                ) : (
-                                    <span className="font-bold text-[11px] sm:text-xs text-neutral-900 dark:text-neutral-100">
-                                        {authorName}
-                                    </span>
-                                )}
-
-                                {authorUsername && (
-                                    <span className="hidden text-[10px] sm:text-[11px] text-neutral-400 sm:inline">
-                                        @{authorUsername}
-                                    </span>
-                                )}
-
-                                {/* Etiqueta de respuesta solo si responde a OTRA respuesta (no al comentario raíz) */}
-                                {comment.reply_to && (
-                                    <span className="inline-flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                                        <CornerDownRight className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-neutral-400" />
-                                        <span className="text-neutral-400">a</span>
-                                        <Link
-                                            href={`/perfil/${comment.reply_to.username}`}
-                                            className="font-semibold text-rose-600 hover:underline dark:text-rose-400"
-                                        >
-                                            @{comment.reply_to.username}
-                                        </Link>
-                                    </span>
-                                )}
-
-                                <span className="text-neutral-300 dark:text-neutral-700">•</span>
-                                <span className="text-[10px] sm:text-[11px] text-neutral-400" title={comment.created_at_iso}>
-                                    {comment.created_at ?? 'hace un momento'}
+                    {/* Header: Author & Meta */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            {authorUsername ? (
+                                <Link
+                                    href={`/perfil/${authorUsername}`}
+                                    className="font-bold text-xs text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400"
+                                >
+                                    {authorName}
+                                </Link>
+                            ) : (
+                                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                                    {authorName}
                                 </span>
+                            )}
 
-                                {comment.is_edited && (
-                                    <span className="text-[10px] text-neutral-400 italic">
-                                        (editado)
-                                    </span>
-                                )}
-                            </div>
+                            {authorUsername && (
+                                <span className="hidden text-[11px] text-neutral-400 sm:inline">
+                                    @{authorUsername}
+                                </span>
+                            )}
+
+                            {comment.reply_to && (
+                                <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                                    <CornerDownRight className="h-3 w-3 text-neutral-400" />
+                                    <span className="text-neutral-400">a</span>
+                                    <Link
+                                        href={`/perfil/${comment.reply_to.username}`}
+                                        className="font-semibold text-rose-600 hover:underline dark:text-rose-400"
+                                    >
+                                        @{comment.reply_to.username}
+                                    </Link>
+                                </span>
+                            )}
+
+                            <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                            <span className="text-[11px] text-neutral-400" title={comment.created_at_iso}>
+                                {comment.created_at ?? 'hace un momento'}
+                            </span>
+
+                            {comment.is_edited && (
+                                <span className="text-[10px] text-neutral-400 italic">
+                                    (editado)
+                                </span>
+                            )}
+                        </div>
 
                             {/* Dropdown / Actions for author or staff */}
                             {(comment.can_update || comment.can_delete) && (
@@ -296,42 +298,43 @@ export function ArticleCommentItem({
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="whitespace-pre-wrap leading-relaxed break-words">
+                                    <p className="whitespace-pre-wrap text-xs sm:text-[13px] leading-relaxed break-words text-neutral-800 dark:text-neutral-200">
                                         {comment.body}
                                     </p>
                                 )}
                             </div>
                         )}
 
-                        {/* Footer Interactions (Like & Reply buttons) */}
-                        <div className="mt-2.5 flex items-center gap-3 border-t border-neutral-100/80 pt-2 dark:border-neutral-800/50">
+                        {/* Footer Interactions (Responder a la izquierda, Me gusta a la derecha) */}
+                        <div className="mt-2 flex items-center justify-between gap-3 pt-1">
                             <button
                                 type="button"
-                                onClick={() => onToggleLike(comment.id)}
-                                className={`inline-flex items-center gap-1 text-xs font-medium transition-colors ${
-                                    comment.has_liked
-                                        ? 'text-rose-600 dark:text-rose-400'
-                                        : 'text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400'
-                                }`}
-                                title="Me gusta"
+                                onClick={() => onReplyClick(comment)}
+                                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors"
+                                title="Responder a este comentario"
                             >
-                                <Heart
-                                    className={`h-3.5 w-3.5 ${comment.has_liked ? 'fill-current text-rose-500' : ''}`}
-                                />
-                                <span>{comment.likes_count > 0 ? comment.likes_count : ''}</span>
+                                <MessageCircle className="h-3 w-3" />
+                                <span>Responder</span>
                             </button>
 
                             <button
                                 type="button"
-                                onClick={() => onReplyClick(comment)}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                                title="Responder a este comentario"
+                                onClick={() => onToggleLike(comment.id)}
+                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-semibold transition-all active:scale-95 ${
+                                    comment.has_liked
+                                        ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
+                                        : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
+                                }`}
+                                title="Me gusta"
                             >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                <span>Responder</span>
+                                <Heart
+                                    className={`h-3.5 w-3.5 ${comment.has_liked ? 'fill-current text-rose-500 dark:text-rose-400' : ''}`}
+                                />
+                                {comment.likes_count > 0 && (
+                                    <span className="text-[11px]">{comment.likes_count}</span>
+                                )}
                             </button>
                         </div>
-                    </div>
 
                     {/* Inline Reply Form if triggered for this specific comment */}
                     {isThisReplying && (
