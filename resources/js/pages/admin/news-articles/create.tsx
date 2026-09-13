@@ -47,9 +47,7 @@ export default function NewsArticleCreate({
         '',
     );
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
+    const submitWithStatus = (targetStatus: NewsArticle['status']) => {
         createArticle({
             title,
             slug,
@@ -57,30 +55,58 @@ export default function NewsArticleCreate({
             excerpt,
             body,
             featured_image: featuredImage,
-            status,
+            status: targetStatus,
             tags,
         });
+        setStatus(targetStatus);
+    };
+
+    // Igual que en editar: "Guardar" siempre crea como borrador, nunca
+    // publica por las dudas. "Publicar" (solo visible si el estado elegido
+    // no es borrador) es la única acción que la hace pública.
+    const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        submitWithStatus('draft');
+    };
+
+    const handlePublish = () => {
+        submitWithStatus('published');
     };
 
     return (
         <>
             <Head title="Nueva noticia" />
 
-            <form onSubmit={handleSubmit} id="create-article-form">
+            <form onSubmit={handleSave} id="create-article-form">
                 <div className="space-y-6 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <Heading
                             title="Nueva noticia"
                             description="Cargala a mano en vez de esperar al scraping automático"
                         />
-                        <Button
-                            type="submit"
-                            form="create-article-form"
-                            disabled={processing}
-                        >
-                            {processing && <Spinner />}
-                            Crear noticia
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="submit"
+                                form="create-article-form"
+                                variant={
+                                    status !== 'draft' ? 'outline' : 'default'
+                                }
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Guardar como borrador
+                            </Button>
+                            {status !== 'draft' && (
+                                <Button
+                                    type="button"
+                                    disabled={processing}
+                                    onClick={handlePublish}
+                                >
+                                    {processing && <Spinner />}
+                                    Publicar
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">

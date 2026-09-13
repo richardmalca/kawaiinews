@@ -127,9 +127,7 @@ export default function NewsArticleEdit({
         (article.body ?? '').trim(),
     );
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
+    const submitWithStatus = (targetStatus: NewsArticle['status']) => {
         saveArticle(article.id, {
             title,
             slug,
@@ -138,16 +136,32 @@ export default function NewsArticleEdit({
             body,
             featured_image: featuredImage,
             audio_url: audioUrl,
-            status,
+            status: targetStatus,
             tags,
         });
+        setStatus(targetStatus);
+    };
+
+    // "Guardar" nunca cambia el estado de publicación por las dudas: si el
+    // toggle de Estado quedó en "Publicada" pero el editor solo quiere
+    // guardar avances (o viceversa, tocó el toggle sin querer), guardar
+    // conserva el estado que ya tenía la noticia en la base — para
+    // publicarla de verdad está el botón "Publicar", que solo aparece
+    // cuando el estado elegido en el toggle ya no es borrador.
+    const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        submitWithStatus(article.status);
+    };
+
+    const handlePublish = () => {
+        submitWithStatus('published');
     };
 
     return (
         <>
             <Head title={`Editar: ${article.title}`} />
 
-            <form onSubmit={handleSubmit} id="edit-article-form">
+            <form onSubmit={handleSave} id="edit-article-form">
                 <div className="space-y-6 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <Heading
@@ -176,11 +190,24 @@ export default function NewsArticleEdit({
                             <Button
                                 type="submit"
                                 form="edit-article-form"
+                                variant={
+                                    status !== 'draft' ? 'outline' : 'default'
+                                }
                                 disabled={processing}
                             >
                                 {processing && <Spinner />}
                                 Guardar
                             </Button>
+                            {status !== 'draft' && (
+                                <Button
+                                    type="button"
+                                    disabled={processing}
+                                    onClick={handlePublish}
+                                >
+                                    {processing && <Spinner />}
+                                    Publicar
+                                </Button>
+                            )}
                         </div>
                     </div>
 
