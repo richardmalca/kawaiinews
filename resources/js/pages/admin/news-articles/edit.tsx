@@ -190,24 +190,20 @@ export default function NewsArticleEdit({
                             <Button
                                 type="submit"
                                 form="edit-article-form"
-                                variant={
-                                    status !== 'draft' ? 'outline' : 'default'
-                                }
+                                variant="outline"
                                 disabled={processing}
                             >
                                 {processing && <Spinner />}
                                 Guardar
                             </Button>
-                            {status !== 'draft' && (
-                                <Button
-                                    type="button"
-                                    disabled={processing}
-                                    onClick={handlePublish}
-                                >
-                                    {processing && <Spinner />}
-                                    Publicar
-                                </Button>
-                            )}
+                            <Button
+                                type="button"
+                                disabled={processing}
+                                onClick={handlePublish}
+                            >
+                                {processing && <Spinner />}
+                                Publicar
+                            </Button>
                         </div>
                     </div>
 

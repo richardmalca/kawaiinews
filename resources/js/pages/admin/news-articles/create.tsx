@@ -88,24 +88,20 @@ export default function NewsArticleCreate({
                             <Button
                                 type="submit"
                                 form="create-article-form"
-                                variant={
-                                    status !== 'draft' ? 'outline' : 'default'
-                                }
+                                variant="outline"
                                 disabled={processing}
                             >
                                 {processing && <Spinner />}
                                 Guardar como borrador
                             </Button>
-                            {status !== 'draft' && (
-                                <Button
-                                    type="button"
-                                    disabled={processing}
-                                    onClick={handlePublish}
-                                >
-                                    {processing && <Spinner />}
-                                    Publicar
-                                </Button>
-                            )}
+                            <Button
+                                type="button"
+                                disabled={processing}
+                                onClick={handlePublish}
+                            >
+                                {processing && <Spinner />}
+                                Publicar
+                            </Button>
                         </div>
                     </div>
 
