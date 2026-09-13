@@ -3,8 +3,10 @@
 use App\Jobs\GenerateMediaJob;
 use App\Models\Media;
 use App\Models\NewsArticle;
+use App\Models\StorageSetting;
 use App\Models\User;
 use App\Services\Admin\MediaLibraryService;
+use App\Support\RemoteStorage;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -49,6 +51,31 @@ test('an audio file can be uploaded to the media library', function () {
         'original_name' => 'narration.mp3',
         'news_article_id' => $article->id,
     ]);
+});
+
+test('an image is stored on the remote disk when storage is active for media', function () {
+    Storage::fake('public');
+    Storage::fake(RemoteStorage::DISK_NAME);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+        'active_for_media' => true,
+    ]);
+
+    $file = UploadedFile::fake()->image('cover.jpg');
+
+    $response = $this->postJson(route('admin.media.store'), ['file' => $file]);
+
+    $response->assertOk();
+
+    // El archivo termina en el disco remoto (fake), no en el local público
+    // — el fake de Storage no respeta la URL configurada, así que la
+    // comprobación real es "existe en el disco remoto" / "no existe en el
+    // local", no comparar la URL contra un dominio.
+    $remoteFiles = Storage::disk(RemoteStorage::DISK_NAME)->allFiles();
+    expect($remoteFiles)->not->toBeEmpty();
+    Storage::disk(RemoteStorage::DISK_NAME)->assertExists($remoteFiles[0]);
+    Storage::disk('public')->assertDirectoryEmpty('media');
 });
 
 test('audio upload rejects non audio files', function () {

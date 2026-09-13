@@ -5,7 +5,10 @@ namespace App\Services\Admin;
 use App\Models\AiProvider;
 use App\Models\Media;
 use App\Models\NewsArticle;
+use App\Models\StorageSetting;
 use App\Support\AiUsageLogger;
+use App\Support\RemoteStorage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +23,54 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class MediaLibraryService
 {
     private const AUDIO_MAX_CHARS = 3500;
+
+    /**
+     * Disco donde se guardan los archivos nuevos: Wasabi/S3 si está
+     * configurado y activado para medios en Configuración de almacenamiento,
+     * el disco local ("public") si no. Los archivos que ya existían en el
+     * otro disco se siguen sirviendo/borrando bien igual (ver diskForUrl()).
+     */
+    private function mediaDisk(): Filesystem
+    {
+        $storageSettings = StorageSetting::current();
+
+        if ($storageSettings->active_for_media && $storageSettings->isConfigured()) {
+            return RemoteStorage::disk($storageSettings);
+        }
+
+        return Storage::disk('public');
+    }
+
+    /**
+     * Encuentra en qué disco (local o remoto) vive de verdad una URL ya
+     * guardada, sin asumir que es el disco actualmente activo — así,
+     * migrar de local a S3 (o viceversa) no rompe los archivos que ya
+     * estaban en el otro.
+     *
+     * @return array{0: Filesystem, 1: string}|null
+     */
+    private function diskForUrl(string $url): ?array
+    {
+        $localDisk = Storage::disk('public');
+        $localPrefix = $localDisk->url('');
+
+        if (Str::startsWith($url, $localPrefix)) {
+            return [$localDisk, Str::after($url, $localPrefix)];
+        }
+
+        $storageSettings = StorageSetting::current();
+
+        if ($storageSettings->isConfigured()) {
+            $remoteDisk = RemoteStorage::disk($storageSettings);
+            $remotePrefix = $remoteDisk->url('');
+
+            if (Str::startsWith($url, $remotePrefix)) {
+                return [$remoteDisk, Str::after($url, $remotePrefix)];
+            }
+        }
+
+        return null;
+    }
 
     private function resolveImageProvider(): ?AiProvider
     {
@@ -70,10 +121,11 @@ class MediaLibraryService
 
     public function storeUpload(UploadedFile $file, ?int $newsArticleId = null): Media
     {
-        $path = $file->store('media', 'public');
+        $disk = $this->mediaDisk();
+        $path = $disk->putFile('media', $file, 'public');
 
         return Media::create([
-            'url' => Storage::disk('public')->url($path),
+            'url' => $disk->url($path),
             'original_name' => $file->getClientOriginalName(),
             'source' => 'upload',
             'type' => 'image',
@@ -83,10 +135,11 @@ class MediaLibraryService
 
     public function storeAudioUpload(UploadedFile $file, ?int $newsArticleId = null): Media
     {
-        $path = $file->store('audio', 'public');
+        $disk = $this->mediaDisk();
+        $path = $disk->putFile('audio', $file, 'public');
 
         return Media::create([
-            'url' => Storage::disk('public')->url($path),
+            'url' => $disk->url($path),
             'original_name' => $file->getClientOriginalName(),
             'source' => 'upload',
             'type' => 'audio',
@@ -133,11 +186,12 @@ class MediaLibraryService
         AiUsageLogger::record('image', $provider->provider, $model, $response->usage);
 
         if ($image->hasBase64()) {
+            $disk = $this->mediaDisk();
             $path = 'media/'.uniqid('ai-', true).'.png';
-            Storage::disk('public')->put($path, base64_decode($image->base64));
+            $disk->put($path, base64_decode($image->base64), 'public');
 
             return Media::create([
-                'url' => Storage::disk('public')->url($path),
+                'url' => $disk->url($path),
                 'original_name' => Str::limit($prompt, 60, ''),
                 'source' => 'ai',
                 'provider' => $provider->provider,
@@ -200,11 +254,12 @@ class MediaLibraryService
             ->withProviderOptions($voiceConfig['options'])
             ->asAudio();
 
+        $disk = $this->mediaDisk();
         $path = 'audio/'.uniqid('narracion-', true).'.mp3';
-        Storage::disk('public')->put($path, base64_decode($response->audio->base64));
+        $disk->put($path, base64_decode($response->audio->base64), 'public');
 
         return Media::create([
-            'url' => Storage::disk('public')->url($path),
+            'url' => $disk->url($path),
             'original_name' => Str::limit($newsArticle->title, 60, ''),
             'source' => 'ai',
             'provider' => $provider->provider,
@@ -218,10 +273,10 @@ class MediaLibraryService
     {
         $filename = $this->downloadFilename($media);
 
-        if (Str::startsWith($media->url, Storage::disk('public')->url(''))) {
-            $path = Str::after($media->url, Storage::disk('public')->url(''));
+        if ($resolved = $this->diskForUrl($media->url)) {
+            [$disk, $path] = $resolved;
 
-            return Storage::disk('public')->download($path, $filename);
+            return $disk->download($path, $filename);
         }
 
         $response = Http::timeout(30)->get($media->url);
@@ -256,9 +311,9 @@ class MediaLibraryService
 
     public function delete(Media $media): void
     {
-        if (Str::startsWith($media->url, Storage::disk('public')->url(''))) {
-            $path = Str::after($media->url, Storage::disk('public')->url(''));
-            Storage::disk('public')->delete($path);
+        if ($resolved = $this->diskForUrl($media->url)) {
+            [$disk, $path] = $resolved;
+            $disk->delete($path);
         }
 
         $media->delete();

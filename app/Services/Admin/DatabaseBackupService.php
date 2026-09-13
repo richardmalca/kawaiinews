@@ -2,6 +2,8 @@
 
 namespace App\Services\Admin;
 
+use App\Models\StorageSetting;
+use App\Support\RemoteStorage;
 use Illuminate\Support\Facades\DB;
 use PDO;
 use Pdo\Mysql;
@@ -9,6 +11,8 @@ use RuntimeException;
 
 class DatabaseBackupService
 {
+    private const REMOTE_PREFIX = 'backups/';
+
     private const SKIP_TABLES = [
         'cache',
         'cache_locks',
@@ -48,6 +52,69 @@ class DatabaseBackupService
         ]);
 
         $pdo->exec($sql);
+    }
+
+    /**
+     * Sube una copia del backup al almacenamiento remoto (Wasabi/S3), si
+     * está configurado y activado para backups. No hace nada si no —
+     * quien llama decide si eso debe frenar el flujo o no.
+     */
+    public function uploadToRemote(string $filename, string $compressedContents): void
+    {
+        $settings = StorageSetting::current();
+
+        if (! $settings->active_for_backups || ! $settings->isConfigured()) {
+            return;
+        }
+
+        RemoteStorage::disk($settings)
+            ->put(self::REMOTE_PREFIX.$filename, $compressedContents);
+    }
+
+    /**
+     * @return array<int, array{name: string, size: int, last_modified: int}>
+     */
+    public function listRemote(): array
+    {
+        $settings = StorageSetting::current();
+
+        if (! $settings->isConfigured()) {
+            return [];
+        }
+
+        $disk = RemoteStorage::disk($settings);
+
+        return collect($disk->files(rtrim(self::REMOTE_PREFIX, '/')))
+            ->map(fn (string $path) => [
+                'name' => basename($path),
+                'size' => $disk->size($path),
+                'last_modified' => $disk->lastModified($path),
+            ])
+            ->sortByDesc('last_modified')
+            ->values()
+            ->all();
+    }
+
+    public function downloadRemote(string $filename): string
+    {
+        $settings = StorageSetting::current();
+
+        if (! $settings->isConfigured()) {
+            throw new RuntimeException('El almacenamiento remoto no está configurado.');
+        }
+
+        return RemoteStorage::disk($settings)->get(self::REMOTE_PREFIX.$filename);
+    }
+
+    public function deleteRemote(string $filename): void
+    {
+        $settings = StorageSetting::current();
+
+        if (! $settings->isConfigured()) {
+            return;
+        }
+
+        RemoteStorage::disk($settings)->delete(self::REMOTE_PREFIX.$filename);
     }
 
     public function buildSql(): string

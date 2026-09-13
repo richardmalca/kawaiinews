@@ -53,9 +53,13 @@ class SiteSetting extends Model
     public static function current(): self
     {
         $attributes = Cache::rememberForever(self::CACHE_KEY, function () {
-            return self::query()
-                ->firstOrCreate(['id' => 1], ['name' => config('app.name', 'KawaiiNews')])
-                ->getAttributes();
+            $model = self::query()->firstOrCreate(['id' => 1], ['name' => config('app.name', 'KawaiiNews')]);
+
+            // firstOrCreate() no trae los defaults que aplica la base al
+            // insertar (ej. search_box_enabled => false): el modelo en
+            // memoria solo tiene los atributos que se pasaron explícitos.
+            // fresh() vuelve a leer la fila ya insertada, con todo.
+            return $model->wasRecentlyCreated ? $model->fresh()->getAttributes() : $model->getAttributes();
         });
 
         $model = new self;

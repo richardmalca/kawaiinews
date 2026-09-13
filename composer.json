@@ -19,6 +19,7 @@
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "league/flysystem-aws-s3-v3": "^3.35",
         "overtrue/laravel-favorite": "^6.0",
         "overtrue/laravel-follow": "^6.0",
         "overtrue/laravel-like": "^6.0",

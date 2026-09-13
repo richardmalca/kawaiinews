@@ -4,25 +4,49 @@ import { Cookie, X } from 'lucide-react';
 
 const COOKIE_CONSENT_KEY = 'kawaiinews_cookie_consent';
 
+function getConsent(): boolean {
+    if (typeof window === 'undefined') return true;
+    try {
+        if (localStorage.getItem(COOKIE_CONSENT_KEY)) return true;
+        return document.cookie.split('; ').some((row) => row.startsWith(`${COOKIE_CONSENT_KEY}=`));
+    } catch {
+        return false;
+    }
+}
+
+function saveConsent(value: string) {
+    try {
+        localStorage.setItem(COOKIE_CONSENT_KEY, value);
+    } catch {}
+    try {
+        // Set cookie valid for 1 year so it persists across reloads, incognito boundaries, and server responses
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 1);
+        document.cookie = `${COOKIE_CONSENT_KEY}=${value}; expires=${date.toUTCString()}; path=/; SameSite=Lax`;
+    } catch {}
+}
+
 export function CookieConsentBanner() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
-        if (!consent) {
-            // Small delay so it doesn't pop aggressively immediately upon render
-            const timer = setTimeout(() => setIsVisible(true), 800);
+        if (!getConsent()) {
+            const timer = setTimeout(() => {
+                if (!getConsent()) {
+                    setIsVisible(true);
+                }
+            }, 800);
             return () => clearTimeout(timer);
         }
     }, []);
 
     const handleAccept = () => {
-        localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
+        saveConsent('accepted');
         setIsVisible(false);
     };
 
     const handleDismiss = () => {
-        localStorage.setItem(COOKIE_CONSENT_KEY, 'dismissed');
+        saveConsent('dismissed');
         setIsVisible(false);
     };
 

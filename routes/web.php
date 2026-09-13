@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\SiteSettingController;
+use App\Http\Controllers\Admin\StorageSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\ArticleController;
@@ -188,6 +189,22 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('backup/restore', [DatabaseBackupController::class, 'restore'])
                 ->middleware('throttle:6,1')
                 ->name('backup.restore');
+            Route::post('backup/remote', [DatabaseBackupController::class, 'backupNow'])
+                ->middleware('throttle:6,1')
+                ->name('backup.remote.store');
+            Route::get('backup/remote', [DatabaseBackupController::class, 'remoteIndex'])->name('backup.remote.index');
+            Route::get('backup/remote/{filename}/download', [DatabaseBackupController::class, 'downloadRemote'])
+                ->middleware('throttle:6,1')
+                ->name('backup.remote.download');
+            Route::delete('backup/remote/{filename}', [DatabaseBackupController::class, 'destroyRemote'])->name('backup.remote.destroy');
+
+            Route::get('storage-settings', [StorageSettingController::class, 'edit'])->name('storage-settings.edit');
+            Route::put('storage-settings', [StorageSettingController::class, 'update'])->name('storage-settings.update');
+            Route::post('storage-settings/test-connection', [StorageSettingController::class, 'testConnection'])
+                ->middleware('throttle:10,1')
+                ->name('storage-settings.test-connection');
+            Route::post('storage-settings/media', [StorageSettingController::class, 'toggleMedia'])->name('storage-settings.media.toggle');
+            Route::post('storage-settings/backups', [StorageSettingController::class, 'toggleBackups'])->name('storage-settings.backups.toggle');
 
             Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
             Route::get('ai-usage', [AiUsageController::class, 'index'])->name('ai-usage.index');

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BrainCircuit,
+    CloudCog,
     DatabaseBackup,
     DollarSign,
     History,
@@ -31,6 +32,7 @@ import { index as aiProvidersIndex } from '@/routes/admin/ai-providers';
 import { index as aiUsageIndex } from '@/routes/admin/ai-usage';
 import { index as backupIndex } from '@/routes/admin/backup';
 import { edit as siteSettingsEdit } from '@/routes/admin/site-settings';
+import { edit as storageSettingsEdit } from '@/routes/admin/storage-settings';
 import { index as commentsIndex } from '@/routes/admin/comments';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
@@ -116,6 +118,11 @@ export function AppSidebar() {
                   title: 'Backups',
                   href: backupIndex(),
                   icon: DatabaseBackup,
+              },
+              {
+                  title: 'Almacenamiento',
+                  href: storageSettingsEdit(),
+                  icon: CloudCog,
               },
               {
                   title: 'Actividad',
