@@ -368,7 +368,11 @@ export default function StorageSettingsIndex({
                                         Esto puede tardar un rato si tenés
                                         muchos archivos. Podés seguir usando
                                         el panel mientras se hace, y nada
-                                        deja de funcionar mientras tanto.
+                                        deja de funcionar mientras tanto. Si
+                                        alguna imagen es de antes de tener
+                                        esta función, también se aligera de
+                                        paso, sin que tengas que hacer nada
+                                        extra.
                                     </p>
                                 </div>
                             )}

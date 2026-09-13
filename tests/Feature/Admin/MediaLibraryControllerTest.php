@@ -137,9 +137,39 @@ test('migrateAll moves local files to the remote disk and updates their url', fu
 
     $result = app(MediaLibraryService::class)->migrateAll('remote');
 
-    expect($result)->toBe(['moved' => 1, 'already_there' => 0, 'failed' => 0]);
+    expect($result)->toBe(['moved' => 1, 'already_there' => 0, 'failed' => 0, 'optimized' => 0]);
     Storage::disk('public')->assertMissing('media/photo.webp');
     expect($media->fresh()->url)->toStartWith(Storage::disk(RemoteStorage::DISK_NAME)->url(''));
+});
+
+test('migrateAll also optimizes images that were uploaded before webp conversion existed', function () {
+    Storage::fake('public');
+    Storage::fake(RemoteStorage::DISK_NAME, ['url' => 'https://e.test/b']);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+    ]);
+
+    $image = imagecreatetruecolor(800, 600);
+    imagefill($image, 0, 0, imagecolorallocate($image, 200, 50, 50));
+    ob_start();
+    imagepng($image);
+    $original = ob_get_clean();
+    imagedestroy($image);
+    Storage::disk('public')->put('media/old-photo.png', $original);
+    $media = Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url('media/old-photo.png'),
+    ]);
+
+    $result = app(MediaLibraryService::class)->migrateAll('remote');
+
+    expect($result)->toBe(['moved' => 1, 'already_there' => 0, 'failed' => 0, 'optimized' => 1]);
+    expect($media->fresh()->url)->toEndWith('.webp');
+
+    $remotePath = Str::after($media->fresh()->url, Storage::disk(RemoteStorage::DISK_NAME)->url(''));
+    $stored = Storage::disk(RemoteStorage::DISK_NAME)->get($remotePath);
+    expect(strlen($stored))->toBeLessThan(strlen($original));
 });
 
 test('migrateAll skips files already on the target and reports them separately', function () {
@@ -157,7 +187,7 @@ test('migrateAll skips files already on the target and reports them separately',
 
     $result = app(MediaLibraryService::class)->migrateAll('local');
 
-    expect($result)->toBe(['moved' => 0, 'already_there' => 1, 'failed' => 0]);
+    expect($result)->toBe(['moved' => 0, 'already_there' => 1, 'failed' => 0, 'optimized' => 0]);
 });
 
 test('a superadmin can trigger a media migration and poll its result', function () {

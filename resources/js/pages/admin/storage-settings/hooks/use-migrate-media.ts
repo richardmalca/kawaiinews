@@ -8,6 +8,7 @@ type MigrationResult = {
     moved: number;
     already_there: number;
     failed: number;
+    optimized: number;
 };
 
 function readCsrfToken(): string {
@@ -22,6 +23,12 @@ function summarize(result: MigrationResult): string {
     }
 
     const parts = [`Se movieron ${result.moved} archivos.`];
+
+    if (result.optimized > 0) {
+        parts.push(
+            `De paso, ${result.optimized} se aligeraron porque todavía no estaban optimizados.`,
+        );
+    }
 
     if (result.failed > 0) {
         parts.push(

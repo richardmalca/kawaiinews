@@ -111,7 +111,12 @@ class MediaLibraryService
      * funcionando. Los que ya estén en el destino se cuentan aparte, no
      * se tocan de nuevo.
      *
-     * @return array{moved: int, already_there: int, failed: int}
+     * De paso, cualquier imagen que todavía no esté en WebP (subida antes
+     * de tener esta optimización) se convierte en el momento — así con un
+     * solo traslado quedan al día tanto la ubicación como el peso del
+     * archivo, sin tener que hacerlo dos veces.
+     *
+     * @return array{moved: int, already_there: int, failed: int, optimized: int}
      */
     public function migrateAll(string $direction): array
     {
@@ -127,6 +132,7 @@ class MediaLibraryService
         $moved = 0;
         $alreadyThere = 0;
         $failed = 0;
+        $optimized = 0;
 
         foreach (Media::whereIn('type', ['image', 'audio'])->cursor() as $media) {
             if (Str::startsWith($media->url, $targetPrefix)) {
@@ -144,23 +150,40 @@ class MediaLibraryService
                 continue;
             }
 
-            [$sourceDisk, $path] = $resolved;
+            [$sourceDisk, $originalPath] = $resolved;
 
             try {
-                $contents = $sourceDisk->get($path);
-                $newPath = ($media->type === 'audio' ? 'audio/' : 'media/').basename($path);
+                $contents = $sourceDisk->get($originalPath);
+                $destinationPath = $originalPath;
+                $wasOptimized = false;
+
+                if ($media->type === 'image' && ! Str::endsWith($originalPath, '.webp')) {
+                    $webp = $this->imageOptimizer->optimize($contents, $sourceDisk->mimeType($originalPath) ?: 'image/jpeg');
+
+                    if ($webp !== null) {
+                        $contents = $webp;
+                        $destinationPath = Str::beforeLast($originalPath, '.').'.webp';
+                        $wasOptimized = true;
+                    }
+                }
+
+                $newPath = ($media->type === 'audio' ? 'audio/' : 'media/').basename($destinationPath);
 
                 $targetDisk->put($newPath, $contents, 'public');
-                $sourceDisk->delete($path);
+                $sourceDisk->delete($originalPath);
                 $media->update(['url' => $targetDisk->url($newPath)]);
 
                 $moved++;
+
+                if ($wasOptimized) {
+                    $optimized++;
+                }
             } catch (Throwable) {
                 $failed++;
             }
         }
 
-        return ['moved' => $moved, 'already_there' => $alreadyThere, 'failed' => $failed];
+        return ['moved' => $moved, 'already_there' => $alreadyThere, 'failed' => $failed, 'optimized' => $optimized];
     }
 
     private function resolveImageProvider(): ?AiProvider
