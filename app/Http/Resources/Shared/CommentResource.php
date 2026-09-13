@@ -36,6 +36,7 @@ class CommentResource extends JsonResource
                 'name' => $this->user->name,
                 'username' => $this->user->username,
                 'avatar' => $this->user->active_avatar_url,
+                'badge' => $this->user->community_badge,
             ] : null),
             'reply_to' => $this->whenLoaded('replyToComment', fn () => $this->replyToComment?->user ? [
                 'comment_id' => $this->replyToComment->id,

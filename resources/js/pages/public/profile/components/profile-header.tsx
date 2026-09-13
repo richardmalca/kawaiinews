@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Heart, Newspaper, Settings, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
 import type { PublicUserProfile } from '@/types';
+import { UserBadge } from '@/components/public/user-badge';
 
 interface ProfileHeaderProps {
     profile: PublicUserProfile;
@@ -52,11 +53,8 @@ export function ProfileHeader({
                                 <h1 className="text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl dark:text-white">
                                     {profile.name}
                                 </h1>
-                                {profile.is_author && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400">
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                        <span>Redactor Oficial</span>
-                                    </span>
+                                {profile.badge && (
+                                    <UserBadge badge={profile.badge} className="px-2 py-0.5 text-xs" />
                                 )}
                             </div>
                             <p className="font-mono text-xs font-medium text-neutral-500 dark:text-neutral-400">

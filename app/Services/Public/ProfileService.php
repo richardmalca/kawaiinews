@@ -36,6 +36,7 @@ class ProfileService
             'banner' => $profileUser->banner,
             'avatar_source' => $profileUser->avatar_source ?? 'google',
             'is_author' => $isAuthor,
+            'badge' => $profileUser->community_badge,
             'published_articles_count' => ($isAuthor || $profileUser->publishedArticlesCount() > 0) ? $profileUser->publishedArticlesCount() : null,
             'total_articles_likes_count' => ($isAuthor || $profileUser->publishedArticlesCount() > 0) ? $profileUser->totalArticlesLikesCount() : null,
             'followers_count' => $profileUser->followers()->count(),

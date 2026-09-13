@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
+import { AtSign, Bell, Check, CheckCheck, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
@@ -24,6 +24,11 @@ export interface AppNotificationItem {
         reason?: 'author' | 'category' | 'tag' | string;
         reason_label?: string | null;
         reply_preview?: string;
+        mentioner_id?: number;
+        mentioner_name?: string;
+        mentioner_username?: string;
+        mentioner_avatar?: string | null;
+        comment_preview?: string;
         follower_name?: string;
         follower_username?: string;
         follower_avatar?: string | null;
@@ -216,6 +221,7 @@ export function NotificationBell() {
                             notifications.map((item) => {
                                 const isUnread = !item.read_at;
                                 const isReply = item.data.type === 'comment_reply';
+                                const isMention = item.data.type === 'comment_mention';
                                 const isFollow = item.data.type === 'user_follow';
                                 const isNewArticle = item.data.type === 'new_article';
 
@@ -237,19 +243,22 @@ export function NotificationBell() {
                                                         alt="Portada"
                                                         className="h-full w-full object-cover"
                                                     />
-                                                ) : (item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
+                                                ) : (item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
                                                     <img
-                                                        src={(item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
+                                                        src={(item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (
-                                                    (item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
+                                                    (item.data.mentioner_name || item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
                                                 )}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-950 shadow-xs">
                                                 {isReply && (
                                                     <MessageSquare className="h-2.5 w-2.5 text-rose-500" />
+                                                )}
+                                                {isMention && (
+                                                    <AtSign className="h-2.5 w-2.5 text-purple-500" />
                                                 )}
                                                 {isFollow && (
                                                     <UserPlus className="h-2.5 w-2.5 text-sky-500" />
@@ -268,6 +277,17 @@ export function NotificationBell() {
                                                             {item.data.replier_name}
                                                         </span>{' '}
                                                         respondió a tu comentario en{' '}
+                                                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                                            {item.data.article_title}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                {isMention && (
+                                                    <>
+                                                        <span className="font-bold text-neutral-950 dark:text-white">
+                                                            {item.data.mentioner_name}
+                                                        </span>{' '}
+                                                        te mencionó en un comentario en{' '}
                                                         <span className="font-semibold text-rose-600 dark:text-rose-400">
                                                             {item.data.article_title}
                                                         </span>
@@ -314,14 +334,14 @@ export function NotificationBell() {
                                                         </span>
                                                     </>
                                                 )}
-                                                {!isReply && !isFollow && !isNewArticle && (
+                                                {!isReply && !isMention && !isFollow && !isNewArticle && (
                                                     <span>Nueva notificación</span>
                                                 )}
                                             </p>
 
-                                            {item.data.reply_preview && (
+                                            {(item.data.reply_preview || item.data.comment_preview) && (
                                                 <p className="text-[11px] text-neutral-500 dark:text-neutral-400 italic line-clamp-1">
-                                                    "{item.data.reply_preview}"
+                                                    "{item.data.reply_preview || item.data.comment_preview}"
                                                 </p>
                                             )}
 

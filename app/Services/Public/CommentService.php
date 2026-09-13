@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
 use App\Notifications\CommentRepliedNotification;
+use App\Notifications\UserMentionedNotification;
 use App\Support\SidebarAlerts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
@@ -97,7 +98,29 @@ class CommentService
             }
         }
 
+        $this->notifyMentionedUsers($comment, $user, isset($target) ? $target->user_id : null);
+
         return $comment;
+    }
+
+    private function notifyMentionedUsers(Comment $comment, User $author, ?int $repliedUserId): void
+    {
+        preg_match_all('/@([a-zA-Z0-9_\-\.]{3,30})/', $comment->body, $matches);
+
+        if (empty($matches[1])) {
+            return;
+        }
+
+        $usernames = array_unique($matches[1]);
+
+        $users = User::whereIn('username', $usernames)
+            ->where('id', '!=', $author->id)
+            ->when($repliedUserId, fn ($query) => $query->where('id', '!=', $repliedUserId))
+            ->get();
+
+        foreach ($users as $mentionedUser) {
+            $mentionedUser->notify(new UserMentionedNotification($comment, $author));
+        }
     }
 
     public function update(Comment $comment, string $body, ?bool $isSpoiler = null): Comment

@@ -46,6 +46,7 @@ export type PublicUserProfile = {
     banner?: string | null;
     avatar_source?: 'google' | 'custom';
     is_author: boolean;
+    badge?: CommunityBadge | null;
     published_articles_count: number | null;
     total_articles_likes_count?: number | null;
     followers_count: number;
@@ -107,11 +108,18 @@ export type PublicUserProfile = {
     }[];
 };
 
+export type CommunityBadge = {
+    key: string;
+    label: string;
+    color: string;
+};
+
 export type PublicCommentAuthor = {
     id: number;
     name: string;
     username: string;
     avatar?: string | null;
+    badge?: CommunityBadge | null;
 };
 
 export type PublicCommentReplyTo = {

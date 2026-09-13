@@ -149,4 +149,45 @@ class User extends Authenticatable implements PasskeyUser
             })
             ->count();
     }
+
+    /**
+     * @return array{key: string, label: string, color: string}|null
+     */
+    public function getCommunityBadgeAttribute(): ?array
+    {
+        if ($this->hasRole(['superadmin', 'admin', 'editor'])) {
+            return [
+                'key' => 'staff',
+                'label' => 'Staff',
+                'color' => 'rose',
+            ];
+        }
+
+        if ($this->authoredArticles()->where('status', 'published')->exists()) {
+            return [
+                'key' => 'author',
+                'label' => 'Redactor',
+                'color' => 'indigo',
+            ];
+        }
+
+        $commentsCount = $this->comments()->where('status', 'visible')->count();
+        if ($commentsCount >= 10) {
+            return [
+                'key' => 'top_commenter',
+                'label' => 'Top Comentarista',
+                'color' => 'amber',
+            ];
+        }
+
+        if ($this->created_at && $this->created_at->lt(now()->subDays(30))) {
+            return [
+                'key' => 'veteran',
+                'label' => 'Pionero',
+                'color' => 'emerald',
+            ];
+        }
+
+        return null;
+    }
 }

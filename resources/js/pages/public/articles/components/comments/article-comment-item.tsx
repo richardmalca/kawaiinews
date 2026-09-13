@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import {
     CornerDownRight,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { PublicComment } from '@/types';
 import { ArticleCommentForm } from './article-comment-form';
+import { UserBadge } from '@/components/public/user-badge';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -139,6 +140,10 @@ export function ArticleCommentItem({
                                 <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
                                     {authorName}
                                 </span>
+                            )}
+
+                            {author?.badge && (
+                                <UserBadge badge={author.badge} />
                             )}
 
                             {comment.reply_to && (
@@ -293,7 +298,21 @@ export function ArticleCommentItem({
                                     </div>
                                 ) : (
                                     <p className="whitespace-pre-wrap text-xs sm:text-[13px] leading-relaxed break-words text-neutral-800 dark:text-neutral-200">
-                                        {comment.body}
+                                        {comment.body.split(/(@[a-zA-Z0-9_\-\.]{3,30})/g).map((part, i) => {
+                                            if (part.startsWith('@')) {
+                                                const uname = part.substring(1);
+                                                return (
+                                                    <Link
+                                                        key={i}
+                                                        href={`/perfil/${uname}`}
+                                                        className="font-semibold text-rose-600 hover:underline dark:text-rose-400"
+                                                    >
+                                                        {part}
+                                                    </Link>
+                                                );
+                                            }
+                                            return <Fragment key={i}>{part}</Fragment>;
+                                        })}
                                     </p>
                                 )}
                             </div>
