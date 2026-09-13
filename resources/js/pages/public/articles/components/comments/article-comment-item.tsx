@@ -93,13 +93,13 @@ export function ArticleCommentItem({
     return (
         <div
             id={`comentario-${comment.id}`}
-            className={`group relative scroll-mt-36 sm:scroll-mt-32 transition-all duration-300 py-2.5 sm:py-3 ${
+            className={`group relative scroll-mt-36 sm:scroll-mt-32 transition-all duration-300 py-2 sm:py-2.5 ${
                 isReply
-                    ? 'ml-4 sm:ml-7 pl-3 sm:pl-4 border-l-2 border-rose-200/80 dark:border-rose-900/50'
+                    ? 'ml-3.5 sm:ml-6 pl-2.5 sm:pl-3.5 border-l-2 border-rose-200/80 dark:border-rose-900/50'
                     : 'border-b border-neutral-100 dark:border-neutral-800/60 last:border-b-0'
             }`}
         >
-            <div className="flex items-start gap-2.5 sm:gap-3">
+            <div className="flex items-start gap-2 sm:gap-2.5">
                 {/* Avatar */}
                 <div className="shrink-0 pt-0.5">
                     {authorUsername ? (
@@ -108,16 +108,16 @@ export function ArticleCommentItem({
                                 <img
                                     src={authorAvatar}
                                     alt={authorName}
-                                    className="h-7 w-7 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
+                                    className="h-6 w-6 sm:h-7 sm:w-7 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-800"
                                 />
                             ) : (
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 font-bold text-[11px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-rose-100 font-bold text-[10px] sm:text-[11px] text-rose-700 dark:bg-rose-950 dark:text-rose-300">
                                     {authorName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                         </Link>
                     ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-200 font-bold text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                        <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-neutral-200 font-bold text-[10px] sm:text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                             {authorName.charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -126,7 +126,7 @@ export function ArticleCommentItem({
                 {/* Content Box */}
                 <div className="min-w-0 flex-1">
                     {/* Header: Author & Meta */}
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-1.5">
                         <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             {authorUsername ? (
                                 <Link
@@ -138,12 +138,6 @@ export function ArticleCommentItem({
                             ) : (
                                 <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
                                     {authorName}
-                                </span>
-                            )}
-
-                            {authorUsername && (
-                                <span className="hidden text-[11px] text-neutral-400 sm:inline">
-                                    @{authorUsername}
                                 </span>
                             )}
 
@@ -305,22 +299,21 @@ export function ArticleCommentItem({
                             </div>
                         )}
 
-                        {/* Footer Interactions (Responder a la izquierda, Me gusta a la derecha) */}
-                        <div className="mt-2 flex items-center justify-between gap-3 pt-1">
+                        {/* Footer Interactions (Responder a la izquierda sin icono, Me gusta a la derecha) */}
+                        <div className="mt-1 flex items-center justify-between gap-2 pt-0.5">
                             <button
                                 type="button"
                                 onClick={() => onReplyClick(comment)}
-                                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors"
+                                className="text-[11px] font-semibold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors py-0.5"
                                 title="Responder a este comentario"
                             >
-                                <MessageCircle className="h-3 w-3" />
-                                <span>Responder</span>
+                                Responder
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => onToggleLike(comment.id)}
-                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-semibold transition-all active:scale-95 ${
+                                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-all active:scale-95 ${
                                     comment.has_liked
                                         ? 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400'
                                         : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
@@ -328,7 +321,7 @@ export function ArticleCommentItem({
                                 title="Me gusta"
                             >
                                 <Heart
-                                    className={`h-3.5 w-3.5 ${comment.has_liked ? 'fill-current text-rose-500 dark:text-rose-400' : ''}`}
+                                    className={`h-3 w-3 ${comment.has_liked ? 'fill-current text-rose-500 dark:text-rose-400' : ''}`}
                                 />
                                 {comment.likes_count > 0 && (
                                     <span className="text-[11px]">{comment.likes_count}</span>
