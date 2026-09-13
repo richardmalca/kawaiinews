@@ -198,6 +198,10 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::delete('site-settings/logo', [SiteSettingController::class, 'destroyLogo'])->name('site-settings.logo.destroy');
             Route::post('site-settings/favicon', [SiteSettingController::class, 'updateFavicon'])->name('site-settings.favicon.update');
             Route::post('site-settings/og-image', [SiteSettingController::class, 'updateOgImage'])->name('site-settings.og-image.update');
+            Route::post('site-settings/search-box', [SiteSettingController::class, 'updateSearchBox'])->name('site-settings.search-box.update');
+            Route::post('site-settings/seo-audit', [SiteSettingController::class, 'seoAudit'])
+                ->middleware('throttle:ai-costly')
+                ->name('site-settings.seo-audit');
         });
     });
 

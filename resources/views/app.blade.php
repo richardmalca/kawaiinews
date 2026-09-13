@@ -127,8 +127,31 @@
             if ($siteSettings->socialLinks()) {
                 $organizationSchema['sameAs'] = $siteSettings->socialLinks();
             }
+            $websiteSchema = null;
+            if ($siteSettings->search_box_enabled) {
+                $websiteSchema = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'WebSite',
+                    'name' => $siteSettings->name,
+                    'url' => url('/'),
+                    'potentialAction' => [
+                        '@type' => 'SearchAction',
+                        // El home ya soporta ?q= para filtrar artículos, así
+                        // que la "sitelinks search box" de Google apunta ahí
+                        // directamente, sin depender de una página nueva.
+                        'target' => [
+                            '@type' => 'EntryPoint',
+                            'urlTemplate' => url('/').'?q={search_term_string}',
+                        ],
+                        'query-input' => 'required name=search_term_string',
+                    ],
+                ];
+            }
         @endphp
         <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @if ($websiteSchema)
+            <script type="application/ld+json">{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])

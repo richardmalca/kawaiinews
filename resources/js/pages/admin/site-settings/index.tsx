@@ -4,13 +4,16 @@ import {
     ImageOff,
     Images,
     Palette,
+    Search,
     Share2,
+    Sparkles,
     Upload,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -22,10 +25,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import NewsArticleTagsInput from '@/pages/admin/news-articles/components/news-article-tags-input';
 import GoogleSerpPreview from '@/pages/admin/site-settings/components/google-serp-preview';
+import SeoChecklist from '@/pages/admin/site-settings/components/seo-checklist';
+import { useSeoAudit } from '@/pages/admin/site-settings/hooks/use-seo-audit';
 import { useSiteImageUpload } from '@/pages/admin/site-settings/hooks/use-site-image-upload';
 import { useSiteSettingsForm } from '@/pages/admin/site-settings/hooks/use-site-settings-form';
 import siteSettingsRoutes from '@/routes/admin/site-settings';
@@ -40,6 +46,7 @@ type SiteSettings = {
     facebook_url: string | null;
     instagram_url: string | null;
     tiktok_url: string | null;
+    search_box_enabled: boolean;
     logo_url: string | null;
     favicon_url: string | null;
     favicon_192_url: string | null;
@@ -73,6 +80,12 @@ export default function SiteSettingsIndex({ settings }: Props) {
         settings.instagram_url ?? '',
     );
     const [tiktokUrl, setTiktokUrl] = useState(settings.tiktok_url ?? '');
+    const [searchBoxEnabled, setSearchBoxEnabled] = useState(
+        settings.search_box_enabled,
+    );
+    const [searchBoxProcessing, setSearchBoxProcessing] = useState(false);
+    const { result: auditResult, loading: auditLoading, runAudit } =
+        useSeoAudit();
 
     const logoUpload = useSiteImageUpload(
         siteSettingsRoutes.logo.update().url,
@@ -109,6 +122,35 @@ export default function SiteSettingsIndex({ settings }: Props) {
         });
     };
 
+    const toggleSearchBox = (checked: boolean) => {
+        setSearchBoxEnabled(checked);
+        setSearchBoxProcessing(true);
+
+        const promise = new Promise<void>((resolve, reject) => {
+            router.post(
+                siteSettingsRoutes.searchBox.update().url,
+                { enabled: checked },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => resolve(),
+                    onError: () => {
+                        setSearchBoxEnabled(!checked);
+                        reject();
+                    },
+                    onFinish: () => setSearchBoxProcessing(false),
+                },
+            );
+        });
+
+        toast.promise(promise, {
+            loading: 'Guardando...',
+            success: checked
+                ? 'Buscador activado'
+                : 'Buscador desactivado',
+            error: 'No se pudo guardar',
+        });
+    };
+
     // Un solo save() para todos los campos de texto (el backend los guarda
     // juntos) pero disparado por botones sueltos en cada tab, no por un
     // <form> compartido: las tabs (Radix) desmontan el contenido inactivo,
@@ -141,6 +183,10 @@ export default function SiteSettingsIndex({ settings }: Props) {
                     <TabsList>
                         <TabsTrigger value="identity">
                             Identidad y SEO
+                        </TabsTrigger>
+                        <TabsTrigger value="audit">
+                            <Search />
+                            Auditoría SEO
                         </TabsTrigger>
                         <TabsTrigger value="images">
                             <ImageIcon />
@@ -290,6 +336,128 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 </Card>
                             </div>
                         </div>
+                    </TabsContent>
+
+                    <TabsContent value="audit" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-medium">
+                                    Buscador de Google (sitelinks search box)
+                                </CardTitle>
+                                <CardDescription>
+                                    Le dice a Google que puede mostrar una
+                                    cajita de búsqueda del sitio debajo del
+                                    resultado, apuntando a tu propio buscador
+                                    (la portada ya filtra artículos con
+                                    ?q=...). Google decide si la muestra o
+                                    no, esto solo la habilita.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        id="search-box-enabled"
+                                        checked={searchBoxEnabled}
+                                        disabled={searchBoxProcessing}
+                                        onCheckedChange={toggleSearchBox}
+                                    />
+                                    <Label htmlFor="search-box-enabled">
+                                        Activar
+                                    </Label>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-medium">
+                                    Análisis del sitio
+                                </CardTitle>
+                                <CardDescription>
+                                    Le pega una request real a tu portada y
+                                    revisa las tags que efectivamente está
+                                    sirviendo (no lo que dice esta pantalla —
+                                    así se nota si algo se rompió en el
+                                    camino).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <Button
+                                    type="button"
+                                    disabled={auditLoading}
+                                    onClick={runAudit}
+                                >
+                                    {auditLoading ? (
+                                        <Spinner />
+                                    ) : (
+                                        <Search className="h-4 w-4" />
+                                    )}
+                                    Analizar ahora
+                                </Button>
+
+                                {auditResult && (
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <p className="mb-2 text-sm font-medium">
+                                                Checklist
+                                            </p>
+                                            <SeoChecklist
+                                                checks={auditResult.checks}
+                                            />
+                                        </div>
+                                        <div>
+                                            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                                                <Sparkles className="h-4 w-4" />
+                                                Opinión de la IA
+                                            </p>
+                                            {auditResult.ai_review ? (
+                                                <p className="text-muted-foreground text-sm whitespace-pre-line">
+                                                    {auditResult.ai_review}
+                                                </p>
+                                            ) : (
+                                                <Alert>
+                                                    <AlertTitle>
+                                                        Sin análisis de IA
+                                                    </AlertTitle>
+                                                    <AlertDescription>
+                                                        No hay un proveedor de
+                                                        IA de texto activo
+                                                        (Modelo de IA), así
+                                                        que solo se muestra
+                                                        el checklist
+                                                        automático.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            )}
+                                        </div>
+
+                                        <div className="sm:col-span-2">
+                                            <p className="mb-2 text-sm font-medium">
+                                                Tags detectadas en el inicio
+                                            </p>
+                                            <div className="bg-muted grid gap-x-4 gap-y-1 border p-3 text-xs sm:grid-cols-[140px_1fr]">
+                                                {Object.entries(
+                                                    auditResult.tags,
+                                                ).map(([key, value]) => (
+                                                    <Fragment key={key}>
+                                                        <span className="text-muted-foreground font-mono">
+                                                            {key}
+                                                        </span>
+                                                        <span className="break-all">
+                                                            {value ?? (
+                                                                <span className="text-destructive">
+                                                                    (vacío)
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </Fragment>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                     <TabsContent value="images" className="space-y-6">

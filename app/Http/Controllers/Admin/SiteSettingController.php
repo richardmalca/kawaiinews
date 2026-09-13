@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSiteSettingRequest;
 use App\Models\SiteSetting;
+use App\Services\Admin\SeoAuditService;
 use App\Services\Admin\SiteSettingService;
 use App\Support\ActivityLogger;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,7 +17,10 @@ use Inertia\Response;
 
 class SiteSettingController extends Controller
 {
-    public function __construct(private readonly SiteSettingService $siteSettingService) {}
+    public function __construct(
+        private readonly SiteSettingService $siteSettingService,
+        private readonly SeoAuditService $seoAuditService,
+    ) {}
 
     public function edit(): Response
     {
@@ -70,6 +75,25 @@ class SiteSettingController extends Controller
         return back();
     }
 
+    public function updateSearchBox(Request $request): RedirectResponse
+    {
+        $request->validate(['enabled' => ['required', 'boolean']]);
+
+        SiteSetting::current()->update(['search_box_enabled' => $request->boolean('enabled')]);
+
+        ActivityLogger::log(
+            'site_settings.search_box_toggled',
+            description: $request->boolean('enabled') ? 'Activó el buscador de Google (sitelinks)' : 'Desactivó el buscador de Google (sitelinks)',
+        );
+
+        return back();
+    }
+
+    public function seoAudit(): JsonResponse
+    {
+        return response()->json($this->seoAuditService->audit(SiteSetting::current()));
+    }
+
     public function updateOgImage(Request $request): RedirectResponse
     {
         $request->validate([
@@ -98,6 +122,7 @@ class SiteSettingController extends Controller
             'facebook_url' => $settings->facebook_url,
             'instagram_url' => $settings->instagram_url,
             'tiktok_url' => $settings->tiktok_url,
+            'search_box_enabled' => $settings->search_box_enabled,
             'logo_url' => $settings->logoUrl(),
             'favicon_url' => $settings->faviconUrl(),
             'favicon_192_url' => $settings->favicon192Url(),
