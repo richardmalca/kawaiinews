@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import PublicLayout from '@/layouts/public-layout';
 import type { PublicCategorySummary } from '@/types';
 import { ArrowLeft, Cookie, FileText, Scale, Shield, Mail } from 'lucide-react';
@@ -46,6 +46,8 @@ export function LegalLayout({
     categories,
     children,
 }: LegalLayoutProps) {
+    const { contactEmail } = usePage().props;
+
     return (
         <PublicLayout categories={categories}>
             <Head title={`${title} - KawaiiNews`} />
@@ -63,10 +65,11 @@ export function LegalLayout({
                 </Link>
             </div>
 
-            <div className="mb-8 flex flex-col gap-4 border-b border-neutral-200/80 pb-6 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800/80">
+            <div className="mb-10 flex flex-col gap-4 border-b border-neutral-200/80 pb-8 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800/80">
                 <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
-                        <span>Legal & Transparencia</span>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-50/50 px-3 py-1 text-xs font-bold text-rose-600 dark:border-rose-500/30 dark:bg-rose-950/30 dark:text-rose-400">
+                        <Scale className="h-3.5 w-3.5" />
+                        <span>Marco Legal y Transparencia</span>
                     </div>
                     <h1 className="text-3xl font-black tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
                         {title}
@@ -80,10 +83,10 @@ export function LegalLayout({
                     <Mail className="h-4 w-4 text-rose-500 shrink-0" />
                     <span>Contacto:</span>
                     <a
-                        href="mailto:legal@kawaiinews.com"
+                        href={`mailto:${contactEmail}`}
                         className="font-semibold text-neutral-800 hover:text-rose-600 dark:text-neutral-200 dark:hover:text-rose-400"
                     >
-                        legal@kawaiinews.com
+                        {contactEmail}
                     </a>
                 </div>
             </div>

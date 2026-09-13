@@ -1,4 +1,4 @@
-﻿import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import type { PublicCategorySummary } from '@/types';
 import { LegalLayout } from './legal-layout';
 
@@ -7,6 +7,8 @@ interface LegalProps {
 }
 
 export default function PrivacyPage({ categories }: LegalProps) {
+    const { contactEmail } = usePage().props;
+
     return (
         <LegalLayout
             title="Política de Privacidad"
@@ -90,10 +92,10 @@ export default function PrivacyPage({ categories }: LegalProps) {
                     <p>
                         Si tienes cualquier duda sobre el tratamiento de tus datos o deseas hacer una consulta específica, puedes escribirnos directamente a nuestro correo:{' '}
                         <a
-                            href="mailto:legal@kawaiinews.com"
+                            href={`mailto:${contactEmail}`}
                             className="font-semibold text-rose-600 underline hover:text-rose-500 dark:text-rose-400"
                         >
-                            legal@kawaiinews.com
+                            {contactEmail}
                         </a>
                         .
                     </p>

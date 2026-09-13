@@ -1,4 +1,5 @@
-﻿import type { PublicCategorySummary } from '@/types';
+import { usePage } from '@inertiajs/react';
+import type { PublicCategorySummary } from '@/types';
 import { LegalLayout } from './legal-layout';
 
 interface LegalProps {
@@ -6,6 +7,7 @@ interface LegalProps {
 }
 
 export default function DmcaPage({ categories }: LegalProps) {
+    const { contactEmail } = usePage().props;
     return (
         <LegalLayout
             title="Derechos de Autor (DMCA)"
@@ -36,10 +38,10 @@ export default function DmcaPage({ categories }: LegalProps) {
                     <p>
                         Para procesar tu solicitud rápidamente, por favor envíanos un correo a{' '}
                         <a
-                            href="mailto:legal@kawaiinews.com"
+                            href={`mailto:${contactEmail}`}
                             className="font-semibold text-rose-600 underline hover:text-rose-500 dark:text-rose-400"
                         >
-                            legal@kawaiinews.com
+                            {contactEmail}
                         </a>{' '}
                         con los siguientes datos:
                     </p>

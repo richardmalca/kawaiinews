@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import { Download, Sparkles, Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
@@ -19,9 +20,11 @@ interface ShareStoryModalProps {
 }
 
 export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModalProps) {
+    const { siteUrl } = usePage().props;
     const [copied, setCopied] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
+    const displayDomain = siteUrl ? siteUrl.replace(/^https?:\/\//, '') : 'kawaiinews.com';
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
     const categoryName =
         typeof article.category === 'string'
@@ -195,7 +198,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 30px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('kawaiinews.com', 540, 1800);
+        ctx.fillText(displayDomain, 540, 1800);
 
         return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
     };
@@ -309,7 +312,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
 
                             <div className="rounded-xl border border-white/20 bg-white/10 px-2 py-1 text-center backdrop-blur-xs">
                                 <span className="text-[9px] font-bold text-neutral-200">
-                                    kawaiinews.com
+                                    {displayDomain}
                                 </span>
                             </div>
                         </div>
