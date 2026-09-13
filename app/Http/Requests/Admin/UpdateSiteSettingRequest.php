@@ -20,6 +20,7 @@ class UpdateSiteSettingRequest extends FormRequest
             'name' => ['required', 'string', 'max:60'],
             'seo_title' => ['nullable', 'string', 'max:70'],
             'description' => ['nullable', 'string', 'max:200'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
             'keywords' => ['nullable', 'array', 'max:15'],
             'keywords.*' => ['string', 'max:40'],
             'theme_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],

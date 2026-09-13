@@ -116,6 +116,8 @@ class SiteSettingController extends Controller
             'name' => $settings->name,
             'seo_title' => $settings->seo_title,
             'description' => $settings->description,
+            'contact_email' => $settings->contact_email,
+            'contact_email_placeholder' => $settings->contactEmail(),
             'keywords' => $settings->keywords ?? [],
             'theme_color' => $settings->theme_color,
             'twitter_handle' => $settings->twitter_handle,

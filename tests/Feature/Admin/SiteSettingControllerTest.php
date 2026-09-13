@@ -85,6 +85,30 @@ test('socialLinks() collects every configured profile as a full url', function (
     ]);
 });
 
+test('contactEmail() falls back to legal@ + the real app domain, never a hardcoded one', function () {
+    config(['app.url' => 'https://kawaiinews.example']);
+
+    $settings = SiteSetting::current();
+    $settings->update(['contact_email' => null]);
+
+    expect($settings->fresh()->contactEmail())->toBe('legal@kawaiinews.example');
+
+    $settings->update(['contact_email' => 'soporte@kawaiinews.example']);
+
+    expect($settings->fresh()->contactEmail())->toBe('soporte@kawaiinews.example');
+});
+
+test('the site url and contact email are shared to every inertia page, never hardcoded', function () {
+    $response = $this->get(route('admin.dashboard'));
+
+    // Se derivan de la app real (url()/config('app.url')), nunca de un
+    // dominio fijo tipeado en el código.
+    $response->assertInertia(fn ($page) => $page
+        ->where('siteUrl', rtrim(url('/'), '/'))
+        ->where('contactEmail', SiteSetting::current()->contactEmail())
+    );
+});
+
 test('seoTitle() falls back to the short name when no seo title is set', function () {
     $settings = SiteSetting::current();
     $settings->update(['name' => 'KawaiiNews', 'seo_title' => null]);

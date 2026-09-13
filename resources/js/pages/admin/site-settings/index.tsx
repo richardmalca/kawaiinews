@@ -40,6 +40,8 @@ type SiteSettings = {
     name: string;
     seo_title: string | null;
     description: string | null;
+    contact_email: string | null;
+    contact_email_placeholder: string;
     keywords: string[];
     theme_color: string | null;
     twitter_handle: string | null;
@@ -66,6 +68,9 @@ export default function SiteSettingsIndex({ settings }: Props) {
     const [name, setName] = useState(settings.name);
     const [seoTitle, setSeoTitle] = useState(settings.seo_title ?? '');
     const [description, setDescription] = useState(settings.description ?? '');
+    const [contactEmail, setContactEmail] = useState(
+        settings.contact_email ?? '',
+    );
     const [keywords, setKeywords] = useState<string[]>(settings.keywords);
     const [themeColor, setThemeColor] = useState(
         settings.theme_color ?? '#ec4899',
@@ -160,6 +165,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
             name,
             seo_title: seoTitle,
             description,
+            contact_email: contactEmail,
             keywords,
             theme_color: themeColor,
             twitter_handle: twitterHandle,
@@ -286,6 +292,37 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                         />
                                         <InputError
                                             message={errors.description}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="contact-email">
+                                            Email de contacto
+                                        </Label>
+                                        <Input
+                                            id="contact-email"
+                                            type="email"
+                                            placeholder={
+                                                settings.contact_email_placeholder
+                                            }
+                                            value={contactEmail}
+                                            onChange={(event) =>
+                                                setContactEmail(
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            Se usa en las páginas legales
+                                            (privacidad, DMCA) y donde el
+                                            sitio muestre un contacto. Si lo
+                                            dejás vacío, se arma solo con el
+                                            dominio actual (
+                                            {settings.contact_email_placeholder}
+                                            ).
+                                        </p>
+                                        <InputError
+                                            message={errors.contact_email}
                                         />
                                     </div>
 

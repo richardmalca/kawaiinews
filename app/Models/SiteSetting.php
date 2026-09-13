@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string $name
  * @property string|null $seo_title
  * @property string|null $description
+ * @property string|null $contact_email
  * @property array<int, string>|null $keywords
  * @property string|null $logo_path
  * @property string|null $favicon_path
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $tiktok_url
  * @property bool $search_box_enabled
  */
-#[Fillable(['name', 'seo_title', 'description', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled'])]
+#[Fillable(['name', 'seo_title', 'description', 'contact_email', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled'])]
 class SiteSetting extends Model
 {
     private const CACHE_KEY = 'site-settings:singleton';
@@ -95,6 +96,23 @@ class SiteSetting extends Model
             $this->instagram_url,
             $this->tiktok_url,
         ]));
+    }
+
+    /**
+     * Nunca un dominio/email fijo: si no se cargó uno a mano, se arma con
+     * el dominio real de la app (config('app.url'), lo que ya define
+     * APP_URL) — así nunca queda desincronizado si el sitio cambia de
+     * dominio.
+     */
+    public function contactEmail(): string
+    {
+        if ($this->contact_email) {
+            return $this->contact_email;
+        }
+
+        $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
+
+        return "legal@{$host}";
     }
 
     public function logoUrl(): ?string

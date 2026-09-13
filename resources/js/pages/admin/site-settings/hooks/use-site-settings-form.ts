@@ -7,6 +7,7 @@ type SiteSettingsData = {
     name: string;
     seo_title: string;
     description: string;
+    contact_email: string;
     keywords: string[];
     theme_color: string;
     twitter_handle: string;
