@@ -7,6 +7,8 @@ use App\Models\NewsArticle;
 use App\Models\Share;
 use App\Models\User;
 use App\Notifications\ArticleLikedNotification;
+use App\Notifications\ArticleSavedNotification;
+use App\Notifications\ArticleSharedNotification;
 
 class ArticleInteractionService
 {
@@ -29,9 +31,38 @@ class ArticleInteractionService
     public function toggleFavorite(User $user, NewsArticle $article): array
     {
         $user->toggleFavorite($article);
+        $favorited = $user->hasFavorited($article);
+
+        // Notificar al autor si guardó la noticia y no es el autor mismo
+        if ($favorited && $article->author_id && $article->author_id !== $user->id) {
+            $author = $article->author;
+            if ($author) {
+                $existingNotification = $author->unreadNotifications()
+                    ->where('type', ArticleSavedNotification::class)
+                    ->where('data->article_id', $article->id)
+                    ->first();
+
+                $totalSaves = $article->favoriters()->count();
+
+                if ($existingNotification) {
+                    $data = $existingNotification->data;
+                    $data['saver_id'] = $user->id;
+                    $data['saver_name'] = $user->name;
+                    $data['saver_username'] = $user->username;
+                    $data['saver_avatar'] = $user->active_avatar_url;
+                    $data['total_saves'] = $totalSaves;
+                    $existingNotification->update([
+                        'data' => $data,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $author->notify(new ArticleSavedNotification($user, $article, $totalSaves));
+                }
+            }
+        }
 
         return [
-            'favorited' => $user->hasFavorited($article),
+            'favorited' => $favorited,
         ];
     }
 
@@ -40,10 +71,13 @@ class ArticleInteractionService
      */
     public function recordShare(?User $user, NewsArticle $article, ?string $channel): array
     {
+        $isFirstShareForUser = false;
         if ($user) {
-            // Un usuario logueado solo tiene un share por noticia: si ya la
-            // había compartido, actualizamos el canal y la fecha en vez de
-            // duplicar la fila (eso es lo que inflaba su perfil).
+            $existingShare = Share::where('user_id', $user->id)->where('news_article_id', $article->id)->first();
+            if (! $existingShare) {
+                $isFirstShareForUser = true;
+            }
+
             Share::updateOrCreate(
                 ['user_id' => $user->id, 'news_article_id' => $article->id],
                 ['channel' => $channel, 'updated_at' => now(), 'created_at' => now()]
@@ -56,9 +90,38 @@ class ArticleInteractionService
             ]);
         }
 
+        $totalShares = $article->shares()->count();
+
+        // Notificar al autor de la noticia cuando un usuario registrado la comparte
+        if ($user && $isFirstShareForUser && $article->author_id && $article->author_id !== $user->id) {
+            $author = $article->author;
+            if ($author) {
+                $existingNotification = $author->unreadNotifications()
+                    ->where('type', ArticleSharedNotification::class)
+                    ->where('data->article_id', $article->id)
+                    ->first();
+
+                if ($existingNotification) {
+                    $data = $existingNotification->data;
+                    $data['sharer_id'] = $user->id;
+                    $data['sharer_name'] = $user->name;
+                    $data['sharer_username'] = $user->username;
+                    $data['sharer_avatar'] = $user->active_avatar_url;
+                    $data['channel'] = $channel;
+                    $data['total_shares'] = $totalShares;
+                    $existingNotification->update([
+                        'data' => $data,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $author->notify(new ArticleSharedNotification($user, $article, $channel, $totalShares));
+                }
+            }
+        }
+
         return [
             'shared' => true,
-            'total_shares' => $article->shares()->count(),
+            'total_shares' => $totalShares,
         ];
     }
 
