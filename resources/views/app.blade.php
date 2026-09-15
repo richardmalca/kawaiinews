@@ -46,7 +46,26 @@
         <link rel="apple-touch-icon" href="{{ $siteSettings->appleTouchIconUrl() ?? '/apple-touch-icon.png' }}">
         @if ($siteSettings->theme_color)
             <meta name="theme-color" content="{{ $siteSettings->theme_color }}">
+        @else
+            <meta name="theme-color" content="#e11d48">
         @endif
+
+        {{-- PWA Manifest & Mobile Capability --}}
+        <link rel="manifest" href="/manifest.json">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="{{ $siteSettings->name ?? 'KawaiiNews' }}">
+
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                        console.warn('Service Worker registration failed:', err);
+                    });
+                });
+            }
+        </script>
 
         @fonts
 

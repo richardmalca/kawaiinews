@@ -76,6 +76,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('public.notifications.read');
     Route::post('notificaciones/leer-todas', [NotificationController::class, 'markAllAsRead'])
         ->name('public.notifications.read_all');
+    Route::delete('notificaciones/{id}', [NotificationController::class, 'destroy'])
+        ->name('public.notifications.destroy');
+    Route::delete('notificaciones', [NotificationController::class, 'destroyAll'])
+        ->name('public.notifications.destroy_all');
     Route::post('noticias/{slug}/me-gusta', [ArticleInteractionController::class, 'toggleLike'])
         ->middleware('throttle:45,1')
         ->name('public.articles.like');

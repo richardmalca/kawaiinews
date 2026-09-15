@@ -14,7 +14,7 @@ import {
     VolumeX,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
 import {
@@ -666,6 +666,17 @@ export function NotificationBell() {
                                 No tienes notificaciones pendientes
                             </div>
                         )}
+                    </div>
+
+                    {/* Footer: ir al centro de notificaciones completo */}
+                    <div className="border-t border-neutral-100 bg-neutral-50/70 p-2 text-center dark:border-neutral-800 dark:bg-neutral-900/60">
+                        <Link
+                            href="/notificaciones"
+                            onClick={() => setIsOpen(false)}
+                            className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors py-1 px-3 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40 w-full"
+                        >
+                            Ver todas las notificaciones
+                        </Link>
                     </div>
                 </div>
             )}
