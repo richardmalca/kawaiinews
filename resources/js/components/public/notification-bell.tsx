@@ -1,8 +1,26 @@
-import { AtSign, Bell, Check, CheckCheck, MessageSquare, Newspaper, UserPlus } from 'lucide-react';
+import {
+    AtSign,
+    Bell,
+    BellOff,
+    Check,
+    CheckCheck,
+    MessageSquare,
+    Newspaper,
+    UserPlus,
+    Volume2,
+    VolumeX,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
+import {
+    getNotificationPermission,
+    isBrowserNotificationSupported,
+    playNotificationSound,
+    requestBrowserNotificationPermission,
+    showBrowserNotification,
+} from '@/lib/notification-sound';
 
 export interface AppNotificationItem {
     id: string;
@@ -39,14 +57,65 @@ export interface AppNotificationItem {
 }
 
 export function NotificationBell() {
-    const { auth } = usePage().props;
+    const { auth, siteLogoUrl } = usePage().props;
     const isAuthenticated = Boolean(auth.user);
 
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [notifications, setNotifications] = useState<AppNotificationItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('kawaii_notification_sound') !== 'false';
+        }
+        return true;
+    });
+    const [browserPermission, setBrowserPermission] = useState<NotificationPermission>('default');
+
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const prevNotificationIdsRef = useRef<Set<string>>(new Set());
+    const isInitialFetchRef = useRef(true);
+
+    // Actualizar estado de permiso al montar
+    useEffect(() => {
+        if (isBrowserNotificationSupported()) {
+            setBrowserPermission(getNotificationPermission());
+        }
+    }, []);
+
+    const toggleSound = () => {
+        const next = !soundEnabled;
+        setSoundEnabled(next);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('kawaii_notification_sound', String(next));
+        }
+        if (next) {
+            playNotificationSound();
+            toast.success('Sonido de notificaciones activado');
+        } else {
+            toast('Sonido de notificaciones silenciado');
+        }
+    };
+
+    const handleEnableBrowserNotifications = async () => {
+        if (!isBrowserNotificationSupported()) {
+            toast.error('Tu navegador no admite notificaciones de escritorio/móvil.');
+            return;
+        }
+
+        const granted = await requestBrowserNotificationPermission();
+        setBrowserPermission(getNotificationPermission());
+
+        if (granted) {
+            toast.success('¡Notificaciones de escritorio/móvil activadas!');
+            showBrowserNotification('KawaiiNews', {
+                body: 'Las notificaciones en tu dispositivo están activadas.',
+                icon: siteLogoUrl || '/android-chrome-192x192.png',
+            });
+        } else {
+            toast.error('Permiso de notificaciones denegado en tu navegador.');
+        }
+    };
 
     const fetchNotifications = async () => {
         if (!isAuthenticated) return;
@@ -57,8 +126,71 @@ export function NotificationBell() {
             });
             if (res.ok) {
                 const data = await res.json();
-                setUnreadCount(data.unread_count ?? 0);
-                setNotifications(data.notifications ?? []);
+                const fetchedNotifications: AppNotificationItem[] = data.notifications ?? [];
+                const newUnreadCount = data.unread_count ?? 0;
+
+                // Detectar si hay nuevas notificaciones que no estaban en la carga previa
+                if (!isInitialFetchRef.current) {
+                    const newItems = fetchedNotifications.filter(
+                        (n) => !n.read_at && !prevNotificationIdsRef.current.has(n.id),
+                    );
+
+                    if (newItems.length > 0) {
+                        // 1. Sonido en pantalla si está habilitado
+                        if (soundEnabled) {
+                            playNotificationSound();
+                        }
+
+                        // 2. Notificación en pantalla y sistema operativo (PC / Móvil)
+                        const latest = newItems[0];
+                        let title = 'Nueva notificación';
+                        let body = 'Tienes una nueva interacción en KawaiiNews';
+
+                        if (latest.data.type === 'comment_reply') {
+                            title = `${latest.data.replier_name ?? 'Alguien'} respondió a tu comentario`;
+                            body = latest.data.reply_preview || 'Revisa la respuesta en el artículo';
+                        } else if (latest.data.type === 'comment_mention') {
+                            title = `${latest.data.mentioner_name ?? 'Alguien'} te mencionó`;
+                            body = latest.data.comment_preview || 'Te etiquetaron en un comentario';
+                        } else if (latest.data.type === 'user_follow') {
+                            title = 'Nuevo seguidor';
+                            body = `${latest.data.follower_name ?? 'Un usuario'} ha comenzado a seguirte`;
+                        } else if (latest.data.type === 'new_article') {
+                            title = 'Nueva noticia publicada';
+                            body = latest.data.article_title || 'Hay un nuevo artículo disponible';
+                        }
+
+                        toast.info(title, {
+                            description: body,
+                            action: latest.data.url
+                                ? {
+                                      label: 'Ver',
+                                      onClick: () => handleMarkAsRead(latest.id, latest.data.url),
+                                  }
+                                : undefined,
+                        });
+
+                        showBrowserNotification(title, {
+                            body,
+                            icon:
+                                latest.data.mentioner_avatar ||
+                                latest.data.replier_avatar ||
+                                latest.data.follower_avatar ||
+                                siteLogoUrl ||
+                                '/android-chrome-192x192.png',
+                            url: latest.data.url,
+                            tag: `notif-${latest.id}`,
+                        });
+                    }
+                } else {
+                    isInitialFetchRef.current = false;
+                }
+
+                prevNotificationIdsRef.current = new Set(
+                    fetchedNotifications.map((n) => n.id),
+                );
+                setUnreadCount(newUnreadCount);
+                setNotifications(fetchedNotifications);
             }
         } catch {
             // Ignorar errores en fetch silencioso
@@ -69,9 +201,9 @@ export function NotificationBell() {
         if (!isAuthenticated) return;
         fetchNotifications();
 
-        const interval = setInterval(fetchNotifications, 60000);
+        const interval = setInterval(fetchNotifications, 25000);
         return () => clearInterval(interval);
-    }, [isAuthenticated]);
+    }, [isAuthenticated, soundEnabled]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -203,18 +335,58 @@ export function NotificationBell() {
                             )}
                         </div>
 
-                        {unreadCount > 0 && (
+                        <div className="flex items-center gap-2">
+                            {/* Toggle Sonido */}
                             <button
                                 type="button"
-                                onClick={handleMarkAllAsRead}
-                                disabled={isLoading}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors"
+                                onClick={toggleSound}
+                                className={`rounded-lg p-1 transition-colors ${
+                                    soundEnabled
+                                        ? 'text-neutral-500 hover:text-rose-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-rose-400 dark:hover:bg-neutral-900'
+                                        : 'text-neutral-400 line-through hover:text-neutral-600 hover:bg-neutral-100 dark:text-neutral-500 dark:hover:bg-neutral-900'
+                                }`}
+                                title={soundEnabled ? 'Silenciar sonido' : 'Activar sonido'}
+                                aria-label="Sonido de notificaciones"
                             >
-                                <CheckCheck className="h-3 w-3" />
-                                <span>Marcar todas</span>
+                                {soundEnabled ? (
+                                    <Volume2 className="h-3.5 w-3.5" />
+                                ) : (
+                                    <VolumeX className="h-3.5 w-3.5" />
+                                )}
                             </button>
-                        )}
+
+                            {unreadCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleMarkAllAsRead}
+                                    disabled={isLoading}
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-500 hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400 transition-colors"
+                                >
+                                    <CheckCheck className="h-3 w-3" />
+                                    <span>Marcar todas</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Banner para activar notificaciones de escritorio / móvil si no están concedidas */}
+                    {isBrowserNotificationSupported() && browserPermission === 'default' && (
+                        <div className="mt-2 mb-1.5 flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-rose-500/10 to-amber-500/10 p-2.5 text-xs dark:from-rose-500/15 dark:to-amber-500/15">
+                            <div className="flex items-center gap-2">
+                                <Bell className="h-4 w-4 text-rose-500 shrink-0" />
+                                <span className="text-[11px] text-neutral-700 dark:text-neutral-300">
+                                    ¿Recibir alertas en tu PC o móvil?
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleEnableBrowserNotifications}
+                                className="shrink-0 rounded-lg bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors shadow-xs"
+                            >
+                                Activar
+                            </button>
+                        </div>
+                    )}
 
                     <div className="max-h-[360px] overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-900/60 py-1">
                         {notifications.length > 0 ? (
