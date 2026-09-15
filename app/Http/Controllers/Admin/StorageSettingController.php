@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateStorageSettingRequest;
 use App\Jobs\MigrateMediaStorageJob;
+use App\Jobs\RenameMediaFilesJob;
 use App\Models\StorageSetting;
 use App\Services\Admin\MediaLibraryService;
 use App\Services\Admin\StorageSettingService;
@@ -90,6 +91,20 @@ class StorageSettingController extends Controller
             description: $data['direction'] === 'remote'
                 ? 'Empezó a pasar los archivos guardados a Wasabi/S3'
                 : 'Empezó a traer los archivos de vuelta a este servidor',
+        );
+
+        return response()->json(['run_id' => $runId]);
+    }
+
+    public function renameMedia(): JsonResponse
+    {
+        $runId = JobRunStatus::start();
+
+        RenameMediaFilesJob::dispatch($runId);
+
+        ActivityLogger::log(
+            'storage_settings.media_rename_started',
+            description: 'Empezó a unificar los nombres de los archivos de medios',
         );
 
         return response()->json(['run_id' => $runId]);

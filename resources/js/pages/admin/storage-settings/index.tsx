@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useMigrateMedia } from '@/pages/admin/storage-settings/hooks/use-migrate-media';
+import { useRenameMedia } from '@/pages/admin/storage-settings/hooks/use-rename-media';
 import { useStorageSettingsForm } from '@/pages/admin/storage-settings/hooks/use-storage-settings-form';
 import { useTestStorageConnection } from '@/pages/admin/storage-settings/hooks/use-test-storage-connection';
 import storageSettingsRoutes from '@/routes/admin/storage-settings';
@@ -56,6 +57,7 @@ export default function StorageSettingsIndex({
     const { testConnection, processing: testing } =
         useTestStorageConnection();
     const { migrate, processing: migrating } = useMigrateMedia();
+    const { rename, processing: renaming } = useRenameMedia();
 
     const [accessKey, setAccessKey] = useState(settings.access_key ?? '');
     const [secretKey, setSecretKey] = useState('');
@@ -374,6 +376,31 @@ export default function StorageSettingsIndex({
                                         paso, sin que tengas que hacer nada
                                         extra.
                                     </p>
+
+                                    <div className="space-y-2 border-t pt-3">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={renaming}
+                                            onClick={rename}
+                                        >
+                                            {renaming && <Spinner />}
+                                            Ponerle el mismo nombre a todos
+                                            los archivos
+                                        </Button>
+                                        <p className="text-muted-foreground text-xs">
+                                            Cada imagen y audio que subís
+                                            queda con un nombre parejo, no
+                                            con el nombre que traía el
+                                            archivo original. Si tenés
+                                            archivos de antes con nombres
+                                            sueltos, este botón se los
+                                            ordena a todos (estén acá o en
+                                            el almacenamiento externo), sin
+                                            moverlos de lugar.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </CardContent>

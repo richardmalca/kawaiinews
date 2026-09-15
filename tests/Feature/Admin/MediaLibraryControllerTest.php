@@ -2,6 +2,7 @@
 
 use App\Jobs\GenerateMediaJob;
 use App\Jobs\MigrateMediaStorageJob;
+use App\Jobs\RenameMediaFilesJob;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\StorageSetting;
@@ -172,6 +173,47 @@ test('migrateAll also optimizes images that were uploaded before webp conversion
     expect(strlen($stored))->toBeLessThan(strlen($original));
 });
 
+test('renameAll unifies file names in place without changing their location', function () {
+    Storage::fake('public');
+
+    Storage::disk('public')->put('media/nombre-original-del-cliente.webp', 'contenido');
+    $media = Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url('media/nombre-original-del-cliente.webp'),
+    ]);
+
+    $result = app(MediaLibraryService::class)->renameAll();
+
+    expect($result)->toBe(['renamed' => 1, 'already_ok' => 0, 'failed' => 0, 'optimized' => 0]);
+    Storage::disk('public')->assertMissing('media/nombre-original-del-cliente.webp');
+
+    $newUrl = $media->fresh()->url;
+    expect($newUrl)->not->toContain('nombre-original-del-cliente')
+        ->and($newUrl)->toEndWith('.webp')
+        ->and(Str::after($newUrl, Storage::disk('public')->url('')))->toStartWith('media/img-');
+});
+
+test('renameAll also optimizes old images that were not webp yet', function () {
+    Storage::fake('public');
+
+    $image = imagecreatetruecolor(800, 600);
+    imagefill($image, 0, 0, imagecolorallocate($image, 10, 20, 30));
+    ob_start();
+    imagepng($image);
+    $original = ob_get_clean();
+    imagedestroy($image);
+    Storage::disk('public')->put('media/vieja.png', $original);
+    $media = Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url('media/vieja.png'),
+    ]);
+
+    $result = app(MediaLibraryService::class)->renameAll();
+
+    expect($result)->toBe(['renamed' => 1, 'already_ok' => 0, 'failed' => 0, 'optimized' => 1]);
+    expect($media->fresh()->url)->toEndWith('.webp');
+});
+
 test('migrateAll skips files already on the target and reports them separately', function () {
     Storage::fake('public');
     Storage::fake(RemoteStorage::DISK_NAME);
@@ -204,6 +246,17 @@ test('a superadmin can trigger a media migration and poll its result', function 
 
     $response->assertOk()->assertJsonStructure(['run_id']);
     Queue::assertPushed(MigrateMediaStorageJob::class, fn ($job) => $job->direction === 'remote');
+});
+
+test('a superadmin can trigger a media rename and poll its result', function () {
+    Storage::fake('public');
+
+    Queue::fake();
+
+    $response = $this->postJson(route('admin.storage-settings.media.rename'));
+
+    $response->assertOk()->assertJsonStructure(['run_id']);
+    Queue::assertPushed(RenameMediaFilesJob::class);
 });
 
 test('audio upload rejects non audio files', function () {

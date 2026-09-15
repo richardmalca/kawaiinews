@@ -7,6 +7,7 @@ use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\StorageSetting;
 use App\Support\AiUsageLogger;
+use App\Support\MediaNaming;
 use App\Support\RemoteStorage;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Collection;
@@ -153,21 +154,7 @@ class MediaLibraryService
             [$sourceDisk, $originalPath] = $resolved;
 
             try {
-                $contents = $sourceDisk->get($originalPath);
-                $destinationPath = $originalPath;
-                $wasOptimized = false;
-
-                if ($media->type === 'image' && ! Str::endsWith($originalPath, '.webp')) {
-                    $webp = $this->imageOptimizer->optimize($contents, $sourceDisk->mimeType($originalPath) ?: 'image/jpeg');
-
-                    if ($webp !== null) {
-                        $contents = $webp;
-                        $destinationPath = Str::beforeLast($originalPath, '.').'.webp';
-                        $wasOptimized = true;
-                    }
-                }
-
-                $newPath = ($media->type === 'audio' ? 'audio/' : 'media/').basename($destinationPath);
+                [$contents, $newPath, $wasOptimized] = $this->prepareForStorage($media, $sourceDisk, $originalPath);
 
                 $targetDisk->put($newPath, $contents, 'public');
                 $sourceDisk->delete($originalPath);
@@ -184,6 +171,84 @@ class MediaLibraryService
         }
 
         return ['moved' => $moved, 'already_there' => $alreadyThere, 'failed' => $failed, 'optimized' => $optimized];
+    }
+
+    /**
+     * Pone al día, en el mismo lugar donde ya está cada archivo, el
+     * nombre unificado (y de paso lo optimiza si todavía no lo estaba).
+     * Para los que ya estaban subidos antes de tener esta estructura de
+     * nombres, así no hace falta moverlos de servidor para arreglarlos.
+     *
+     * @return array{renamed: int, already_ok: int, failed: int, optimized: int}
+     */
+    public function renameAll(): array
+    {
+        $renamed = 0;
+        $alreadyOk = 0;
+        $failed = 0;
+        $optimized = 0;
+
+        foreach (Media::whereIn('type', ['image', 'audio'])->cursor() as $media) {
+            $resolved = $this->diskForUrl($media->url);
+
+            if (! $resolved) {
+                continue;
+            }
+
+            [$disk, $originalPath] = $resolved;
+
+            try {
+                [$contents, $newPath, $wasOptimized] = $this->prepareForStorage($media, $disk, $originalPath);
+
+                if ($newPath === $originalPath && ! $wasOptimized) {
+                    $alreadyOk++;
+
+                    continue;
+                }
+
+                $disk->put($newPath, $contents, 'public');
+                $disk->delete($originalPath);
+                $media->update(['url' => $disk->url($newPath)]);
+
+                $renamed++;
+
+                if ($wasOptimized) {
+                    $optimized++;
+                }
+            } catch (Throwable) {
+                $failed++;
+            }
+        }
+
+        return ['renamed' => $renamed, 'already_ok' => $alreadyOk, 'failed' => $failed, 'optimized' => $optimized];
+    }
+
+    /**
+     * Lee un archivo existente, lo optimiza si hace falta (imagen no
+     * webp) y calcula su nombre con la estructura unificada, sin
+     * importar en qué disco vaya a quedar guardado.
+     *
+     * @return array{0: string, 1: string, 2: bool} contenido, nueva ruta, si se optimizó
+     */
+    private function prepareForStorage(Media $media, Filesystem $sourceDisk, string $originalPath): array
+    {
+        $contents = $sourceDisk->get($originalPath);
+        $extension = pathinfo($originalPath, PATHINFO_EXTENSION) ?: ($media->type === 'audio' ? 'mp3' : 'png');
+        $wasOptimized = false;
+
+        if ($media->type === 'image' && $extension !== 'webp') {
+            $webp = $this->imageOptimizer->optimize($contents, $sourceDisk->mimeType($originalPath) ?: 'image/jpeg');
+
+            if ($webp !== null) {
+                $contents = $webp;
+                $extension = 'webp';
+                $wasOptimized = true;
+            }
+        }
+
+        $newPath = MediaNaming::path($media->type, $extension);
+
+        return [$contents, $newPath, $wasOptimized];
     }
 
     private function resolveImageProvider(): ?AiProvider
@@ -239,12 +304,14 @@ class MediaLibraryService
         $optimized = $this->imageOptimizer->optimize(file_get_contents($file->getRealPath()), $file->getMimeType());
 
         if ($optimized !== null) {
-            $path = 'media/'.uniqid('img-', true).'.webp';
+            $path = MediaNaming::path('image', 'webp');
             $disk->put($path, $optimized, 'public');
         } else {
             // GIF (para no perder la animación) u otro caso que el
-            // optimizador no supo procesar: se guarda tal cual llegó.
-            $path = $disk->putFile('media', $file, 'public');
+            // optimizador no supo procesar: se guarda tal cual llegó, pero
+            // con el mismo esquema de nombre que todo lo demás.
+            $path = MediaNaming::path('image', $file->getClientOriginalExtension() ?: $file->extension() ?: 'gif');
+            $disk->putFileAs(dirname($path), $file, basename($path), 'public');
         }
 
         return Media::create([
@@ -259,7 +326,8 @@ class MediaLibraryService
     public function storeAudioUpload(UploadedFile $file, ?int $newsArticleId = null): Media
     {
         $disk = $this->mediaDisk();
-        $path = $disk->putFile('audio', $file, 'public');
+        $path = MediaNaming::path('audio', $file->getClientOriginalExtension() ?: $file->extension() ?: 'mp3');
+        $disk->putFileAs(dirname($path), $file, basename($path), 'public');
 
         return Media::create([
             'url' => $disk->url($path),
@@ -312,7 +380,7 @@ class MediaLibraryService
             $disk = $this->mediaDisk();
             $decoded = base64_decode($image->base64);
             $optimized = $this->imageOptimizer->optimize($decoded, 'image/png');
-            $path = 'media/'.uniqid('ai-', true).($optimized !== null ? '.webp' : '.png');
+            $path = MediaNaming::path('image', $optimized !== null ? 'webp' : 'png');
             $disk->put($path, $optimized ?? $decoded, 'public');
 
             return Media::create([
@@ -380,7 +448,7 @@ class MediaLibraryService
             ->asAudio();
 
         $disk = $this->mediaDisk();
-        $path = 'audio/'.uniqid('narracion-', true).'.mp3';
+        $path = MediaNaming::path('audio', 'mp3');
         $disk->put($path, base64_decode($response->audio->base64), 'public');
 
         return Media::create([
