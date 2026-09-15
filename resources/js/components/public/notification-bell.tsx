@@ -4,6 +4,7 @@ import {
     BellOff,
     Check,
     CheckCheck,
+    Heart,
     MessageSquare,
     Newspaper,
     UserPlus,
@@ -26,6 +27,12 @@ export interface AppNotificationItem {
     id: string;
     data: {
         type?: string;
+        liker_id?: number;
+        liker_name?: string;
+        liker_username?: string;
+        liker_avatar?: string | null;
+        reaction?: string;
+        total_reactions?: number;
         replier_name?: string;
         replier_username?: string;
         replier_avatar?: string | null;
@@ -165,6 +172,12 @@ export function NotificationBell() {
                         } else if (latest.data.type === 'new_article') {
                             title = 'Nueva noticia publicada';
                             body = latest.data.article_title || 'Hay un nuevo artículo disponible';
+                        } else if (latest.data.type === 'article_liked') {
+                            const othersCount = (latest.data.total_reactions ?? 1) - 1;
+                            title = '¡Reacción en tu noticia!';
+                            body = othersCount > 0
+                                ? `A ${latest.data.liker_name ?? 'Alguien'} y a otras ${othersCount} personas les gusta tu noticia`
+                                : `A ${latest.data.liker_name ?? 'Alguien'} le gusta tu noticia "${latest.data.article_title ?? ''}"`;
                         }
 
                         toast.info(title, {
@@ -406,6 +419,7 @@ export function NotificationBell() {
                                 const isMention = item.data.type === 'comment_mention';
                                 const isFollow = item.data.type === 'user_follow';
                                 const isNewArticle = item.data.type === 'new_article';
+                                const isLiked = item.data.type === 'article_liked';
 
                                 return (
                                     <div
@@ -425,17 +439,20 @@ export function NotificationBell() {
                                                         alt="Portada"
                                                         className="h-full w-full object-cover"
                                                     />
-                                                ) : (item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
+                                                ) : (item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
                                                     <img
-                                                        src={(item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
+                                                        src={(item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (
-                                                    (item.data.mentioner_name || item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
+                                                    (item.data.liker_name || item.data.mentioner_name || item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
                                                 )}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-950 shadow-xs">
+                                                {isLiked && (
+                                                    <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />
+                                                )}
                                                 {isReply && (
                                                     <MessageSquare className="h-2.5 w-2.5 text-rose-500" />
                                                 )}
@@ -483,6 +500,27 @@ export function NotificationBell() {
                                                         comenzó a seguirte.
                                                     </>
                                                 )}
+                                                {isLiked && (
+                                                    <>
+                                                        <span className="font-bold text-neutral-950 dark:text-white">
+                                                            {item.data.liker_name}
+                                                        </span>
+                                                        {(item.data.total_reactions ?? 1) > 1 ? (
+                                                            <span>
+                                                                {' '}y a otras{' '}
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    {(item.data.total_reactions ?? 1) - 1}
+                                                                </span>{' '}
+                                                                personas les gusta tu noticia{' '}
+                                                            </span>
+                                                        ) : (
+                                                            <span> le gusta tu noticia </span>
+                                                        )}
+                                                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                                            {item.data.article_title}
+                                                        </span>
+                                                    </>
+                                                )}
                                                 {isNewArticle && (
                                                     <>
                                                         {item.data.reason === 'author' && item.data.author_name ? (
@@ -516,7 +554,7 @@ export function NotificationBell() {
                                                         </span>
                                                     </>
                                                 )}
-                                                {!isReply && !isMention && !isFollow && !isNewArticle && (
+                                                {!isReply && !isMention && !isFollow && !isNewArticle && !isLiked && (
                                                     <span>Nueva notificación</span>
                                                 )}
                                             </p>

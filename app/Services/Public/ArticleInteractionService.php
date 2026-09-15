@@ -6,6 +6,7 @@ use App\Models\ArticleReaction;
 use App\Models\NewsArticle;
 use App\Models\Share;
 use App\Models\User;
+use App\Notifications\ArticleLikedNotification;
 
 class ArticleInteractionService
 {
@@ -70,6 +71,7 @@ class ArticleInteractionService
             ->where('news_article_id', $article->id)
             ->first();
 
+        $isNewReaction = false;
         if ($existing && $existing->reaction === $reaction) {
             $existing->delete();
             $currentReaction = null;
@@ -83,6 +85,38 @@ class ArticleInteractionService
                 'reaction' => $reaction,
             ]);
             $currentReaction = $reaction;
+            $isNewReaction = true;
+        }
+
+        // Notificar al autor de la noticia (con agrupación para no saturar si hay 50 o 500 reacciones)
+        if ($isNewReaction && $article->author_id && $article->author_id !== $user->id) {
+            $author = $article->author;
+            if ($author) {
+                // Verificar si ya existe una notificación no leída para este artículo en las últimas 24 horas
+                $existingNotification = $author->unreadNotifications()
+                    ->where('type', ArticleLikedNotification::class)
+                    ->where('data->article_id', $article->id)
+                    ->first();
+
+                $totalLikes = $article->reactions()->count();
+
+                if ($existingNotification) {
+                    // Actualizar la notificación existente agrupando el conteo
+                    $data = $existingNotification->data;
+                    $data['liker_id'] = $user->id;
+                    $data['liker_name'] = $user->name;
+                    $data['liker_username'] = $user->username;
+                    $data['liker_avatar'] = $user->active_avatar_url;
+                    $data['reaction'] = $reaction;
+                    $data['total_reactions'] = $totalLikes;
+                    $existingNotification->update([
+                        'data' => $data,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $author->notify(new ArticleLikedNotification($user, $article, $reaction, $totalLikes));
+                }
+            }
         }
 
         return [
