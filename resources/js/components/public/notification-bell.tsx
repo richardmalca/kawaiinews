@@ -75,6 +75,12 @@ export function NotificationBell() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const prevNotificationIdsRef = useRef<Set<string>>(new Set());
     const isInitialFetchRef = useRef(true);
+    const isFetchingRef = useRef(false);
+    const soundEnabledRef = useRef(soundEnabled);
+
+    useEffect(() => {
+        soundEnabledRef.current = soundEnabled;
+    }, [soundEnabled]);
 
     // Actualizar estado de permiso al montar
     useEffect(() => {
@@ -91,9 +97,9 @@ export function NotificationBell() {
         }
         if (next) {
             playNotificationSound();
-            toast.success('Sonido de notificaciones activado');
+            toast.success('Sonido de notificaciones activado', { id: 'sound-toggle' });
         } else {
-            toast('Sonido de notificaciones silenciado');
+            toast('Sonido de notificaciones silenciado', { id: 'sound-toggle' });
         }
     };
 
@@ -107,18 +113,19 @@ export function NotificationBell() {
         setBrowserPermission(getNotificationPermission());
 
         if (granted) {
-            toast.success('¡Notificaciones de escritorio/móvil activadas!');
+            toast.success('¡Notificaciones de escritorio/móvil activadas!', { id: 'browser-notif-perm' });
             showBrowserNotification('KawaiiNews', {
                 body: 'Las notificaciones en tu dispositivo están activadas.',
                 icon: siteLogoUrl || '/android-chrome-192x192.png',
             });
         } else {
-            toast.error('Permiso de notificaciones denegado en tu navegador.');
+            toast.error('Permiso de notificaciones denegado en tu navegador.', { id: 'browser-notif-perm' });
         }
     };
 
     const fetchNotifications = async () => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || isFetchingRef.current) return;
+        isFetchingRef.current = true;
         try {
             const res = await fetch('/notificaciones', {
                 headers: { Accept: 'application/json' },
@@ -137,7 +144,7 @@ export function NotificationBell() {
 
                     if (newItems.length > 0) {
                         // 1. Sonido en pantalla si está habilitado
-                        if (soundEnabled) {
+                        if (soundEnabledRef.current) {
                             playNotificationSound();
                         }
 
@@ -161,6 +168,7 @@ export function NotificationBell() {
                         }
 
                         toast.info(title, {
+                            id: `notif-${latest.id}`,
                             description: body,
                             action: latest.data.url
                                 ? {
@@ -194,6 +202,8 @@ export function NotificationBell() {
             }
         } catch {
             // Ignorar errores en fetch silencioso
+        } finally {
+            isFetchingRef.current = false;
         }
     };
 
@@ -203,7 +213,7 @@ export function NotificationBell() {
 
         const interval = setInterval(fetchNotifications, 25000);
         return () => clearInterval(interval);
-    }, [isAuthenticated, soundEnabled]);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
