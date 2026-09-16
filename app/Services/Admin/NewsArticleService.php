@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Jobs\GenerateArticleFeaturedImageJob;
 use App\Jobs\SendNewArticleNotificationsJob;
 use App\Models\AiProvider;
 use App\Models\NewsArticle;
@@ -34,6 +35,14 @@ class NewsArticleService
         ]);
 
         $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
+
+        // Solo si hay una imagen de la fuente para usar de referencia y el
+        // admin activó explícitamente esta opción (consume créditos de
+        // IA por cada artículo, así que nunca corre sin que la prendan
+        // ellos primero en Modelo de IA).
+        if (filled($newsCluster->image_url) && AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
+            GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
+        }
 
         return $newsArticle;
     }

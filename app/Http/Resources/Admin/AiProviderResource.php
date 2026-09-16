@@ -24,6 +24,7 @@ class AiProviderResource extends JsonResource
             'is_active_for_images' => $this->is_active_for_images,
             'is_active_for_audio' => $this->is_active_for_audio,
             'is_active_for_moderation' => $this->is_active_for_moderation,
+            'auto_generate_featured_image' => $this->auto_generate_featured_image,
             'supports_image' => $this->supportsImages(),
             'supports_audio' => $this->supportsAudio(),
             'last_verified_at' => $this->last_verified_at?->diffForHumans(),

@@ -127,6 +127,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::post('ai-providers/{aiProvider}/activate', [AiProviderController::class, 'activate'])
                 ->name('ai-providers.activate');
+            Route::post('ai-providers/{aiProvider}/toggle-auto-generate-featured-image', [AiProviderController::class, 'toggleAutoGenerateFeaturedImage'])
+                ->name('ai-providers.toggle-auto-generate-featured-image');
             Route::post('ai-providers/{aiProvider}/test', [AiProviderController::class, 'test'])
                 ->middleware('throttle:ai-costly')
                 ->name('ai-providers.test');

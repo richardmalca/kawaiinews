@@ -8,11 +8,15 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import AddAiProviderDialog from '@/pages/admin/ai-providers/components/add-ai-provider-dialog';
 import EditAiProviderDialog from '@/pages/admin/ai-providers/components/edit-ai-provider-dialog';
-import { activate } from '@/routes/admin/ai-providers';
+import {
+    activate,
+    toggleAutoGenerateFeaturedImage,
+} from '@/routes/admin/ai-providers';
 import type {
     AiProvider,
     AiProviderCapability,
@@ -77,6 +81,18 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
         }
 
         router.post(activate(provider.id).url, { capability });
+    };
+
+    const handleToggleAutoGenerate = (enabled: boolean) => {
+        if (!provider) {
+            return;
+        }
+
+        router.post(
+            toggleAutoGenerateFeaturedImage(provider.id).url,
+            { enabled },
+            { preserveScroll: true },
+        );
     };
 
     return (
@@ -147,6 +163,23 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
                                         Activar {CAPABILITY_LABELS[key]}
                                     </Button>
                                 )),
+                        )}
+
+                        {provider.is_active_for_images && (
+                            <label
+                                className="flex w-full items-center gap-2 pt-1 text-xs"
+                                title="Al crear un artículo, genera sola la imagen de portada con IA usando la imagen de la fuente como referencia. Gasta créditos por cada artículo nuevo con imagen de fuente."
+                            >
+                                <Switch
+                                    checked={
+                                        provider.auto_generate_featured_image
+                                    }
+                                    onCheckedChange={handleToggleAutoGenerate}
+                                />
+                                <span className="text-muted-foreground">
+                                    Portada automática al crear
+                                </span>
+                            </label>
                         )}
                     </div>
                 ) : (

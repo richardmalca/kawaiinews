@@ -7,6 +7,7 @@ use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Models\StorageSetting;
 use App\Support\AiUsageLogger;
+use App\Support\ArticleImagePromptBuilder;
 use App\Support\MediaNaming;
 use App\Support\RemoteStorage;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
+use Prism\Prism\ValueObjects\Media\Image;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -354,7 +356,7 @@ class MediaLibraryService
         'gemini' => ['aspect_ratio' => '16:9'],
     ];
 
-    public function generateWithAi(string $prompt, ?int $newsArticleId = null): Media
+    public function generateWithAi(string $prompt, ?int $newsArticleId = null, ?string $referenceImageUrl = null): Media
     {
         $provider = $this->resolveImageProvider();
 
@@ -368,7 +370,7 @@ class MediaLibraryService
             ])
             ->withClientOptions(['timeout' => 120])
             ->withProviderOptions(self::IMAGE_ASPECT_OPTIONS[$provider->provider] ?? [])
-            ->withPrompt($prompt)
+            ->withPrompt($prompt, $referenceImageUrl ? [Image::fromUrl($referenceImageUrl)] : [])
             ->generate();
 
         $image = $response->firstImage();
@@ -403,6 +405,49 @@ class MediaLibraryService
             'type' => 'image',
             'news_article_id' => $newsArticleId,
         ]);
+    }
+
+    /**
+     * Genera automáticamente la imagen de portada de un artículo recién
+     * creado, usando la imagen del cluster de origen (si tiene) como
+     * referencia visual — así la IA no arranca de cero con solo texto,
+     * sino que sigue la composición/escena real de la noticia. No hace
+     * nada si el artículo no tiene título/resumen/contenido todavía, o si
+     * ya tiene una portada puesta (para no pisar algo que alguien haya
+     * cargado a mano mientras el job esperaba en la cola).
+     */
+    public function generateFeaturedImage(NewsArticle $article): ?Media
+    {
+        // Al crear el artículo, featured_image arranca con la imagen tal
+        // cual la trajo la fuente (ver NewsArticleService::createFromCluster)
+        // — no es todavía una elección deliberada. Si sigue siendo esa
+        // misma imagen (o está vacía), esto la reemplaza por la versión
+        // generada con IA usándola de referencia. Si alguien ya la
+        // cambió a mano por otra cosa, se respeta y no se toca.
+        $fallbackImage = $article->newsCluster?->image_url;
+
+        if (filled($article->featured_image) && $article->featured_image !== $fallbackImage) {
+            return null;
+        }
+
+        $prompt = ArticleImagePromptBuilder::build($article);
+
+        if (! $prompt) {
+            return null;
+        }
+
+        $media = $this->generateWithAi($prompt, $article->id, $fallbackImage);
+
+        // Se vuelve a chequear acá (no solo al principio) por si alguien
+        // cargó una portada a mano mientras la IA generaba la imagen,
+        // que puede tardar hasta un par de minutos.
+        $article->refresh();
+
+        if (blank($article->featured_image) || $article->featured_image === $fallbackImage) {
+            $article->update(['featured_image' => $media->url]);
+        }
+
+        return $media;
     }
 
     private const AUDIO_VOICES = [

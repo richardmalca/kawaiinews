@@ -22,11 +22,12 @@ use Illuminate\Support\Facades\Crypt;
  * @property bool $is_active_for_images
  * @property bool $is_active_for_audio
  * @property bool $is_active_for_moderation
+ * @property bool $auto_generate_featured_image
  * @property Carbon|null $last_verified_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['provider', 'label', 'default_model', 'api_key', 'is_active', 'is_active_for_images', 'is_active_for_audio', 'is_active_for_moderation', 'last_verified_at'])]
+#[Fillable(['provider', 'label', 'default_model', 'api_key', 'is_active', 'is_active_for_images', 'is_active_for_audio', 'is_active_for_moderation', 'auto_generate_featured_image', 'last_verified_at'])]
 #[Hidden(['api_key'])]
 class AiProvider extends Model
 {
@@ -45,6 +46,7 @@ class AiProvider extends Model
             'is_active_for_images' => 'boolean',
             'is_active_for_audio' => 'boolean',
             'is_active_for_moderation' => 'boolean',
+            'auto_generate_featured_image' => 'boolean',
             'last_verified_at' => 'datetime',
         ];
     }

@@ -14,7 +14,10 @@ return [
     'gemini' => [
         'label' => 'Google Gemini',
         'models' => ['gemini-2.5-pro', 'gemini-2.5-flash'],
-        'image_model' => 'imagen-4',
+        // gemini-3.1-flash-image-preview: barato (~$0.07 la imagen) y, a
+        // diferencia de Imagen 4, acepta una imagen de referencia (ver
+        // ArticleImagePromptBuilder + MediaLibraryService::generateFeaturedImage).
+        'image_model' => 'gemini-3.1-flash-image-preview',
     ],
     'groq' => [
         'label' => 'Groq',

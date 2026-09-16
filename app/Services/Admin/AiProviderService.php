@@ -62,6 +62,19 @@ class AiProviderService
         $aiProvider->update([$column => true]);
     }
 
+    /**
+     * Prende/apaga la generación automática de la imagen de portada al
+     * crear un artículo (usando la imagen de la fuente como referencia).
+     * Solo tiene efecto en el proveedor activo para imágenes — se guarda
+     * igual en cualquiera para no perder la preferencia si después se
+     * cambia cuál es el activo, pero createFromCluster solo la consulta
+     * en el que está activo para imágenes.
+     */
+    public function setAutoGenerateFeaturedImage(AiProvider $aiProvider, bool $enabled): void
+    {
+        $aiProvider->update(['auto_generate_featured_image' => $enabled]);
+    }
+
     private function resolveDefaultModel(string $provider, ?string $submitted): string
     {
         if (filled($submitted)) {

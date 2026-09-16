@@ -50,6 +50,15 @@ class AiProviderController extends Controller
         return to_route('admin.ai-providers.index');
     }
 
+    public function toggleAutoGenerateFeaturedImage(Request $request, AiProvider $aiProvider): RedirectResponse
+    {
+        $request->validate(['enabled' => ['required', 'boolean']]);
+
+        $this->aiProviderService->setAutoGenerateFeaturedImage($aiProvider, $request->boolean('enabled'));
+
+        return to_route('admin.ai-providers.index');
+    }
+
     public function destroy(AiProvider $aiProvider): RedirectResponse
     {
         $this->aiProviderService->delete($aiProvider);
