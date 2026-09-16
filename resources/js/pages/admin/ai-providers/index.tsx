@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import AiProviderActiveOverview from '@/pages/admin/ai-providers/components/ai-provider-active-overview';
 import AiProviderCatalogGrid from '@/pages/admin/ai-providers/components/ai-provider-catalog-grid';
 import AiProviderSummary from '@/pages/admin/ai-providers/components/ai-provider-summary';
 import type {
@@ -31,10 +32,10 @@ export default function AiProvidersIndex({
 
                 <AiProviderSummary summary={summary} />
 
+                <AiProviderActiveOverview summary={summary} />
+
                 <div className="space-y-3">
-                    <h2 className="text-sm font-medium">
-                        Proveedores disponibles
-                    </h2>
+                    <h2 className="text-sm font-medium">Proveedores</h2>
                     <AiProviderCatalogGrid
                         catalog={catalog}
                         providers={providers}

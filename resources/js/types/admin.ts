@@ -52,15 +52,23 @@ export type AiProviderSummary = {
     active_image: {
         label: string;
         provider: string;
+        model: string | null;
+        auto_generate: boolean;
     } | null;
     active_audio: {
         label: string;
         provider: string;
+        model: string | null;
+        auto_generate: boolean;
     } | null;
     active_moderation: {
         label: string;
         provider: string;
+        model: string;
     } | null;
+    free_moderation: {
+        configured: boolean;
+    };
 };
 
 export type AiProviderCatalogEntry = {

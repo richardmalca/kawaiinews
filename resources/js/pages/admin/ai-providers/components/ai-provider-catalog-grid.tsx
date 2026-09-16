@@ -13,7 +13,13 @@ type Props = {
     providers: AiProvider[];
 };
 
-export default function AiProviderCatalogGrid({ catalog, providers }: Props) {
+function CatalogTable({
+    entries,
+    providers,
+}: {
+    entries: AiProviderCatalogEntry[];
+    providers: AiProvider[];
+}) {
     return (
         <div className="overflow-x-auto">
             <Table>
@@ -27,7 +33,7 @@ export default function AiProviderCatalogGrid({ catalog, providers }: Props) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {catalog.map((entry) => (
+                    {entries.map((entry) => (
                         <AiProviderCatalogRow
                             key={entry.provider}
                             entry={entry}
@@ -40,6 +46,39 @@ export default function AiProviderCatalogGrid({ catalog, providers }: Props) {
                     ))}
                 </TableBody>
             </Table>
+        </div>
+    );
+}
+
+export default function AiProviderCatalogGrid({ catalog, providers }: Props) {
+    const configured = catalog.filter((entry) => entry.configured);
+    const notConfigured = catalog.filter((entry) => !entry.configured);
+
+    return (
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <h2 className="text-sm font-medium">
+                    Cargados ({configured.length})
+                </h2>
+                {configured.length > 0 ? (
+                    <CatalogTable
+                        entries={configured}
+                        providers={providers}
+                    />
+                ) : (
+                    <p className="text-muted-foreground text-sm">
+                        Todavía no cargaste ningún proveedor. Elegí uno de la
+                        lista de abajo para empezar.
+                    </p>
+                )}
+            </div>
+
+            <div className="space-y-2">
+                <h2 className="text-muted-foreground text-sm font-medium">
+                    Por agregar ({notConfigured.length})
+                </h2>
+                <CatalogTable entries={notConfigured} providers={providers} />
+            </div>
         </div>
     );
 }

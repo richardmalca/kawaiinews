@@ -169,6 +169,7 @@ class AiProviderService
         $activeImage = $providers->firstWhere('is_active_for_images', true);
         $activeAudio = $providers->firstWhere('is_active_for_audio', true);
         $activeModeration = $providers->firstWhere('is_active_for_moderation', true);
+        $googleModeration = $providers->firstWhere('provider', 'google-moderation');
 
         return [
             'total' => $providers->count(),
@@ -182,15 +183,27 @@ class AiProviderService
             'active_image' => $activeImage ? [
                 'label' => $activeImage->label,
                 'provider' => $activeImage->provider,
+                'model' => config("ai_catalog.{$activeImage->provider}.image_model"),
+                'auto_generate' => $activeImage->auto_generate_featured_image,
             ] : null,
             'active_audio' => $activeAudio ? [
                 'label' => $activeAudio->label,
                 'provider' => $activeAudio->provider,
+                'model' => config("ai_catalog.{$activeAudio->provider}.audio_model"),
+                'auto_generate' => $activeAudio->auto_generate_narration,
             ] : null,
             'active_moderation' => $activeModeration ? [
                 'label' => $activeModeration->label,
                 'provider' => $activeModeration->provider,
+                'model' => $activeModeration->default_model,
             ] : null,
+            // No es una "activación" como las demás (no hay is_active_for_*
+            // para esto): con solo tener la API key cargada ya se usa como
+            // filtro gratis antes de la moderación de pago — ver
+            // CommentModerationService::resolveWithGoogleModeration().
+            'free_moderation' => [
+                'configured' => $googleModeration?->hasApiKey() ?? false,
+            ],
         ];
     }
 
