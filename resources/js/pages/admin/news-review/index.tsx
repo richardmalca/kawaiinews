@@ -24,6 +24,7 @@ import {
 import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import AnalyzeWithAiButton from '@/pages/admin/news-review/components/analyze-with-ai-button';
 import ApplyAiVerdictsButton from '@/pages/admin/news-review/components/apply-ai-verdicts-button';
+import AutoAcceptControl from '@/pages/admin/news-review/components/auto-accept-control';
 import NewsClusterRow from '@/pages/admin/news-review/components/news-cluster-row';
 import NewsReviewCategorySelect from '@/pages/admin/news-review/components/news-review-category-select';
 import NewsReviewSortSelect from '@/pages/admin/news-review/components/news-review-sort-select';
@@ -48,6 +49,11 @@ type NextRun = {
     in: string;
 };
 
+type AutoAccept = {
+    enabled: boolean;
+    daily_limit: number;
+};
+
 type Props = {
     clusters: NewsCluster[];
     hasActiveSources: boolean;
@@ -59,6 +65,8 @@ type Props = {
     meta: Meta;
     nextScrapeAt: NextRun | null;
     nextAutoReviewAt: NextRun | null;
+    nextAutoAcceptAt: NextRun | null;
+    autoAccept: AutoAccept;
     kpis: AdminNewsReviewKpis;
 };
 
@@ -73,6 +81,8 @@ export default function NewsReviewIndex({
     meta,
     nextScrapeAt,
     nextAutoReviewAt,
+    nextAutoAcceptAt,
+    autoAccept,
     kpis,
 }: Props) {
     const [search, setSearch] = useState(initialSearch ?? '');
@@ -178,8 +188,20 @@ export default function NewsReviewIndex({
                                 ({nextAutoReviewAt.at})
                             </span>
                         )}
+                        {autoAccept.enabled && nextAutoAcceptAt && (
+                            <span className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                Próxima aceptación automática:{' '}
+                                {nextAutoAcceptAt.in} ({nextAutoAcceptAt.at})
+                            </span>
+                        )}
                     </div>
                 )}
+
+                <AutoAcceptControl
+                    enabled={autoAccept.enabled}
+                    dailyLimit={autoAccept.daily_limit}
+                />
 
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <KpiCard

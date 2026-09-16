@@ -10,12 +10,14 @@ use App\Jobs\ApplyAiVerdictsJob;
 use App\Jobs\ScrapeNewsSourcesJob;
 use App\Models\NewsCluster;
 use App\Models\NewsSource;
+use App\Models\SiteSetting;
 use App\Services\Admin\NewsClusterService;
 use App\Support\ActivityLogger;
 use App\Support\JobRunStatus;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,6 +52,11 @@ class NewsReviewController extends Controller
             ],
             'nextScrapeAt' => $this->nextScheduledRun('news:scrape'),
             'nextAutoReviewAt' => $this->nextScheduledRun('news:auto-review'),
+            'nextAutoAcceptAt' => $this->nextScheduledRun('news:auto-accept'),
+            'autoAccept' => [
+                'enabled' => SiteSetting::current()->auto_accept_news_enabled,
+                'daily_limit' => SiteSetting::current()->auto_accept_news_daily_limit,
+            ],
             'kpis' => $this->newsClusterService->adminKpis($category),
         ]);
     }
@@ -123,6 +130,28 @@ class NewsReviewController extends Controller
         ApplyAiVerdictsJob::dispatch($runId);
 
         return response()->json(['run_id' => $runId]);
+    }
+
+    public function toggleAutoAccept(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'daily_limit' => ['required', 'integer', 'min:1', 'max:20'],
+        ]);
+
+        SiteSetting::current()->update([
+            'auto_accept_news_enabled' => $data['enabled'],
+            'auto_accept_news_daily_limit' => $data['daily_limit'],
+        ]);
+
+        ActivityLogger::log(
+            'news_cluster.auto_accept_toggled',
+            description: $data['enabled']
+                ? "Activó la aceptación automática de noticias (hasta {$data['daily_limit']} por día)"
+                : 'Desactivó la aceptación automática de noticias',
+        );
+
+        return back();
     }
 
     public function runStatus(string $runId): JsonResponse

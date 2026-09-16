@@ -25,8 +25,10 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $instagram_url
  * @property string|null $tiktok_url
  * @property bool $search_box_enabled
+ * @property bool $auto_accept_news_enabled
+ * @property int $auto_accept_news_daily_limit
  */
-#[Fillable(['name', 'seo_title', 'description', 'contact_email', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled'])]
+#[Fillable(['name', 'seo_title', 'description', 'contact_email', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled', 'auto_accept_news_enabled', 'auto_accept_news_daily_limit'])]
 class SiteSetting extends Model
 {
     private const CACHE_KEY = 'site-settings:singleton';
@@ -36,6 +38,8 @@ class SiteSetting extends Model
         return [
             'keywords' => 'array',
             'search_box_enabled' => 'boolean',
+            'auto_accept_news_enabled' => 'boolean',
+            'auto_accept_news_daily_limit' => 'integer',
         ];
     }
 

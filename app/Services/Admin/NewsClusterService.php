@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\AiProvider;
 use App\Models\NewsCluster;
+use App\Models\SiteSetting;
 use App\Support\AiUsageLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -124,21 +125,46 @@ class NewsClusterService
      *
      * @return array{applied: int, article_ids: array<int, int>}
      */
-    public function acceptAllPublishVerdicts(): array
+    public function acceptAllPublishVerdicts(?int $limit = null): array
     {
-        $clusters = NewsCluster::where('status', 'pending')
+        $query = NewsCluster::where('status', 'pending')
             ->where('ai_verdict', 'publish')
-            ->get();
+            ->orderByDesc('relevance_score');
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
 
         $articleIds = [];
 
-        foreach ($clusters as $cluster) {
+        foreach ($query->get() as $cluster) {
             $this->accept($cluster);
             $article = $this->newsArticleService->createFromCluster($cluster);
             $articleIds[] = $article->id;
         }
 
         return ['applied' => count($articleIds), 'article_ids' => $articleIds];
+    }
+
+    /**
+     * Versión acotada de acceptAllPublishVerdicts() para el comando
+     * programado diario (news:auto-accept): solo corre si el admin lo
+     * activó explícitamente, y solo toma las mejor puntuadas hasta el
+     * tope diario que haya configurado — así la redacción con noticias
+     * queda funcionando sola, pero sin que se dispare de golpe con todo
+     * lo que haya pendiente ni sin que el admin lo haya pedido.
+     *
+     * @return array{applied: int, article_ids: array<int, int>}
+     */
+    public function autoAcceptDaily(): array
+    {
+        $settings = SiteSetting::current();
+
+        if (! $settings->auto_accept_news_enabled) {
+            return ['applied' => 0, 'article_ids' => []];
+        }
+
+        return $this->acceptAllPublishVerdicts($settings->auto_accept_news_daily_limit);
     }
 
     public function autoRejectDiscarded(): int

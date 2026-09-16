@@ -155,6 +155,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->middleware('throttle:ai-costly')
                 ->name('news-review.apply-ai-verdicts');
             Route::get('news-review/runs/{runId}', [NewsReviewController::class, 'runStatus'])->name('news-review.run-status');
+            Route::post('news-review/toggle-auto-accept', [NewsReviewController::class, 'toggleAutoAccept'])
+                ->name('news-review.toggle-auto-accept');
             Route::post('news-review/{newsCluster}/accept', [NewsReviewController::class, 'accept'])
                 ->middleware('throttle:ai-costly')
                 ->name('news-review.accept');
