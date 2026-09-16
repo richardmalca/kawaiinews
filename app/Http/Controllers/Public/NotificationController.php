@@ -49,7 +49,7 @@ class NotificationController extends Controller
         } elseif ($filter === 'guardados') {
             $query->whereIn('data->type', ['article_saved', 'article_shared']);
         } elseif ($filter === 'comentarios') {
-            $query->whereIn('data->type', ['comment_reply', 'comment_mention']);
+            $query->whereIn('data->type', ['comment_reply', 'comment_mention', 'article_commented']);
         } elseif ($filter === 'seguidores') {
             $query->where('data->type', 'user_follow');
         } elseif ($filter === 'noticias') {

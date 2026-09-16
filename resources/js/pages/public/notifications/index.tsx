@@ -272,8 +272,10 @@ export default function NotificationsPage({
                         const isLiked = item.data.type === 'article_liked';
                         const isSaved = item.data.type === 'article_saved';
                         const isShared = item.data.type === 'article_shared';
+                        const isArticleCommented = item.data.type === 'article_commented';
 
                         const avatarSrc = (
+                            item.data.commenter_avatar ||
                             item.data.saver_avatar ||
                             item.data.sharer_avatar ||
                             item.data.liker_avatar ||
@@ -284,6 +286,7 @@ export default function NotificationsPage({
                         ) as string | undefined;
 
                         const avatarInitial = (
+                            item.data.commenter_name ||
                             item.data.saver_name ||
                             item.data.sharer_name ||
                             item.data.liker_name ||
@@ -341,7 +344,7 @@ export default function NotificationsPage({
                                             {isLiked && <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />}
                                             {isSaved && <Bookmark className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />}
                                             {isShared && <Share2 className="h-2.5 w-2.5 text-blue-500" />}
-                                            {isReply && <MessageSquare className="h-2.5 w-2.5 text-rose-500" />}
+                                            {(isReply || isArticleCommented) && <MessageSquare className="h-2.5 w-2.5 text-rose-500" />}
                                             {isMention && <AtSign className="h-2.5 w-2.5 text-purple-500" />}
                                             {isFollow && <UserPlus className="h-2.5 w-2.5 text-sky-500" />}
                                             {isNewArticle && <Newspaper className="h-2.5 w-2.5 text-rose-500" />}
@@ -438,6 +441,27 @@ export default function NotificationsPage({
                                                         </span>
                                                     ) : (
                                                         <span> compartió tu noticia </span>
+                                                    )}
+                                                    <span className="font-semibold text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400">
+                                                        {item.data.article_title}
+                                                    </span>
+                                                </>
+                                            )}
+                                            {isArticleCommented && (
+                                                <>
+                                                    <span className="font-semibold text-neutral-950 dark:text-white">
+                                                        {item.data.commenter_name}
+                                                    </span>
+                                                    {(item.data.total_comments ?? 1) > 1 ? (
+                                                        <span>
+                                                            {' '}y otras{' '}
+                                                            <span className="font-semibold text-neutral-950 dark:text-white">
+                                                                {(item.data.total_comments ?? 1) - 1}
+                                                            </span>{' '}
+                                                            personas comentaron tu noticia{' '}
+                                                        </span>
+                                                    ) : (
+                                                        <span> comentó en tu noticia </span>
                                                     )}
                                                     <span className="font-semibold text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400">
                                                         {item.data.article_title}

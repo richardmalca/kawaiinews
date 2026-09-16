@@ -6,10 +6,12 @@ use App\Jobs\ModerateCommentWithAiJob;
 use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
+use App\Notifications\ArticleCommentedNotification;
 use App\Notifications\CommentRepliedNotification;
 use App\Notifications\UserMentionedNotification;
 use App\Support\SidebarAlerts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CommentService
@@ -95,6 +97,40 @@ class CommentService
             $targetAuthor = $target->user;
             if ($targetAuthor) {
                 $targetAuthor->notify(new CommentRepliedNotification($comment, $user));
+            }
+        }
+
+        // Notificar al autor de la noticia (con agrupación para no saturar si hay 50 o 500 comentarios)
+        $articleAuthorId = $article->author_id;
+        $isReplyingToAuthorComment = isset($target) && $target->user_id === $articleAuthorId;
+
+        if ($articleAuthorId && $articleAuthorId !== $user->id && ! $isReplyingToAuthorComment) {
+            $author = $article->author;
+            if ($author) {
+                $existingNotification = $author->unreadNotifications()
+                    ->where('type', ArticleCommentedNotification::class)
+                    ->where('data->article_id', $article->id)
+                    ->first();
+
+                $totalComments = $article->comments()->count();
+
+                if ($existingNotification) {
+                    $data = $existingNotification->data;
+                    $data['commenter_id'] = $user->id;
+                    $data['commenter_name'] = $user->name;
+                    $data['commenter_username'] = $user->username;
+                    $data['commenter_avatar'] = $user->active_avatar_url;
+                    $data['comment_id'] = $comment->id;
+                    $data['comment_preview'] = Str::limit($comment->body, 90);
+                    $data['total_comments'] = $totalComments;
+                    $data['url'] = "/noticias/{$article->slug}#comentario-{$comment->id}";
+                    $existingNotification->update([
+                        'data' => $data,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $author->notify(new ArticleCommentedNotification($user, $article, $comment, $totalComments));
+                }
             }
         }
 

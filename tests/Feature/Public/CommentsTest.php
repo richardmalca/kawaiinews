@@ -206,3 +206,61 @@ test('a logged in user can like and unlike a comment', function () {
         ->assertOk()
         ->assertJson(['liked' => false, 'total_likers' => 0]);
 });
+
+test('article author receives a notification when someone comments on their article', function () {
+    $author = User::factory()->create();
+    $commenter = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create(['author_id' => $author->id]);
+
+    $this->actingAs($commenter)
+        ->postJson(route('public.comments.store', $article->slug), [
+            'body' => '¡Excelente artículo, gracias!',
+        ])
+        ->assertCreated();
+
+    $notification = $author->notifications()->first();
+    expect($notification)->not->toBeNull()
+        ->and($notification->data['type'])->toBe('article_commented')
+        ->and($notification->data['commenter_id'])->toBe($commenter->id)
+        ->and($notification->data['article_id'])->toBe($article->id)
+        ->and($notification->data['total_comments'])->toBe(1);
+});
+
+test('article author notifications are aggregated when multiple comments arrive', function () {
+    $author = User::factory()->create();
+    $commenter1 = User::factory()->create();
+    $commenter2 = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create(['author_id' => $author->id]);
+
+    $this->actingAs($commenter1)
+        ->postJson(route('public.comments.store', $article->slug), [
+            'body' => 'Primer comentario',
+        ])
+        ->assertCreated();
+
+    $this->actingAs($commenter2)
+        ->postJson(route('public.comments.store', $article->slug), [
+            'body' => 'Segundo comentario',
+        ])
+        ->assertCreated();
+
+    expect($author->unreadNotifications()->count())->toBe(1);
+
+    $notification = $author->unreadNotifications()->first();
+    expect($notification->data['type'])->toBe('article_commented')
+        ->and($notification->data['commenter_id'])->toBe($commenter2->id)
+        ->and($notification->data['total_comments'])->toBe(2);
+});
+
+test('author commenting on their own article does not send notification to themselves', function () {
+    $author = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create(['author_id' => $author->id]);
+
+    $this->actingAs($author)
+        ->postJson(route('public.comments.store', $article->slug), [
+            'body' => 'Mi propio comentario como autor',
+        ])
+        ->assertCreated();
+
+    expect($author->notifications()->count())->toBe(0);
+});

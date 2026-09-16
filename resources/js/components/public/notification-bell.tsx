@@ -46,6 +46,11 @@ export interface AppNotificationItem {
         sharer_avatar?: string | null;
         channel?: string | null;
         total_shares?: number;
+        commenter_id?: number;
+        commenter_name?: string;
+        commenter_username?: string;
+        commenter_avatar?: string | null;
+        total_comments?: number;
         replier_name?: string;
         replier_username?: string;
         replier_avatar?: string | null;
@@ -203,6 +208,12 @@ export function NotificationBell() {
                             body = othersCount > 0
                                 ? `${latest.data.sharer_name ?? 'Alguien'} y otras ${othersCount} personas compartieron tu noticia`
                                 : `${latest.data.sharer_name ?? 'Alguien'} compartió tu noticia "${latest.data.article_title ?? ''}"`;
+                        } else if (latest.data.type === 'article_commented') {
+                            const othersCount = (latest.data.total_comments ?? 1) - 1;
+                            title = '¡Nuevo comentario en tu noticia!';
+                            body = othersCount > 0
+                                ? `${latest.data.commenter_name ?? 'Alguien'} y otras ${othersCount} personas comentaron tu noticia`
+                                : `${latest.data.commenter_name ?? 'Alguien'} comentó en tu noticia "${latest.data.article_title ?? ''}"`;
                         }
 
                         toast.info(title, {
@@ -219,6 +230,7 @@ export function NotificationBell() {
                         showBrowserNotification(title, {
                             body,
                             icon:
+                                latest.data.commenter_avatar ||
                                 latest.data.saver_avatar ||
                                 latest.data.sharer_avatar ||
                                 latest.data.liker_avatar ||
@@ -450,6 +462,7 @@ export function NotificationBell() {
                                 const isLiked = item.data.type === 'article_liked';
                                 const isSaved = item.data.type === 'article_saved';
                                 const isShared = item.data.type === 'article_shared';
+                                const isArticleCommented = item.data.type === 'article_commented';
 
                                 return (
                                     <div
@@ -469,14 +482,14 @@ export function NotificationBell() {
                                                         alt="Portada"
                                                         className="h-full w-full object-cover"
                                                     />
-                                                ) : (item.data.saver_avatar || item.data.sharer_avatar || item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
+                                                ) : (item.data.commenter_avatar || item.data.saver_avatar || item.data.sharer_avatar || item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) ? (
                                                     <img
-                                                        src={(item.data.saver_avatar || item.data.sharer_avatar || item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
+                                                        src={(item.data.commenter_avatar || item.data.saver_avatar || item.data.sharer_avatar || item.data.liker_avatar || item.data.mentioner_avatar || item.data.replier_avatar || item.data.follower_avatar || item.data.author_avatar) as string}
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (
-                                                    (item.data.saver_name || item.data.sharer_name || item.data.liker_name || item.data.mentioner_name || item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
+                                                    (item.data.commenter_name || item.data.saver_name || item.data.sharer_name || item.data.liker_name || item.data.mentioner_name || item.data.replier_name || item.data.follower_name || item.data.author_name || 'K').charAt(0).toUpperCase()
                                                 )}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-950 shadow-xs">
@@ -489,7 +502,7 @@ export function NotificationBell() {
                                                 {isShared && (
                                                     <Share2 className="h-2.5 w-2.5 text-blue-500" />
                                                 )}
-                                                {isReply && (
+                                                {(isReply || isArticleCommented) && (
                                                     <MessageSquare className="h-2.5 w-2.5 text-rose-500" />
                                                 )}
                                                 {isMention && (
@@ -593,6 +606,27 @@ export function NotificationBell() {
                                                             </span>
                                                         ) : (
                                                             <span> compartió tu noticia </span>
+                                                        )}
+                                                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                                            {item.data.article_title}
+                                                        </span>
+                                                    </>
+                                                )}
+                                                {isArticleCommented && (
+                                                    <>
+                                                        <span className="font-bold text-neutral-950 dark:text-white">
+                                                            {item.data.commenter_name}
+                                                        </span>
+                                                        {(item.data.total_comments ?? 1) > 1 ? (
+                                                            <span>
+                                                                {' '}y otras{' '}
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    {(item.data.total_comments ?? 1) - 1}
+                                                                </span>{' '}
+                                                                personas comentaron tu noticia{' '}
+                                                            </span>
+                                                        ) : (
+                                                            <span> comentó en tu noticia </span>
                                                         )}
                                                         <span className="font-semibold text-rose-600 dark:text-rose-400">
                                                             {item.data.article_title}
