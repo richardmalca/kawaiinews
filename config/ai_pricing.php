@@ -22,4 +22,14 @@ return [
         'gemini-2.5-pro' => ['input' => 1.25, 'output' => 10.0],
         'gemini-2.5-flash' => ['input' => 0.3, 'output' => 2.5],
     ],
+    // Google Cloud Text-to-Speech no cobra por token sino por carácter —
+    // se reutiliza el mismo cálculo "input" guardando los caracteres
+    // narrados como prompt_tokens (ver MediaLibraryService::generateNarration),
+    // así el estimado sale bien sin armar una fórmula aparte para uno
+    // solo. Los primeros 1.000.000 de caracteres por mes con esta voz
+    // (WaveNet) son gratis, así que el estimado acá es un techo, no lo
+    // que realmente se termina pagando la mayoría de los meses.
+    'google-tts' => [
+        'es-US-Wavenet-B' => ['input' => 4.0, 'output' => 0.0],
+    ],
 ];

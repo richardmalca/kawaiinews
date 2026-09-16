@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\AiProvider;
+use App\Models\AiUsageLog;
 use App\Models\Media;
 use App\Models\NewsArticle;
 use App\Services\Admin\MediaLibraryService;
+use Illuminate\Support\Facades\Http;
 use Prism\Prism\Audio\AudioResponse;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\ValueObjects\GeneratedAudio;
@@ -43,6 +45,45 @@ test('generating a narration creates an audio media item linked to the article',
         ->and($media->source)->toBe('ai');
 
     expect(Media::where('type', 'audio')->where('news_article_id', $article->id)->count())->toBe(1);
+
+    // Antes, generar audio no dejaba ningún registro en ai_usage_logs —
+    // por eso el costo de narración nunca aparecía en Costo de IA ni en
+    // Mis noticias, aunque las llamadas a OpenAI/ElevenLabs sí gastaban.
+    $log = AiUsageLog::where('kind', 'audio')->first();
+    expect($log)->not->toBeNull()
+        ->and($log->subject_id)->toBe($article->id);
+});
+
+test('generating a narration with Google Cloud Text-to-Speech calls its REST API directly (Prism does not support it)', function () {
+    AiProvider::factory()->create([
+        'provider' => 'google-tts',
+        'api_key' => 'test-key',
+    ]);
+
+    Http::fake([
+        'texttospeech.googleapis.com/*' => Http::response([
+            'audioContent' => base64_encode('fake-mp3-bytes'),
+        ]),
+    ]);
+
+    $article = NewsArticle::factory()->create([
+        'title' => 'Una noticia con narración de Google',
+        'excerpt' => 'Resumen de prueba',
+        'body' => '<p>Cuerpo de la noticia de prueba.</p>',
+    ]);
+
+    $media = app(MediaLibraryService::class)->generateNarration($article);
+
+    expect($media->type)->toBe('audio')
+        ->and($media->provider)->toBe('google-tts');
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'texttospeech.googleapis.com')
+        && $request['voice']['name'] === 'es-US-Wavenet-B');
+
+    $log = AiUsageLog::where('kind', 'audio')->where('provider', 'google-tts')->first();
+    expect($log)->not->toBeNull()
+        ->and($log->prompt_tokens)->toBeGreaterThan(0)
+        ->and($log->completion_tokens)->toBe(0);
 });
 
 test('audio library only lists audio media, not images', function () {

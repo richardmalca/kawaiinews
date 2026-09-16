@@ -60,4 +60,14 @@ return [
         // narrar noticias todos los días.
         'audio_model' => 'eleven_turbo_v2_5',
     ],
+    'google-tts' => [
+        'label' => 'Google Cloud Text-to-Speech',
+        'models' => [],
+        // Voz WaveNet: 1.000.000 de caracteres gratis por mes, recién
+        // después $4 por millón — para el volumen de este sitio (unas
+        // pocas noticias por día) no debería llegar a cobrar nada. No usa
+        // Prism (no está entre sus proveedores soportados): se llama
+        // directo por HTTP en MediaLibraryService::generateGoogleTtsAudio().
+        'audio_model' => 'es-US-Wavenet-B',
+    ],
 ];

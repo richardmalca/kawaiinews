@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\ValueObjects\Media\Image;
+use Prism\Prism\ValueObjects\Usage;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -481,36 +482,86 @@ class MediaLibraryService
             throw new RuntimeException('No hay un proveedor con soporte de audio configurado. Agrégalo y activalo para audio en Modelo de IA.');
         }
 
-        $voiceConfig = self::AUDIO_VOICES[$provider->provider] ?? ['voice' => null, 'options' => []];
-
-        if (! $voiceConfig['voice']) {
-            throw new RuntimeException("No hay una voz configurada para {$provider->provider}.");
-        }
-
         $script = $this->buildNarrationScript($newsArticle);
+        $model = config("ai_catalog.{$provider->provider}.audio_model");
 
-        $response = Prism::audio()
-            ->using($provider->provider, config("ai_catalog.{$provider->provider}.audio_model"), [
-                'api_key' => $provider->api_key,
-            ])
-            ->withInput($script)
-            ->withVoice($voiceConfig['voice'])
-            ->withProviderOptions($voiceConfig['options'])
-            ->asAudio();
+        $audioBase64 = $provider->provider === 'google-tts'
+            ? $this->generateGoogleTtsAudio($script, $provider->api_key, $model)
+            : $this->generateAudioWithPrism($provider->provider, $model, $provider->api_key, $script);
+
+        // Google Cloud TTS cobra por carácter narrado, no por token — se
+        // guarda igual la cantidad de caracteres como "prompt_tokens" para
+        // que el estimado de costo del panel (AiCostEstimator) lo pueda
+        // calcular con la misma fórmula que el resto, sin duplicarla.
+        AiUsageLogger::record('audio', $provider->provider, $model, new Usage(mb_strlen($script), 0), $newsArticle);
 
         $disk = $this->mediaDisk();
         $path = MediaNaming::path('audio', 'mp3');
-        $disk->put($path, base64_decode($response->audio->base64), 'public');
+        $disk->put($path, base64_decode($audioBase64), 'public');
 
         return Media::create([
             'url' => $disk->url($path),
             'original_name' => Str::limit($newsArticle->title, 60, ''),
             'source' => 'ai',
             'provider' => $provider->provider,
-            'model' => config("ai_catalog.{$provider->provider}.audio_model"),
+            'model' => $model,
             'type' => 'audio',
             'news_article_id' => $newsArticle->id,
         ]);
+    }
+
+    private function generateAudioWithPrism(string $provider, string $model, ?string $apiKey, string $script): string
+    {
+        $voiceConfig = self::AUDIO_VOICES[$provider] ?? ['voice' => null, 'options' => []];
+
+        if (! $voiceConfig['voice']) {
+            throw new RuntimeException("No hay una voz configurada para {$provider}.");
+        }
+
+        $response = Prism::audio()
+            ->using($provider, $model, ['api_key' => $apiKey])
+            ->withInput($script)
+            ->withVoice($voiceConfig['voice'])
+            ->withProviderOptions($voiceConfig['options'])
+            ->asAudio();
+
+        return $response->audio->base64;
+    }
+
+    /**
+     * Google Cloud Text-to-Speech no es un proveedor que Prism soporte
+     * (solo habla con OpenAI y Gemini para audio), así que se llama
+     * directo a su API REST — es simple, solo necesita la clave como
+     * parámetro de consulta, nada de credenciales de service account.
+     */
+    private function generateGoogleTtsAudio(string $script, ?string $apiKey, string $voiceName): string
+    {
+        if (! $apiKey) {
+            throw new RuntimeException('Falta la API key de Google Cloud Text-to-Speech.');
+        }
+
+        $response = Http::timeout(30)->post(
+            "https://texttospeech.googleapis.com/v1/text:synthesize?key={$apiKey}",
+            [
+                'input' => ['text' => $script],
+                'voice' => ['languageCode' => 'es-US', 'name' => $voiceName],
+                'audioConfig' => ['audioEncoding' => 'MP3'],
+            ]
+        );
+
+        if (! $response->successful()) {
+            $message = $response->json('error.message') ?? $response->body();
+
+            throw new RuntimeException("Google Cloud Text-to-Speech: {$message}");
+        }
+
+        $audioContent = $response->json('audioContent');
+
+        if (! $audioContent) {
+            throw new RuntimeException('Google Cloud Text-to-Speech no devolvió audio.');
+        }
+
+        return $audioContent;
     }
 
     public function download(Media $media): BinaryFileResponse|StreamedResponse
