@@ -45,7 +45,6 @@ class ImageOptimizerService
         ob_start();
         $success = imagewebp($image, null, self::QUALITY);
         $webp = ob_get_clean();
-        imagedestroy($image);
 
         return $success && $webp !== false ? $webp : null;
     }
@@ -74,7 +73,6 @@ class ImageOptimizerService
         imagefill($resized, 0, 0, $transparent);
 
         imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-        imagedestroy($image);
 
         return $resized;
     }
