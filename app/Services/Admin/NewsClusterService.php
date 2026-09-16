@@ -246,7 +246,11 @@ class NewsClusterService
         })->implode("\n");
 
         $prompt = <<<PROMPT
-            Sos un editor de noticias de anime/geek/gaming. Evaluá cada uno de estos temas y decidí si vale la pena publicarlos como noticia hoy o descartarlos (por ser viejos, poco relevantes, muy de nicho o triviales). Más fuentes cubriendo el mismo tema y menor antigüedad es mejor señal.
+            Sos el editor de KawaiiNews, un sitio de noticias enfocado específicamente en ANIME, MANGA y CULTURA JAPONESA (videojuegos japoneses, películas japonesas o directamente relacionadas con anime/manga, y noticias de Japón en general). NO es un sitio genérico de geek, gaming o cine occidental.
+
+            Las fuentes que alimentan este sistema incluyen sitios genéricos de tecnología (Kotaku, IGN, Xataka), gaming (Vandal, Eurogamer, 3DJuegos) y cine (Sensacine, Espinof) que también publican mucho contenido que NO tiene nada que ver con anime ni Japón (política, hardware genérico, cine de Hollywood, deportes electrónicos occidentales, etc.). Tu trabajo es filtrar eso con criterio estricto: DESCARTAR cualquier tema que no esté claramente relacionado con anime, manga, videojuegos japoneses/desarrollados en Japón, cine japonés, o cultura/noticias de Japón — sin importar que venga catalogado como "geek", "gaming" o "películas". Ante la duda de si algo es realmente sobre Japón/anime o no, descartalo.
+
+            Para lo que sí sea relevante, evaluá además si vale la pena publicarlo hoy o descartarlo por ser viejo, poco relevante, muy de nicho o trivial. Más fuentes cubriendo el mismo tema y menor antigüedad es mejor señal.
 
             Además, para cada uno indicá si se presenta como un RUMOR o reporte sin confirmar (a diferencia de un anuncio oficial ya confirmado por el estudio/desarrollador/editorial) y, si es rumor, tu estimación de qué tan creíble parece SOLO en base a la cantidad y calidad de las fuentes que lo cubren acá (no tenés acceso a internet en vivo, no estás verificando el hecho en sí — es una estimación por cobertura y consistencia entre fuentes, no una confirmación real).
 
