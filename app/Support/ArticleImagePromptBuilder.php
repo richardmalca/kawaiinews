@@ -37,6 +37,13 @@ class ArticleImagePromptBuilder
         // pantallas, grabaciones o los mismos personajes duplicados en
         // dos escenas — justo lo que no queremos en una portada. Solo se
         // usa el título y el resumen como inspiración temática.
-        return "Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point, capturing the mood of: {$title}. Feeling: {$safeExcerpt}. Art style: {$categoryStyle}, cinematic lighting, rich colorful atmosphere. Depict one unified scene or a single character pose that evokes the topic — do not literally recreate plot or reporting details from the text. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.";
+        //
+        // Este builder solo lo usa MediaLibraryService::generateFeaturedImage(),
+        // que siempre manda la imagen oficial de la fuente como
+        // referencia (nunca se llama sin una) — por eso el prompt le
+        // pide que se apegue a esa referencia en vez de reinterpretarla
+        // libremente: cuando ya hay una foto oficial, el admin prefiere
+        // una versión fiel de esa escena antes que una inventada.
+        return "Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point. Closely follow the composition, characters, poses and framing of the provided reference image — this should read as a faithful stylized redraw of that same scene, not a different or reinterpreted scene. Capturing the mood of: {$title}. Feeling: {$safeExcerpt}. Art style: {$categoryStyle}, cinematic lighting, rich colorful atmosphere. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.";
     }
 }
