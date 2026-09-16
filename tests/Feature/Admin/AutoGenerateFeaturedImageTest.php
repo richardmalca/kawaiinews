@@ -22,6 +22,28 @@ test('ArticleImagePromptBuilder returns null until title, excerpt and body are a
     expect(ArticleImagePromptBuilder::build($article))->toBeNull();
 });
 
+test('ArticleImagePromptBuilder never leaks the article body into the prompt (regression: caused screens/duplicated characters)', function () {
+    // El cuerpo menciona explícitamente una grabación y una pantalla —
+    // si esto se filtra al prompt visual, la IA termina dibujando eso
+    // literal (justo el bug reportado: personajes duplicados, una vez
+    // "en una grabación" y otra vez "en pantalla grande").
+    $article = NewsArticle::factory()->make([
+        'title' => 'Un titular de prueba',
+        'excerpt' => 'Un resumen de prueba',
+        'body' => '<p>Se reveló en una transmisión en vivo, mostrada en una pantalla grande ante el público.</p>',
+        'category' => 'anime',
+    ]);
+
+    $prompt = ArticleImagePromptBuilder::build($article);
+
+    expect($prompt)
+        ->not->toContain('transmisión')
+        ->not->toContain('pantalla')
+        ->toContain('no screens')
+        ->toContain('no monitors')
+        ->toContain('no duplicated or repeated characters');
+});
+
 test('ArticleImagePromptBuilder builds a textless prompt mentioning the title and category style', function () {
     $article = NewsArticle::factory()->make([
         'title' => 'Un titular de prueba',

@@ -115,18 +115,19 @@ export default function NewsArticleEdit({
         .replace(/["“”]/g, '')
         .slice(0, 180)
         .trim();
-    const safeContext = plainBody
-        .replace(/["“”]/g, '')
-        .slice(0, 200)
-        .trim();
 
     const categoryStyle =
         category === 'gaming'
             ? 'Stylized video game promotional concept art, vibrant dynamic digital gaming illustration, game atmosphere'
             : 'Official 2D Japanese anime key visual illustration, authentic modern animation aesthetic, crisp lineart, cel-shaded coloring, studio animation quality';
 
+    // A propósito NO se manda el cuerpo completo de la noticia al prompt
+    // visual (solo se exige como requisito para habilitar el botón): el
+    // cuerpo habla de mecánica periodística (tráilers, streams, capturas,
+    // retrasos) que la IA toma literal y termina dibujando pantallas,
+    // grabaciones o los mismos personajes duplicados en dos escenas.
     const aiImagePrompt = isContentComplete
-        ? `Cinematic editorial illustration in 16:9 widescreen format inspired by the topic: ${safeTitle}. Theme: ${safeExcerpt}. Background atmosphere: ${safeContext}. Art style: ${categoryStyle}, cinematic lighting, colorful scenic environment. Strict constraints: completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful fictional video game or anime artwork, no violence, no gore, no realistic human photos.`
+        ? `Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point, capturing the mood of: ${safeTitle}. Feeling: ${safeExcerpt}. Art style: ${categoryStyle}, cinematic lighting, rich colorful atmosphere. Depict one unified scene or a single character pose that evokes the topic — do not literally recreate plot or reporting details from the text. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.`
         : null;
 
     const handleCopyImagePrompt = async () => {
