@@ -44,21 +44,27 @@ export default function KpiCard({
     changePercent,
 }: Props) {
     return (
-        <Card>
-            <CardContent className="flex items-center gap-3">
-                <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center">
-                    <Icon className="text-muted-foreground h-5 w-5" />
+        <Card size="sm" className="rounded-xl border border-neutral-200/80 bg-white/90 shadow-2xs transition-all hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900/60">
+            <CardContent className="flex items-center gap-2.5 p-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                    <Icon className="h-4 w-4" />
                 </div>
-                <div className="min-w-0">
-                    <p className="text-muted-foreground text-xs">{label}</p>
-                    <p className="truncate text-lg font-semibold">{value}</p>
+                <div className="min-w-0 flex-1">
+                    <p className="truncate text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                        {label}
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-base font-bold tracking-tight text-neutral-900 sm:text-lg dark:text-neutral-100">
+                            {value}
+                        </p>
+                        {changePercent !== undefined && changePercent !== null && (
+                            <ChangeBadge changePercent={changePercent} />
+                        )}
+                    </div>
                     {sublabel && (
-                        <p className="text-muted-foreground text-xs">
+                        <p className="truncate text-[10px] text-neutral-400 dark:text-neutral-500">
                             {sublabel}
                         </p>
-                    )}
-                    {changePercent !== undefined && changePercent !== null && (
-                        <ChangeBadge changePercent={changePercent} />
                     )}
                 </div>
             </CardContent>

@@ -53,7 +53,7 @@ export default function AdminDashboard({
 
                 <DashboardQuickActions />
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
                     <KpiCard
                         icon={Users}
                         label="Usuarios totales"
@@ -112,7 +112,9 @@ export default function AdminDashboard({
                     <DashboardTopArticles articles={topArticles} />
                 </div>
 
-                <DashboardHealthPanel checks={health} />
+                {health && health.length > 0 && (
+                    <DashboardHealthPanel checks={health} />
+                )}
             </div>
         </>
     );

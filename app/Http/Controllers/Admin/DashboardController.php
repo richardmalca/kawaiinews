@@ -13,10 +13,12 @@ class DashboardController extends Controller
 
     public function index(): Response
     {
+        $user = request()->user();
+
         return Inertia::render('admin/dashboard', [
             'summary' => $this->dashboardService->summary(),
             'growth' => $this->dashboardService->growth(),
-            'health' => $this->dashboardService->healthChecks(),
+            'health' => $user?->hasRole('superadmin') ? $this->dashboardService->healthChecks() : [],
             'timeline' => $this->dashboardService->timeline(),
             'topArticles' => $this->dashboardService->topArticles(),
             'categories' => $this->dashboardService->categoryBreakdown(),
