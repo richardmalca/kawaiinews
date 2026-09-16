@@ -197,7 +197,11 @@ class NewsClusterService
             ->update(['status' => 'rejected']);
     }
 
-    private const BATCH_SIZE = 100;
+    // Lotes chicos: con 100 títulos por llamada la respuesta a veces se
+    // cuelga (probablemente por el tamaño de la salida estructurada que
+    // tiene que generar); con 30 responde en unos segundos de forma
+    // confiable.
+    private const BATCH_SIZE = 30;
 
     /**
      * @return array{analyzed: int, error: ?string}
