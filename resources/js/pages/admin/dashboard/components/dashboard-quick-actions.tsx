@@ -106,19 +106,19 @@ export default function DashboardQuickActions() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                     {visibleActions.map((action) => (
                         <Link
                             key={action.label}
                             href={action.href}
-                            className="group flex flex-col gap-1.5 rounded-xl border border-neutral-200/80 bg-neutral-50/50 p-3 transition-all hover:border-neutral-300 hover:bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/60"
+                            className="group border-border hover:border-primary/50 hover:bg-muted flex flex-col gap-2 border p-3 transition-colors"
                         >
-                            <action.icon className="h-4 w-4 text-neutral-500 transition-colors group-hover:text-rose-500 dark:text-neutral-400 dark:group-hover:text-rose-400" />
-                            <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                            <action.icon className="text-muted-foreground group-hover:text-foreground h-5 w-5" />
+                            <div>
+                                <p className="text-sm font-medium">
                                     {action.label}
                                 </p>
-                                <p className="truncate text-[11px] text-neutral-500 dark:text-neutral-400">
+                                <p className="text-muted-foreground text-xs">
                                     {action.description}
                                 </p>
                             </div>
