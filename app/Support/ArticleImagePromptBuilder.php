@@ -15,7 +15,13 @@ use Illuminate\Support\Str;
  */
 class ArticleImagePromptBuilder
 {
-    public static function build(NewsArticle $article): ?string
+    /**
+     * @param  bool  $hasReference  Si MediaLibraryService::generateFeaturedImage()
+     *                              encontró una imagen para usar de referencia
+     *                              (la de la fuente, o si no había, la miniatura
+     *                              del tráiler de YouTube del cluster).
+     */
+    public static function build(NewsArticle $article, bool $hasReference): ?string
     {
         $title = trim(str_replace(['"', '“', '”'], '', $article->title));
         $excerpt = trim(str_replace(['"', '“', '”'], '', (string) $article->excerpt));
@@ -38,12 +44,17 @@ class ArticleImagePromptBuilder
         // dos escenas — justo lo que no queremos en una portada. Solo se
         // usa el título y el resumen como inspiración temática.
         //
-        // Este builder solo lo usa MediaLibraryService::generateFeaturedImage(),
-        // que siempre manda la imagen oficial de la fuente como
-        // referencia (nunca se llama sin una) — por eso el prompt le
-        // pide que se apegue a esa referencia en vez de reinterpretarla
-        // libremente: cuando ya hay una foto oficial, el admin prefiere
-        // una versión fiel de esa escena antes que una inventada.
-        return "Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point. Closely follow the composition, characters, poses and framing of the provided reference image — this should read as a faithful stylized redraw of that same scene, not a different or reinterpreted scene. Capturing the mood of: {$title}. Feeling: {$safeExcerpt}. Art style: {$categoryStyle}, cinematic lighting, rich colorful atmosphere. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.";
+        // Cuando hay una imagen de referencia (la de la fuente, o la
+        // miniatura del tráiler de YouTube si no había otra), el admin
+        // prefiere una versión fiel de esa escena antes que una
+        // inventada. Sin ninguna referencia, en cambio, hay que
+        // insistirle a la IA en que dibuje algo reconocible del anime o
+        // juego puntual del que habla el título — no una escena genérica
+        // sin relación con la noticia real.
+        $subjectInstruction = $hasReference
+            ? 'Closely follow the composition, characters, poses and framing of the provided reference image — this should read as a faithful stylized redraw of that same scene, not a different or reinterpreted scene.'
+            : 'Depict characters, objects or an environment clearly recognizable as belonging to the specific anime or game franchise named in the topic below — not generic unbranded characters, not an unrelated abstract scene.';
+
+        return "Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point. {$subjectInstruction} Capturing the mood of: {$title}. Feeling: {$safeExcerpt}. Art style: {$categoryStyle}, cinematic lighting, rich colorful atmosphere. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.";
     }
 }

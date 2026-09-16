@@ -10,6 +10,7 @@ use App\Models\NewsCluster;
 use App\Models\Tag;
 use App\Support\AiUsageLogger;
 use App\Support\PublicNewsCacheVersion;
+use App\Support\YoutubeVideo;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -36,11 +37,13 @@ class NewsArticleService
 
         $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
 
-        // Solo si hay una imagen de la fuente para usar de referencia y el
-        // admin activó explícitamente esta opción (consume créditos de
-        // IA por cada artículo, así que nunca corre sin que la prendan
-        // ellos primero en Modelo de IA).
-        if (filled($newsCluster->image_url) && AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
+        // Solo si el admin activó explícitamente esta opción (consume
+        // créditos de IA por cada artículo, así que nunca corre sin que
+        // la prendan ellos primero en Modelo de IA). Con imagen de la
+        // fuente o sin ella: generateFeaturedImage() decide sola qué
+        // referencia usar (la de la fuente, la miniatura del tráiler de
+        // YouTube si hay uno, o ninguna).
+        if (AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
             GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
         }
 
@@ -53,7 +56,7 @@ class NewsArticleService
             return $body;
         }
 
-        $videoId = $this->extractYoutubeId($videoUrl);
+        $videoId = YoutubeVideo::id($videoUrl);
 
         if (! $videoId) {
             return $body;
@@ -62,15 +65,6 @@ class NewsArticleService
         $embed = '<div class="aspect-video"><iframe src="https://www.youtube.com/embed/'.$videoId.'" title="Video de YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
 
         return trim(($body ?? '')."\n\n".$embed);
-    }
-
-    private function extractYoutubeId(string $url): ?string
-    {
-        if (preg_match('#(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([\w-]{11})#i', $url, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
     }
 
     /**

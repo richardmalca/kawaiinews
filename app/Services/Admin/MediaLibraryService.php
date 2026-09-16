@@ -10,6 +10,7 @@ use App\Support\AiUsageLogger;
 use App\Support\ArticleImagePromptBuilder;
 use App\Support\MediaNaming;
 use App\Support\RemoteStorage;
+use App\Support\YoutubeVideo;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -430,13 +431,18 @@ class MediaLibraryService
             return null;
         }
 
-        $prompt = ArticleImagePromptBuilder::build($article);
+        // Sin foto de la fuente, la miniatura del tráiler de YouTube (si
+        // el cluster tiene uno) sirve igual de referencia visual — mejor
+        // eso que arrancar de cero solo con texto.
+        $referenceImage = $fallbackImage ?: YoutubeVideo::thumbnailUrl($article->newsCluster?->video_url);
+
+        $prompt = ArticleImagePromptBuilder::build($article, hasReference: filled($referenceImage));
 
         if (! $prompt) {
             return null;
         }
 
-        $media = $this->generateWithAi($prompt, $article->id, $fallbackImage);
+        $media = $this->generateWithAi($prompt, $article->id, $referenceImage);
 
         // Se vuelve a chequear acá (no solo al principio) por si alguien
         // cargó una portada a mano mientras la IA generaba la imagen,
