@@ -162,6 +162,18 @@ export type NewsArticle = {
         name: string;
         slug: string;
     }[];
+    // Solo vienen cuando el admin lista noticias (ver
+    // NewsArticleController::withListExtras) — no forman parte del
+    // recurso compartido con el sitio público.
+    has_image?: boolean;
+    has_audio?: boolean;
+    has_video?: boolean;
+    references?: {
+        id: number;
+        title: string;
+        url: string;
+        source_label: string;
+    }[];
 };
 
 export type NewsCategoryCatalog = Record<string, { label: string }>;

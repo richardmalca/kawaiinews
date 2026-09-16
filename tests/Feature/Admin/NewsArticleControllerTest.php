@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\NewsArticle;
+use App\Models\NewsCluster;
+use App\Models\NewsSource;
+use App\Models\ScrapedItem;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 
@@ -22,6 +25,49 @@ test('articles index paginates results', function () {
         ->has('articles', 15)
         ->where('meta.total', 20)
         ->where('meta.last_page', 2)
+    );
+});
+
+test('articles index exposes whether each article has image, audio, trailer, and its original references', function () {
+    $source = NewsSource::factory()->create(['label' => 'Anime News Network']);
+    $cluster = NewsCluster::factory()->create(['video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ']);
+    ScrapedItem::factory()->create([
+        'news_cluster_id' => $cluster->id,
+        'news_source_id' => $source->id,
+        'title' => 'Fuente original',
+        'url' => 'https://ann.test/noticia',
+    ]);
+
+    $article = NewsArticle::factory()->create([
+        'news_cluster_id' => $cluster->id,
+        'featured_image' => 'https://example.test/portada.webp',
+        'audio_url' => 'https://example.test/narracion.mp3',
+    ]);
+
+    $response = $this->get(route('admin.news-articles.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('articles.0.id', $article->id)
+        ->where('articles.0.has_image', true)
+        ->where('articles.0.has_audio', true)
+        ->where('articles.0.has_video', true)
+        ->where('articles.0.references.0.url', 'https://ann.test/noticia')
+        ->where('articles.0.references.0.source_label', 'Anime News Network')
+    );
+});
+
+test('a manually created article without a cluster has no references and no trailer', function () {
+    NewsArticle::factory()->create(['news_cluster_id' => null, 'featured_image' => null, 'audio_url' => null]);
+
+    $response = $this->get(route('admin.news-articles.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('articles.0.has_image', false)
+        ->where('articles.0.has_audio', false)
+        ->where('articles.0.has_video', false)
+        ->where('articles.0.references', [])
     );
 });
 

@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { ImageOff, Pencil } from 'lucide-react';
+import {
+    AudioLines,
+    ExternalLink,
+    ImageOff,
+    Pencil,
+    Youtube,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,6 +79,65 @@ export default function NewsArticlesTable({ articles, canDelete }: Props) {
                                 <p className="line-clamp-2">
                                     {article.title}
                                 </p>
+
+                                {/* Qué tiene armado ya: imagen (el
+                                    thumbnail de al lado ya lo muestra),
+                                    trailer de YouTube y audio narrado —
+                                    para saber de un vistazo qué le falta a
+                                    cada noticia sin entrar a editarla. */}
+                                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+                                    {article.has_video && (
+                                        <span
+                                            className="flex items-center gap-1"
+                                            title="Tiene trailer de YouTube"
+                                        >
+                                            <Youtube className="h-3.5 w-3.5" />
+                                        </span>
+                                    )}
+                                    {article.has_audio && (
+                                        <span
+                                            className="flex items-center gap-1"
+                                            title="Tiene audio narrado"
+                                        >
+                                            <AudioLines className="h-3.5 w-3.5" />
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Fuentes originales, si esta noticia
+                                    salió de un cluster de la bandeja de
+                                    revisión (las creadas a mano no tienen). */}
+                                {article.references &&
+                                    article.references.length > 0 && (
+                                        <div className="mt-1 flex flex-wrap gap-2">
+                                            {article.references
+                                                .slice(0, 3)
+                                                .map((reference) => (
+                                                    <a
+                                                        key={reference.id}
+                                                        href={reference.url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs hover:underline"
+                                                    >
+                                                        <ExternalLink className="h-3 w-3" />
+                                                        {
+                                                            reference.source_label
+                                                        }
+                                                    </a>
+                                                ))}
+                                            {article.references.length >
+                                                3 && (
+                                                <span className="text-muted-foreground text-xs">
+                                                    +
+                                                    {article.references
+                                                        .length - 3}{' '}
+                                                    más
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
                                 {/* En mobile Categoría/Creada están
                                     ocultas: las mostramos acá abajo para no
                                     perder el contexto. */}
