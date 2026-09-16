@@ -40,6 +40,7 @@ Route::get('buscar/sugerencias', SearchSuggestionController::class)
     ->middleware('throttle:60,1')
     ->name('public.search.suggestions');
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
+Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 

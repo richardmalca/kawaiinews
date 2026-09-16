@@ -311,9 +311,12 @@ export function NotificationBell() {
 
         if (url) {
             setIsOpen(false);
+            const normalizedUrl = url.startsWith('/noticia/')
+                ? url.replace('/noticia/', '/noticias/')
+                : url;
             const currentUrl = window.location.pathname + window.location.search;
-            const targetUrl = url.split('#')[0];
-            const hash = url.includes('#') ? url.split('#')[1] : '';
+            const targetUrl = normalizedUrl.split('#')[0];
+            const hash = normalizedUrl.includes('#') ? normalizedUrl.split('#')[1] : '';
 
             if (targetUrl === currentUrl || targetUrl === window.location.pathname) {
                 if (hash) {
@@ -321,7 +324,7 @@ export function NotificationBell() {
                     window.dispatchEvent(new HashChangeEvent('hashchange'));
                 }
             } else {
-                router.visit(url);
+                router.visit(normalizedUrl);
             }
         }
     };

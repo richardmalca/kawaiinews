@@ -85,7 +85,10 @@ export default function NotificationsPage({
         }
 
         if (url) {
-            router.visit(url);
+            const normalizedUrl = url.startsWith('/noticia/')
+                ? url.replace('/noticia/', '/noticias/')
+                : url;
+            router.visit(normalizedUrl);
         }
     };
 

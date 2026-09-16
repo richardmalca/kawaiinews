@@ -43,7 +43,7 @@ class ArticleSharedNotification extends Notification
             'article_slug' => $this->article->slug,
             'featured_image' => $this->article->featured_image_url,
             'total_shares' => $this->totalCount,
-            'url' => "/noticia/{$this->article->slug}",
+            'url' => "/noticias/{$this->article->slug}",
         ];
     }
 }

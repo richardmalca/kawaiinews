@@ -43,7 +43,7 @@ class ArticleLikedNotification extends Notification
             'article_slug' => $this->article->slug,
             'featured_image' => $this->article->featured_image_url,
             'total_reactions' => $this->totalCount,
-            'url' => "/noticia/{$this->article->slug}",
+            'url' => "/noticias/{$this->article->slug}",
         ];
     }
 }
