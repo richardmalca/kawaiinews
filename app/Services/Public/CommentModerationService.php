@@ -9,27 +9,39 @@ use App\Models\User;
 use App\Support\AiUsageLogger;
 use App\Support\SidebarAlerts;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
 
 /**
- * Moderación de comentarios en 2 capas (plan en
+ * Moderación de comentarios en capas (plan en
  * docs/backend/11-comments-and-reactions.md):
  *
  * Capa 1 (shouldHoldForReview, gratis): filtro por reglas que corre en
  * cada comentario antes de guardarlo. Si algo matchea, el comentario se
  * guarda igual pero queda `pending` (oculto al público).
  *
- * Capa 2 (reviewWithAi, opcional): solo para los que ya cayeron en
- * `pending` por la Capa 1. Le pasa el texto al proveedor de IA que el
- * admin activó para moderación (`is_active_for_moderation` en
- * /admin/ai-providers, igual que activa uno para imágenes o audio). Si
- * no hay ninguno activado, no hace nada — el comentario se queda
- * `pending` esperando revisión manual, como si la Capa 2 no existiera.
+ * Capa 1.5 (resolveWithPerspective, gratis): solo si hay una API key de
+ * Perspective cargada (proveedor "perspective" en /admin/ai-providers).
+ * Le pasa el texto a Perspective antes de gastar en la IA de pago — si
+ * el puntaje de toxicidad es muy alto o muy bajo, decide sola sin
+ * consultar nada más. Si el puntaje queda en un rango dudoso, no decide
+ * y pasa a la Capa 2.
+ *
+ * Capa 2 (reviewWithAi, opcional, de pago): solo para los que ya
+ * cayeron en `pending` por la Capa 1 y que la 1.5 no pudo resolver. Le
+ * pasa el texto al proveedor de IA que el admin activó para moderación
+ * (`is_active_for_moderation` en /admin/ai-providers, igual que activa
+ * uno para imágenes o audio). Si no hay ninguno activado, no hace nada
+ * — el comentario se queda `pending` esperando revisión manual.
  */
 class CommentModerationService
 {
+    private const PERSPECTIVE_BLOCK_THRESHOLD = 0.85;
+
+    private const PERSPECTIVE_APPROVE_THRESHOLD = 0.15;
+
     public function shouldHoldForReview(User $user, string $body): bool
     {
         return $this->hasBannedWords($body)
@@ -47,6 +59,10 @@ class CommentModerationService
         // Si ya no está pending (un admin ya lo aprobó/borró a mano antes
         // de que el job corriera), no hay nada que hacer.
         if ($comment->status !== 'pending') {
+            return;
+        }
+
+        if ($this->resolveWithPerspective($comment)) {
             return;
         }
 
@@ -93,6 +109,66 @@ class CommentModerationService
         } catch (Throwable) {
             // Si la IA falla (rate limit, key mala, etc.), el comentario
             // se queda pending para revisión manual — no se pierde nada.
+        }
+    }
+
+    /**
+     * Consulta Perspective (gratis) antes de gastar en la IA de pago. Si
+     * el puntaje de toxicidad es claramente alto o claramente bajo,
+     * decide sola y devuelve true (ya no hace falta la Capa 2). Si el
+     * puntaje queda en el medio, o no hay API key cargada, o la consulta
+     * falla, devuelve false — que decida la Capa 2 como si esto no
+     * existiera.
+     */
+    private function resolveWithPerspective(Comment $comment): bool
+    {
+        $provider = AiProvider::where('provider', 'perspective')
+            ->whereNotNull('api_key')
+            ->first();
+
+        if (! $provider || ! $provider->hasApiKey()) {
+            return false;
+        }
+
+        try {
+            $response = Http::timeout(10)->post(
+                "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key={$provider->api_key}",
+                [
+                    'comment' => ['text' => $comment->body],
+                    'languages' => ['es'],
+                    'requestedAttributes' => ['TOXICITY' => (object) []],
+                ]
+            );
+
+            if (! $response->successful()) {
+                return false;
+            }
+
+            $score = $response->json('attributeScores.TOXICITY.summaryScore.value');
+
+            if ($score === null) {
+                return false;
+            }
+
+            if ($score >= self::PERSPECTIVE_BLOCK_THRESHOLD) {
+                $comment->update([
+                    'status' => 'blocked',
+                    'moderation_reason' => 'Comentario tóxico detectado automáticamente',
+                ]);
+                SidebarAlerts::bustBlockedCommentsCount();
+
+                return true;
+            }
+
+            if ($score <= self::PERSPECTIVE_APPROVE_THRESHOLD) {
+                $comment->update(['status' => 'visible', 'moderation_reason' => null]);
+
+                return true;
+            }
+
+            return false;
+        } catch (Throwable) {
+            return false;
         }
     }
 

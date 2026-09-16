@@ -60,6 +60,17 @@ return [
         // narrar noticias todos los días.
         'audio_model' => 'eleven_turbo_v2_5',
     ],
+    'perspective' => [
+        // Perspective API (Google/Jigsaw): detecta toxicidad en texto,
+        // gratis, sin límite de uso publicado. Se usa como filtro previo,
+        // gratis, antes de la Capa 2 de moderación de comentarios (que sí
+        // paga por token) — ver CommentModerationService::resolveWithPerspective().
+        // No es un proveedor de texto/imagen/audio como los demás, por
+        // eso 'models' queda vacío: solo sirve para guardar su API key
+        // con el mismo formulario genérico de "Agregar proveedor".
+        'label' => 'Perspective API (moderación gratis)',
+        'models' => [],
+    ],
     'google-tts' => [
         'label' => 'Google Cloud Text-to-Speech',
         'models' => [],
