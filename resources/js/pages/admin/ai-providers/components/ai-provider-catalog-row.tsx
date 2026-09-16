@@ -2,14 +2,21 @@ import { router } from '@inertiajs/react';
 import {
     AudioLines,
     CheckCircle2,
+    ChevronDown,
     Image,
     MessageSquareText,
     ShieldCheck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import AddAiProviderDialog from '@/pages/admin/ai-providers/components/add-ai-provider-dialog';
 import EditAiProviderDialog from '@/pages/admin/ai-providers/components/edit-ai-provider-dialog';
@@ -76,6 +83,11 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
         },
     ];
 
+    const activatable = capabilities.filter(
+        ({ supported, active }) => supported && !active,
+    );
+    const active = capabilities.filter(({ active }) => active);
+
     const handleActivate = (capability: AiProviderCapability) => {
         if (!provider) {
             return;
@@ -109,15 +121,23 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
     };
 
     return (
-        <TableRow>
-            <TableCell className="py-2">
-                <p className="font-medium">{entry.label}</p>
-                <p className="text-muted-foreground text-xs">
-                    {entry.provider}
-                </p>
-            </TableCell>
+        <Card>
+            <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <p className="font-medium">{entry.label}</p>
+                        <p className="text-muted-foreground text-xs">
+                            {entry.provider}
+                        </p>
+                    </div>
 
-            <TableCell className="py-2">
+                    {provider ? (
+                        <EditAiProviderDialog provider={provider} />
+                    ) : (
+                        <AddAiProviderDialog entry={entry} />
+                    )}
+                </div>
+
                 <div className="flex flex-wrap gap-1">
                     {capabilities.map(({ key, supported }) => {
                         const Icon = CAPABILITY_ICONS[key];
@@ -139,95 +159,94 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
                         );
                     })}
                 </div>
-            </TableCell>
 
-            <TableCell className="max-w-56 py-2">
-                <p
-                    className="text-muted-foreground truncate text-xs"
-                    title={entry.models.join(', ')}
-                >
-                    {entry.models.join(', ')}
-                </p>
-            </TableCell>
+                {entry.models.length > 0 && (
+                    <p
+                        className="text-muted-foreground truncate text-xs"
+                        title={entry.models.join(', ')}
+                    >
+                        {entry.models.join(', ')}
+                    </p>
+                )}
 
-            <TableCell className="py-2">
-                {provider ? (
-                    <div className="flex flex-wrap gap-1.5">
-                        {capabilities.map(
-                            ({ key, supported, active }) =>
-                                supported &&
-                                (active ? (
-                                    <Badge
-                                        key={key}
-                                        className="gap-1"
-                                        title={`${CAPABILITY_LABELS[key]}: activado`}
-                                    >
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        {CAPABILITY_LABELS[key]}
-                                    </Badge>
-                                ) : (
+                {provider && (active.length > 0 || activatable.length > 0) && (
+                    <div className="flex flex-wrap items-center gap-1.5 border-t pt-3">
+                        {active.map(({ key }) => (
+                            <Badge
+                                key={key}
+                                className="gap-1"
+                                title={`${CAPABILITY_LABELS[key]}: activado`}
+                            >
+                                <CheckCircle2 className="h-3 w-3" />
+                                {CAPABILITY_LABELS[key]}
+                            </Badge>
+                        ))}
+
+                        {activatable.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                     <Button
-                                        key={key}
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => handleActivate(key)}
                                     >
-                                        Activar {CAPABILITY_LABELS[key]}
+                                        Activar para
+                                        <ChevronDown className="h-3.5 w-3.5" />
                                     </Button>
-                                )),
-                        )}
-
-                        {provider.is_active_for_images && (
-                            <label
-                                className="flex w-full items-center gap-2 pt-1 text-xs"
-                                title="Al crear un artículo, genera sola la imagen de portada con IA usando la imagen de la fuente como referencia. Gasta créditos por cada artículo nuevo con imagen de fuente."
-                            >
-                                <Switch
-                                    checked={
-                                        provider.auto_generate_featured_image
-                                    }
-                                    onCheckedChange={
-                                        handleToggleAutoGenerateImage
-                                    }
-                                />
-                                <span className="text-muted-foreground">
-                                    Portada automática al crear
-                                </span>
-                            </label>
-                        )}
-
-                        {provider.is_active_for_audio && (
-                            <label
-                                className="flex w-full items-center gap-2 pt-1 text-xs"
-                                title="Al crear un artículo, genera sola la narración de audio con este proveedor. Gasta créditos por cada artículo nuevo."
-                            >
-                                <Switch
-                                    checked={provider.auto_generate_narration}
-                                    onCheckedChange={
-                                        handleToggleAutoGenerateNarration
-                                    }
-                                />
-                                <span className="text-muted-foreground">
-                                    Audio automático al crear
-                                </span>
-                            </label>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    {activatable.map(({ key }) => (
+                                        <DropdownMenuItem
+                                            key={key}
+                                            onSelect={() =>
+                                                handleActivate(key)
+                                            }
+                                        >
+                                            {CAPABILITY_LABELS[key]}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
-                ) : (
-                    <span className="text-muted-foreground text-xs">
-                        Sin configurar
-                    </span>
                 )}
-            </TableCell>
 
-            <TableCell className="py-2 text-right">
-                {provider ? (
-                    <EditAiProviderDialog provider={provider} />
-                ) : (
-                    <AddAiProviderDialog entry={entry} />
+                {provider?.is_active_for_images && (
+                    <label
+                        className="flex items-center gap-2 text-xs"
+                        title="Al crear un artículo, genera sola la imagen de portada con IA usando la imagen de la fuente como referencia. Gasta créditos por cada artículo nuevo con imagen de fuente."
+                    >
+                        <Switch
+                            checked={provider.auto_generate_featured_image}
+                            onCheckedChange={handleToggleAutoGenerateImage}
+                        />
+                        <span className="text-muted-foreground">
+                            Portada automática al crear
+                        </span>
+                    </label>
                 )}
-            </TableCell>
-        </TableRow>
+
+                {provider?.is_active_for_audio && (
+                    <label
+                        className="flex items-center gap-2 text-xs"
+                        title="Al crear un artículo, genera sola la narración de audio con este proveedor. Gasta créditos por cada artículo nuevo."
+                    >
+                        <Switch
+                            checked={provider.auto_generate_narration}
+                            onCheckedChange={handleToggleAutoGenerateNarration}
+                        />
+                        <span className="text-muted-foreground">
+                            Audio automático al crear
+                        </span>
+                    </label>
+                )}
+
+                {!provider && (
+                    <p className="text-muted-foreground text-xs">
+                        Sin configurar
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     );
 }
