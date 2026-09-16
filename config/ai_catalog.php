@@ -54,6 +54,10 @@ return [
     'elevenlabs' => [
         'label' => 'ElevenLabs',
         'models' => [],
-        'audio_model' => 'eleven_multilingual_v2',
+        // Turbo v2.5: misma calidad expresiva que la v3/v2 multilingüe
+        // pero a mitad de precio ($0.05 vs $0.10 por 1K caracteres) y con
+        // más margen de caracteres — mejor relación costo/calidad para
+        // narrar noticias todos los días.
+        'audio_model' => 'eleven_turbo_v2_5',
     ],
 ];
