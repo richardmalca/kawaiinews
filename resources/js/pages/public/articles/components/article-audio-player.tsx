@@ -234,7 +234,7 @@ export function ArticleAudioPlayer({
                         ) : activePlaying ? (
                             <Pause className="h-3 w-3 fill-current" />
                         ) : (
-                            <Play className="h-3 w-3 translate-x-0.5 fill-current" />
+                            <Play className="h-3 w-3 fill-current" />
                         )}
                     </span>
 
@@ -348,7 +348,7 @@ export function ArticleAudioPlayer({
                                 {activePlaying ? (
                                     <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
                                 ) : (
-                                    <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 translate-x-0.5 fill-current" />
+                                    <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
                                 )}
                             </button>
 

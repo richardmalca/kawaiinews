@@ -110,7 +110,7 @@ export function ArticleActionsPanel({
                             {audioState.isPlaying ? (
                                 <Pause className="h-3 w-3 fill-current" />
                             ) : (
-                                <Play className="h-3 w-3 translate-x-0.5 fill-current" />
+                                <Play className="h-3 w-3 fill-current" />
                             )}
                         </span>
                         <span>

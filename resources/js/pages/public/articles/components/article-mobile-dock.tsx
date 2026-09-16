@@ -34,6 +34,7 @@ export function ArticleMobileDock({
     const [audioState, setAudioState] = useState({
         isPlaying: false,
         isPaused: false,
+        isInteracting: false,
     });
 
     useEffect(() => {
@@ -41,11 +42,13 @@ export function ArticleMobileDock({
             const customEvent = e as CustomEvent<{
                 isPlaying: boolean;
                 isPaused: boolean;
+                isInteracting?: boolean;
             }>;
             if (customEvent.detail) {
                 setAudioState({
                     isPlaying: customEvent.detail.isPlaying,
                     isPaused: customEvent.detail.isPaused,
+                    isInteracting: customEvent.detail.isInteracting ?? (customEvent.detail.isPlaying || customEvent.detail.isPaused),
                 });
             }
         };
@@ -58,12 +61,14 @@ export function ArticleMobileDock({
         window.dispatchEvent(new CustomEvent('kawaii:toggle-audio'));
     };
 
-    const isAudioActive = audioState.isPlaying || audioState.isPaused;
+    const isAudioActive = audioState.isInteracting;
 
     return (
         <div
-            className={`fixed left-4 right-4 z-40 transition-all duration-300 lg:hidden ${
-                isAudioActive ? 'bottom-20' : 'bottom-4'
+            className={`fixed left-4 right-4 z-[55] transition-all duration-300 lg:hidden ${
+                isAudioActive
+                    ? 'bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'
+                    : 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
             }`}
         >
             <div className="mx-auto flex max-w-md items-center justify-between gap-1 sm:gap-1.5 rounded-2xl border border-neutral-200/80 bg-white/90 px-2 py-1.5 sm:px-3 sm:py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
