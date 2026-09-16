@@ -273,6 +273,7 @@ export default function NotificationsPage({
                         const isSaved = item.data.type === 'article_saved';
                         const isShared = item.data.type === 'article_shared';
                         const isArticleCommented = item.data.type === 'article_commented';
+                        const isCommentLiked = item.data.type === 'comment_liked';
 
                         const avatarSrc = (
                             item.data.commenter_avatar ||
@@ -341,7 +342,7 @@ export default function NotificationsPage({
 
                                         {/* Insignia pequeña en la esquina */}
                                         <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-900 ring-1 ring-neutral-200 dark:ring-neutral-800">
-                                            {isLiked && <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />}
+                                            {(isLiked || isCommentLiked) && <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />}
                                             {isSaved && <Bookmark className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />}
                                             {isShared && <Share2 className="h-2.5 w-2.5 text-blue-500" />}
                                             {(isReply || isArticleCommented) && <MessageSquare className="h-2.5 w-2.5 text-rose-500" />}
@@ -403,6 +404,32 @@ export default function NotificationsPage({
                                                     <span className="font-semibold text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400">
                                                         {item.data.article_title}
                                                     </span>
+                                                </>
+                                            )}
+                                            {isCommentLiked && (
+                                                <>
+                                                    <span className="font-semibold text-neutral-950 dark:text-white">
+                                                        {item.data.liker_name}
+                                                    </span>
+                                                    {(item.data.total_reactions ?? 1) > 1 ? (
+                                                        <span>
+                                                            {' '}y a otras{' '}
+                                                            <span className="font-semibold text-neutral-950 dark:text-white">
+                                                                {(item.data.total_reactions ?? 1) - 1}
+                                                            </span>{' '}
+                                                            personas les gustó tu comentario
+                                                        </span>
+                                                    ) : (
+                                                        <span> le dio me gusta a tu comentario </span>
+                                                    )}
+                                                    {item.data.article_title && (
+                                                        <span>
+                                                            {' '}en{' '}
+                                                            <span className="font-semibold text-neutral-900 hover:text-rose-600 dark:text-neutral-100 dark:hover:text-rose-400">
+                                                                {item.data.article_title}
+                                                            </span>
+                                                        </span>
+                                                    )}
                                                 </>
                                             )}
                                             {isSaved && (

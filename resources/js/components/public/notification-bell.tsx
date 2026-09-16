@@ -214,6 +214,12 @@ export function NotificationBell() {
                             body = othersCount > 0
                                 ? `${latest.data.commenter_name ?? 'Alguien'} y otras ${othersCount} personas comentaron tu noticia`
                                 : `${latest.data.commenter_name ?? 'Alguien'} comentó en tu noticia "${latest.data.article_title ?? ''}"`;
+                        } else if (latest.data.type === 'comment_liked') {
+                            const othersCount = (latest.data.total_reactions ?? 1) - 1;
+                            title = '¡Me gusta en tu comentario!';
+                            body = othersCount > 0
+                                ? `A ${latest.data.liker_name ?? 'Alguien'} y a otras ${othersCount} personas les gustó tu comentario`
+                                : `A ${latest.data.liker_name ?? 'Alguien'} le gustó tu comentario`;
                         }
 
                         toast.info(title, {
@@ -463,6 +469,7 @@ export function NotificationBell() {
                                 const isSaved = item.data.type === 'article_saved';
                                 const isShared = item.data.type === 'article_shared';
                                 const isArticleCommented = item.data.type === 'article_commented';
+                                const isCommentLiked = item.data.type === 'comment_liked';
 
                                 return (
                                     <div
@@ -493,7 +500,7 @@ export function NotificationBell() {
                                                 )}
                                             </div>
                                             <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-950 shadow-xs">
-                                                {isLiked && (
+                                                {(isLiked || isCommentLiked) && (
                                                     <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />
                                                 )}
                                                 {isSaved && (
@@ -631,6 +638,32 @@ export function NotificationBell() {
                                                         <span className="font-semibold text-rose-600 dark:text-rose-400">
                                                             {item.data.article_title}
                                                         </span>
+                                                    </>
+                                                )}
+                                                {isCommentLiked && (
+                                                    <>
+                                                        <span className="font-bold text-neutral-950 dark:text-white">
+                                                            {item.data.liker_name}
+                                                        </span>
+                                                        {(item.data.total_reactions ?? 1) > 1 ? (
+                                                            <span>
+                                                                {' '}y a otras{' '}
+                                                                <span className="font-bold text-neutral-950 dark:text-white">
+                                                                    {(item.data.total_reactions ?? 1) - 1}
+                                                                </span>{' '}
+                                                                personas les gustó tu comentario
+                                                            </span>
+                                                        ) : (
+                                                            <span> le gustó tu comentario </span>
+                                                        )}
+                                                        {item.data.article_title && (
+                                                            <span>
+                                                                {' '}en{' '}
+                                                                <span className="font-semibold text-rose-600 dark:text-rose-400">
+                                                                    {item.data.article_title}
+                                                                </span>
+                                                            </span>
+                                                        )}
                                                     </>
                                                 )}
                                                 {isNewArticle && (

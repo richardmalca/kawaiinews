@@ -23,6 +23,11 @@ export function useProfileSettingsForm({ user }: UseProfileSettingsFormProps) {
         name: string;
         username: string;
         show_shares_on_profile: boolean;
+        notify_article_comments: boolean;
+        notify_comment_replies: boolean;
+        notify_comment_likes: boolean;
+        notify_article_reactions: boolean;
+        notify_followers: boolean;
         avatar_source: 'google' | 'custom';
         custom_avatar: File | null;
         banner: File | string | null;
@@ -30,6 +35,11 @@ export function useProfileSettingsForm({ user }: UseProfileSettingsFormProps) {
         name: user.name ?? '',
         username: user.username ?? '',
         show_shares_on_profile: Boolean(user.show_shares_on_profile),
+        notify_article_comments: user.notify_article_comments !== false,
+        notify_comment_replies: user.notify_comment_replies !== false,
+        notify_comment_likes: user.notify_comment_likes !== false,
+        notify_article_reactions: user.notify_article_reactions !== false,
+        notify_followers: user.notify_followers !== false,
         avatar_source: (user.avatar_source as 'google' | 'custom') || (user.custom_avatar ? 'custom' : 'google'),
         custom_avatar: null,
         banner: null,

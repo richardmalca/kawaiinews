@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\NewsArticle;
 use App\Models\User;
 use App\Notifications\ArticleCommentedNotification;
+use App\Notifications\CommentLikedNotification;
 use App\Notifications\CommentRepliedNotification;
 use App\Notifications\UserMentionedNotification;
 use App\Support\SidebarAlerts;
@@ -95,7 +96,7 @@ class CommentService
 
         if (isset($target) && $target->user_id !== $user->id) {
             $targetAuthor = $target->user;
-            if ($targetAuthor) {
+            if ($targetAuthor && ($targetAuthor->notify_comment_replies ?? true)) {
                 $targetAuthor->notify(new CommentRepliedNotification($comment, $user));
             }
         }
@@ -106,7 +107,7 @@ class CommentService
 
         if ($articleAuthorId && $articleAuthorId !== $user->id && ! $isReplyingToAuthorComment) {
             $author = $article->author;
-            if ($author) {
+            if ($author && ($author->notify_article_comments ?? true)) {
                 $existingNotification = $author->unreadNotifications()
                     ->where('type', ArticleCommentedNotification::class)
                     ->where('data->article_id', $article->id)
@@ -187,10 +188,38 @@ class CommentService
     public function toggleLike(User $user, Comment $comment): array
     {
         $user->toggleLike($comment);
+        $hasLiked = $user->hasLiked($comment);
+        $totalLikers = $comment->likers()->count();
+
+        // Notificar al autor del comentario si no es él mismo
+        if ($hasLiked && $comment->user_id && $comment->user_id !== $user->id) {
+            $author = $comment->user;
+            if ($author && ($author->notify_comment_likes ?? true)) {
+                $existingNotification = $author->unreadNotifications()
+                    ->where('type', CommentLikedNotification::class)
+                    ->where('data->comment_id', $comment->id)
+                    ->first();
+
+                if ($existingNotification) {
+                    $data = $existingNotification->data;
+                    $data['liker_id'] = $user->id;
+                    $data['liker_name'] = $user->name;
+                    $data['liker_username'] = $user->username;
+                    $data['liker_avatar'] = $user->active_avatar_url;
+                    $data['total_reactions'] = $totalLikers;
+                    $existingNotification->update([
+                        'data' => $data,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $author->notify(new CommentLikedNotification($user, $comment, $totalLikers));
+                }
+            }
+        }
 
         return [
-            'liked' => $user->hasLiked($comment),
-            'total_likers' => $comment->likers()->count(),
+            'liked' => $hasLiked,
+            'total_likers' => $totalLikers,
         ];
     }
 

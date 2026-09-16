@@ -45,7 +45,7 @@ class NotificationController extends Controller
         if ($filter === 'no_leidas') {
             $query->whereNull('read_at');
         } elseif ($filter === 'reacciones') {
-            $query->where('data->type', 'article_liked');
+            $query->whereIn('data->type', ['article_liked', 'comment_liked']);
         } elseif ($filter === 'guardados') {
             $query->whereIn('data->type', ['article_saved', 'article_shared']);
         } elseif ($filter === 'comentarios') {

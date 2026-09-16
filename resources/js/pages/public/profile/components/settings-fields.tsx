@@ -149,3 +149,127 @@ export function SettingsPrivacy({ showShares, onChange }: SettingsPrivacyProps) 
         </div>
     );
 }
+
+interface SettingsNotificationPreferencesProps {
+    notifyArticleComments: boolean;
+    notifyCommentReplies: boolean;
+    notifyCommentLikes: boolean;
+    notifyArticleReactions: boolean;
+    notifyFollowers: boolean;
+    isAuthor: boolean;
+    onChange: (field: string, checked: boolean) => void;
+}
+
+export function SettingsNotificationPreferences({
+    notifyArticleComments,
+    notifyCommentReplies,
+    notifyCommentLikes,
+    notifyArticleReactions,
+    notifyFollowers,
+    isAuthor,
+    onChange,
+}: SettingsNotificationPreferencesProps) {
+    return (
+        <div className="mt-6 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+            <div className="mb-4">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                    Preferencias de Notificaciones
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Elige qué eventos activan avisos en tu campanita y notificaciones de escritorio.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/60 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={notifyCommentReplies}
+                        onChange={(e) => onChange('notify_comment_replies', e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 dark:border-neutral-700 dark:bg-neutral-800"
+                    />
+                    <div className="text-xs">
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                            Respuestas a mis comentarios
+                        </span>
+                        <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                            Cuando otro usuario te responda en el hilo de una noticia.
+                        </p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/60 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={notifyCommentLikes}
+                        onChange={(e) => onChange('notify_comment_likes', e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 dark:border-neutral-700 dark:bg-neutral-800"
+                    />
+                    <div className="text-xs">
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                            Me gusta en mis comentarios
+                        </span>
+                        <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                            Cuando alguien le dé me gusta a tu opinión en los comentarios.
+                        </p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/60 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={notifyFollowers}
+                        onChange={(e) => onChange('notify_followers', e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 dark:border-neutral-700 dark:bg-neutral-800"
+                    />
+                    <div className="text-xs">
+                        <span className="font-semibold text-neutral-900 dark:text-white">
+                            Nuevos seguidores
+                        </span>
+                        <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                            Cuando un miembro de la comunidad empiece a seguirte.
+                        </p>
+                    </div>
+                </label>
+
+                {isAuthor && (
+                    <>
+                        <label className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/60 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={notifyArticleComments}
+                                onChange={(e) => onChange('notify_article_comments', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 dark:border-neutral-700 dark:bg-neutral-800"
+                            />
+                            <div className="text-xs">
+                                <span className="font-semibold text-neutral-900 dark:text-white">
+                                    Comentarios en mis noticias
+                                </span>
+                                <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                                    Cuando la comunidad participe comentando en tus artículos.
+                                </p>
+                            </div>
+                        </label>
+
+                        <label className="flex items-start gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-3.5 transition-colors hover:bg-neutral-50 dark:border-neutral-800/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/60 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={notifyArticleReactions}
+                                onChange={(e) => onChange('notify_article_reactions', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 dark:border-neutral-700 dark:bg-neutral-800"
+                            />
+                            <div className="text-xs">
+                                <span className="font-semibold text-neutral-900 dark:text-white">
+                                    Reacciones en mis noticias
+                                </span>
+                                <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                                    Cuando le den me gusta o reaccionen a tus publicaciones.
+                                </p>
+                            </div>
+                        </label>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}

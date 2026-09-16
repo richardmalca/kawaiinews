@@ -154,7 +154,7 @@ class ArticleInteractionService
         // Notificar al autor de la noticia (con agrupación para no saturar si hay 50 o 500 reacciones)
         if ($isNewReaction && $article->author_id && $article->author_id !== $user->id) {
             $author = $article->author;
-            if ($author) {
+            if ($author && ($author->notify_article_reactions ?? true)) {
                 // Verificar si ya existe una notificación no leída para este artículo en las últimas 24 horas
                 $existingNotification = $author->unreadNotifications()
                     ->where('type', ArticleLikedNotification::class)

@@ -264,3 +264,42 @@ test('author commenting on their own article does not send notification to thems
 
     expect($author->notifications()->count())->toBe(0);
 });
+
+test('comment author receives a notification when someone likes their comment', function () {
+    $author = User::factory()->create();
+    $liker = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+    $comment = Comment::factory()->create([
+        'news_article_id' => $article->id,
+        'user_id' => $author->id,
+    ]);
+
+    $this->actingAs($liker)
+        ->postJson(route('public.comments.like', $comment))
+        ->assertOk();
+
+    $notification = $author->notifications()->first();
+    expect($notification)->not->toBeNull()
+        ->and($notification->data['type'])->toBe('comment_liked')
+        ->and($notification->data['liker_id'])->toBe($liker->id)
+        ->and($notification->data['comment_id'])->toBe($comment->id)
+        ->and($notification->data['total_reactions'])->toBe(1);
+});
+
+test('comment author does not receive notification if disabled in preferences', function () {
+    $author = User::factory()->create([
+        'notify_comment_likes' => false,
+    ]);
+    $liker = User::factory()->create();
+    $article = NewsArticle::factory()->published()->create();
+    $comment = Comment::factory()->create([
+        'news_article_id' => $article->id,
+        'user_id' => $author->id,
+    ]);
+
+    $this->actingAs($liker)
+        ->postJson(route('public.comments.like', $comment))
+        ->assertOk();
+
+    expect($author->notifications()->count())->toBe(0);
+});

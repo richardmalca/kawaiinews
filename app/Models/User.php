@@ -36,7 +36,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'username', 'email', 'password', 'google_id', 'show_shares_on_profile', 'avatar', 'custom_avatar', 'banner', 'avatar_source'])]
+#[Fillable(['name', 'username', 'email', 'password', 'google_id', 'show_shares_on_profile', 'avatar', 'custom_avatar', 'banner', 'avatar_source', 'notify_article_comments', 'notify_comment_replies', 'notify_comment_likes', 'notify_article_reactions', 'notify_followers'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -49,6 +49,11 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'show_shares_on_profile' => 'boolean',
+            'notify_article_comments' => 'boolean',
+            'notify_comment_replies' => 'boolean',
+            'notify_comment_likes' => 'boolean',
+            'notify_article_reactions' => 'boolean',
+            'notify_followers' => 'boolean',
         ];
     }
 

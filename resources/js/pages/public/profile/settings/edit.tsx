@@ -6,7 +6,7 @@ import { AlertCircle, Check } from 'lucide-react';
 import { useProfileSettingsForm } from '../hooks/use-profile-settings-form';
 import { SettingsHeader } from '../components/settings-header';
 import { SettingsBanner, SettingsAvatar } from '../components/settings-media';
-import { SettingsFields, SettingsPrivacy } from '../components/settings-fields';
+import { SettingsFields, SettingsPrivacy, SettingsNotificationPreferences } from '../components/settings-fields';
 import { SettingsDangerZone } from '../components/settings-danger-zone';
 
 interface ProfileSettingsEditProps {
@@ -133,6 +133,16 @@ export default function ProfileSettingsEdit({
                             <SettingsPrivacy
                                 showShares={form.data.show_shares_on_profile}
                                 onChange={(checked) => form.setData('show_shares_on_profile', checked)}
+                            />
+
+                            <SettingsNotificationPreferences
+                                notifyArticleComments={form.data.notify_article_comments}
+                                notifyCommentReplies={form.data.notify_comment_replies}
+                                notifyCommentLikes={form.data.notify_comment_likes}
+                                notifyArticleReactions={form.data.notify_article_reactions}
+                                notifyFollowers={form.data.notify_followers}
+                                isAuthor={authoredArticlesCount > 0 || user.roles?.includes('superadmin') || user.roles?.includes('editor')}
+                                onChange={(field, checked) => form.setData(field as any, checked)}
                             />
                         </div>
                     </div>

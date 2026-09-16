@@ -46,6 +46,11 @@ trait ProfileValidationRules
                     }
                 },
             ],
+            'notify_article_comments' => ['sometimes', 'boolean'],
+            'notify_comment_replies' => ['sometimes', 'boolean'],
+            'notify_comment_likes' => ['sometimes', 'boolean'],
+            'notify_article_reactions' => ['sometimes', 'boolean'],
+            'notify_followers' => ['sometimes', 'boolean'],
         ];
 
         if ($includeEmail) {

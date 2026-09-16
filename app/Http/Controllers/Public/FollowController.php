@@ -29,7 +29,7 @@ class FollowController extends Controller
         $user->toggleFollow($profileUser);
         $isFollowing = $user->isFollowing($profileUser);
 
-        if ($isFollowing) {
+        if ($isFollowing && ($profileUser->notify_followers ?? true)) {
             $profileUser->notify(new UserFollowedNotification($user));
         }
 
