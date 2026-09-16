@@ -15,9 +15,8 @@ import { AdBanner } from '@/components/public/ad-banner';
 import { BreakingNewsTicker } from '@/components/public/breaking-news-ticker';
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
-import { Calendar, Eye, Heart } from 'lucide-react';
+import { Calendar, Eye, Heart, Newspaper } from 'lucide-react';
 import { CategoryBadge } from '@/components/public/category-badge';
-import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
 import { QuickFavoriteButton } from '@/components/public/quick-favorite-button';
 
 interface HomeProps {
@@ -120,7 +119,6 @@ export default function Home({
                             ) : (
                                 <div className="divide-y divide-neutral-100 rounded-2xl border border-neutral-200/80 bg-white shadow-xs dark:divide-neutral-800/60 dark:border-neutral-800/80 dark:bg-neutral-900/40">
                                     {gridArticles.map((article) => {
-                                        const img = article.featured_image || FALLBACK_IMAGES.card;
                                         return (
                                             <div
                                                 key={article.id}
@@ -130,14 +128,17 @@ export default function Home({
                                                     href={`/noticias/${article.slug}`}
                                                     className="flex min-w-0 flex-1 items-center gap-4"
                                                 >
-                                                    <div className="relative h-18 w-24 shrink-0 overflow-hidden rounded-xl bg-neutral-100 sm:h-20 sm:w-28 dark:bg-neutral-950">
-                                                        <img
-                                                            src={img}
-                                                            alt={article.title}
-                                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                            loading="lazy"
-                                                            onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.card)}
-                                                        />
+                                                    <div className="relative aspect-video w-24 shrink-0 overflow-hidden rounded-xl bg-neutral-100 sm:w-28 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/80 flex items-center justify-center">
+                                                        {article.featured_image ? (
+                                                            <img
+                                                                src={article.featured_image}
+                                                                alt={article.title}
+                                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                                loading="lazy"
+                                                            />
+                                                        ) : (
+                                                            <Newspaper className="h-5 w-5 text-neutral-400 dark:text-neutral-500" strokeWidth={1.5} />
+                                                        )}
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="mb-1.5 flex flex-wrap items-center gap-2">

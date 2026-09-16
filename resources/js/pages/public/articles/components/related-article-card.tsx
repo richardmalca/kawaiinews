@@ -1,8 +1,7 @@
 import { CategoryBadge } from '@/components/public/category-badge';
-import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Newspaper } from 'lucide-react';
 
 interface RelatedArticleCardProps {
     article: PublicArticle;
@@ -18,14 +17,19 @@ export function RelatedArticleCard({
             href={`/noticias/${article.slug}`}
             className={`group flex flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white transition-all duration-300 hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/40 dark:hover:border-neutral-700 dark:hover:bg-neutral-900/80 ${className}`}
         >
-            <div className="relative aspect-16/10 w-full overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                <img
-                    src={article.featured_image || FALLBACK_IMAGES.card}
-                    alt={article.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.card)}
-                />
+            <div className="relative aspect-video w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center">
+                {article.featured_image ? (
+                    <img
+                        src={article.featured_image}
+                        alt={article.title}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                    />
+                ) : (
+                    <div className="flex flex-col items-center justify-center p-4 text-neutral-400 dark:text-neutral-500">
+                        <Newspaper className="h-7 w-7 opacity-75" strokeWidth={1.5} />
+                    </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute top-2 left-2 z-10">
                     <CategoryBadge

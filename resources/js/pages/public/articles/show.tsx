@@ -1,7 +1,7 @@
 import { SeoHead } from '@/components/common/seo-head';
 import { useReadingProgress } from '@/hooks/use-reading-progress';
 import PublicLayout from '@/layouts/public-layout';
-import { FALLBACK_IMAGES, formatArticleAsPlainText, handleImageFallback } from '@/lib/utils';
+import { formatArticleAsPlainText } from '@/lib/utils';
 import { TrendingSidebar } from '@/pages/public/home/components/trending-sidebar';
 import type { PublicArticle, PublicCategorySummary } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -253,7 +253,6 @@ export default function ShowArticle({
                                     alt={item.title}
                                     className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
                                     loading="eager"
-                                    onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.hero)}
                                 />
                             </div>
                         </div>

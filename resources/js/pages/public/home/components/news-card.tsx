@@ -1,10 +1,6 @@
 import { CategoryBadge } from '@/components/public/category-badge';
 import { QuickFavoriteButton } from '@/components/public/quick-favorite-button';
-import {
-    FALLBACK_IMAGES,
-    estimateReadingTime,
-    handleImageFallback,
-} from '@/lib/utils';
+import { estimateReadingTime } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
 import { BookOpen, Bookmark, Calendar, Eye, Heart, MessageCircle, Share2 } from 'lucide-react';
@@ -14,7 +10,6 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article }: NewsCardProps) {
-    const imageSrc = article.featured_image || FALLBACK_IMAGES.card;
     const readingMinutes = estimateReadingTime(article.body);
     const likersCount = article.likers_count ?? 0;
     const favoritesCount = article.favorites_count ?? 0;
@@ -27,17 +22,22 @@ export function NewsCard({ article }: NewsCardProps) {
             className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-xs transition-all duration-300 hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/40 dark:shadow-none dark:hover:border-neutral-700/80 dark:hover:bg-neutral-900/80"
         >
             <article className="flex flex-1 flex-col">
-                <div className="relative aspect-16/10 w-full overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                    <img
-                        src={imageSrc}
-                        alt={article.title}
-                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                        loading="lazy"
-                        onError={(e) =>
-                            handleImageFallback(e, FALLBACK_IMAGES.card)
-                        }
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+                <div className="relative aspect-video w-full overflow-hidden bg-neutral-100 dark:bg-neutral-950">
+                    {article.featured_image ? (
+                        <>
+                            <img
+                                src={article.featured_image}
+                                alt={article.title}
+                                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+                                loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+                        </>
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-600">
+                            <BookOpen className="h-10 w-10 stroke-[1.25] transition-transform duration-300 group-hover:scale-110 text-neutral-400/80 dark:text-neutral-600" />
+                        </div>
+                    )}
                     <div className="absolute top-3 left-3 z-10">
                         <CategoryBadge category={article.category} />
                     </div>

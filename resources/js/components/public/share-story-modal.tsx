@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Download, Sparkles, Check, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { FALLBACK_IMAGES, handleImageFallback } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -30,7 +29,7 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
         typeof article.category === 'string'
             ? article.category
             : article.category?.label ?? article.category?.name ?? 'Anime';
-    const bgImage = article.featured_image || FALLBACK_IMAGES.hero;
+    const bgImage = article.featured_image || '';
 
     const handleCopyUrl = async () => {
         try {
@@ -273,12 +272,13 @@ export function ShareStoryModal({ article, open, onOpenChange }: ShareStoryModal
 
                 <div className="py-1">
                     <div className="relative mx-auto aspect-[9/16] w-full max-w-[220px] overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-white shadow-xl">
-                        <img
-                            src={bgImage}
-                            alt=""
-                            className="absolute inset-0 h-full w-full object-cover opacity-60"
-                            onError={(e) => handleImageFallback(e, FALLBACK_IMAGES.hero)}
-                        />
+                        {bgImage && (
+                            <img
+                                src={bgImage}
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover opacity-60"
+                            />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-black/70 pointer-events-none" />
 
                         <div className="relative z-10 flex h-full flex-col justify-between">

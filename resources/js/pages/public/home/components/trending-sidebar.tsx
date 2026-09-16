@@ -1,12 +1,8 @@
 import { CategoryBadge } from '@/components/public/category-badge';
-import {
-    FALLBACK_IMAGES,
-    formatNewsRanking,
-    handleImageFallback,
-} from '@/lib/utils';
+import { formatNewsRanking } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Calendar, Eye, TrendingUp } from 'lucide-react';
+import { Calendar, Eye, Newspaper, TrendingUp } from 'lucide-react';
 
 interface TrendingSidebarProps {
     articles: PublicArticle[];
@@ -54,21 +50,18 @@ export function TrendingSidebar({ articles }: TrendingSidebarProps) {
                         </span>
 
                         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-neutral-200/80 bg-neutral-100 shadow-2xs dark:border-neutral-800 dark:bg-neutral-950">
-                            <img
-                                src={
-                                    article.featured_image ||
-                                    FALLBACK_IMAGES.thumbnail
-                                }
-                                alt={article.title}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                loading="lazy"
-                                onError={(e) =>
-                                    handleImageFallback(
-                                        e,
-                                        FALLBACK_IMAGES.thumbnail,
-                                    )
-                                }
-                            />
+                            {article.featured_image ? (
+                                <img
+                                    src={article.featured_image}
+                                    alt={article.title}
+                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-600">
+                                    <Newspaper className="h-6 w-6 stroke-[1.25]" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="min-w-0 flex-1">
