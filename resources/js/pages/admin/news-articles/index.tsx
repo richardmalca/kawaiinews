@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     FileText,
     ImageOff,
@@ -46,6 +46,9 @@ export default function NewsArticlesIndex({
     categories,
     kpis,
 }: Props) {
+    const { auth } = usePage().props;
+    const canDelete = auth.user?.roles.includes('superadmin') ?? false;
+
     const [search, setSearch] = useState(initialSearch ?? '');
 
     // Debounce: no buscamos en cada tecla, solo cuando el usuario deja de
@@ -183,7 +186,7 @@ export default function NewsArticlesIndex({
                     />
                 </div>
 
-                <NewsArticlesTable articles={articles} />
+                <NewsArticlesTable articles={articles} canDelete={canDelete} />
 
                 {meta.last_page > 1 && (
                     <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">

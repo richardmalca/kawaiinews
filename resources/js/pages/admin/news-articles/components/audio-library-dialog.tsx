@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { AudioLines, Sparkles, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import DeleteMediaButton from '@/components/delete-media-button';
@@ -36,6 +37,9 @@ export default function AudioLibraryDialog({
     articleId,
     canGenerate,
 }: Props) {
+    const { auth } = usePage().props;
+    const canDelete = auth.user?.roles.includes('superadmin') ?? false;
+
     const [open, setOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
@@ -243,12 +247,14 @@ export default function AudioLibraryDialog({
                                                 {item.created_at_formatted}
                                             </TableCell>
                                             <TableCell className="py-1.5 text-right">
-                                                <DeleteMediaButton
-                                                    itemLabel="este audio"
-                                                    onConfirm={() =>
-                                                        deleteItem(item)
-                                                    }
-                                                />
+                                                {canDelete && (
+                                                    <DeleteMediaButton
+                                                        itemLabel="este audio"
+                                                        onConfirm={() =>
+                                                            deleteItem(item)
+                                                        }
+                                                    />
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     );

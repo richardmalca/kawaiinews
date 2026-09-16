@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AiProviderController;
 use App\Http\Controllers\Admin\AiUsageController;
+use App\Http\Controllers\Admin\AuthorStatsController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DatabaseBackupController;
@@ -122,7 +123,46 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->only(['index', 'store', 'update', 'destroy']);
         });
 
+        // Lo que un editor puede tocar: redactar y armar sus noticias
+        // (crear, editar, ponerles imagen/audio) sin poder borrar nada ni
+        // entrar a configuraciones — eso sigue reservado a superadmin más
+        // abajo.
+        Route::middleware('role:superadmin|admin|editor')->group(function () {
+            Route::get('my-articles', [AuthorStatsController::class, 'index'])->name('my-articles.index');
+
+            Route::resource('news-articles', NewsArticleController::class)
+                ->only(['index', 'create', 'store', 'edit', 'update']);
+            Route::post('news-articles/{newsArticle}/toggle-status', [NewsArticleController::class, 'toggleStatus'])
+                ->name('news-articles.toggle-status');
+
+            Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
+            Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');
+            Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
+            Route::post('media/generate', [MediaLibraryController::class, 'generate'])
+                ->middleware('throttle:ai-costly')
+                ->name('media.generate');
+            Route::get('media/generation-status/{newsArticle}', [MediaLibraryController::class, 'generationStatus'])
+                ->name('media.generation-status');
+            Route::get('media/{media}/download', [MediaLibraryController::class, 'download'])->name('media.download');
+
+            Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');
+            Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
+            Route::post('audio', [MediaLibraryController::class, 'storeAudio'])->name('audio.store');
+            Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])
+                ->middleware('throttle:ai-costly')
+                ->name('news-articles.audio.generate');
+
+            Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
+        });
+
         Route::middleware('role:superadmin')->group(function () {
+            // Borrar sigue siendo solo de superadmin, separado del resto de
+            // acciones sobre noticias/medios que ya se abrieron arriba a
+            // editor y admin.
+            Route::delete('news-articles/{newsArticle}', [NewsArticleController::class, 'destroy'])
+                ->name('news-articles.destroy');
+            Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
+
             Route::resource('ai-providers', AiProviderController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
             Route::post('ai-providers/{aiProvider}/activate', [AiProviderController::class, 'activate'])
@@ -164,34 +204,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('news-review/{newsCluster}/restore', [NewsReviewController::class, 'restore'])->name('news-review.restore');
             Route::post('news-review/{newsCluster}/merge', [NewsReviewController::class, 'merge'])->name('news-review.merge');
 
-            Route::resource('news-articles', NewsArticleController::class)
-                ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-            Route::post('news-articles/{newsArticle}/toggle-status', [NewsArticleController::class, 'toggleStatus'])
-                ->name('news-articles.toggle-status');
-
             Route::get('comments', [AdminCommentController::class, 'index'])->name('comments.index');
             Route::post('comments/{comment}/approve', [AdminCommentController::class, 'approve'])->name('comments.approve');
             Route::delete('comments/{comment}', [AdminCommentController::class, 'destroy'])->name('comments.destroy');
-
-            Route::get('media', [MediaLibraryController::class, 'index'])->name('media.index');
-            Route::post('media', [MediaLibraryController::class, 'store'])->name('media.store');
-            Route::post('media/from-url', [MediaLibraryController::class, 'storeFromUrl'])->name('media.store-from-url');
-            Route::post('media/generate', [MediaLibraryController::class, 'generate'])
-                ->middleware('throttle:ai-costly')
-                ->name('media.generate');
-            Route::get('media/generation-status/{newsArticle}', [MediaLibraryController::class, 'generationStatus'])
-                ->name('media.generation-status');
-            Route::get('media/{media}/download', [MediaLibraryController::class, 'download'])->name('media.download');
-            Route::delete('media/{media}', [MediaLibraryController::class, 'destroy'])->name('media.destroy');
-
-            Route::get('media-library', [MediaLibraryController::class, 'libraryIndex'])->name('media-library.index');
-            Route::get('audio', [MediaLibraryController::class, 'audioList'])->name('audio.index');
-            Route::post('audio', [MediaLibraryController::class, 'storeAudio'])->name('audio.store');
-            Route::post('news-articles/{newsArticle}/audio', [MediaLibraryController::class, 'generateAudio'])
-                ->middleware('throttle:ai-costly')
-                ->name('news-articles.audio.generate');
-
-            Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
 
             Route::get('backup', [DatabaseBackupController::class, 'index'])->name('backup.index');
             Route::get('backup/download', [DatabaseBackupController::class, 'download'])

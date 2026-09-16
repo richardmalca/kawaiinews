@@ -17,6 +17,7 @@ import type { NewsArticle } from '@/types/admin';
 
 type Props = {
     articles: NewsArticle[];
+    canDelete: boolean;
 };
 
 function ArticleThumbnail({ article }: { article: NewsArticle }) {
@@ -33,7 +34,7 @@ function ArticleThumbnail({ article }: { article: NewsArticle }) {
     );
 }
 
-export default function NewsArticlesTable({ articles }: Props) {
+export default function NewsArticlesTable({ articles, canDelete }: Props) {
     if (articles.length === 0) {
         return (
             <p className="text-muted-foreground text-sm">
@@ -113,9 +114,11 @@ export default function NewsArticlesTable({ articles }: Props) {
                                             </span>
                                         </Link>
                                     </Button>
-                                    <DeleteNewsArticleDialog
-                                        article={article}
-                                    />
+                                    {canDelete && (
+                                        <DeleteNewsArticleDialog
+                                            article={article}
+                                        />
+                                    )}
                                 </div>
                             </TableCell>
                         </TableRow>

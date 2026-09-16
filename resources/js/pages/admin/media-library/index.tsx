@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { AudioLines, Download, Images } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import DeleteMediaButton from '@/components/delete-media-button';
@@ -35,6 +35,9 @@ export default function MediaLibraryIndex({
     images: initialImages,
     audios: initialAudios,
 }: Props) {
+    const { auth } = usePage().props;
+    const canDelete = auth.user?.roles.includes('superadmin') ?? false;
+
     const [images, setImages] = useState(initialImages);
     const [audios, setAudios] = useState(initialAudios);
     const [filter, setFilter] = useState<Filter>('all');
@@ -209,16 +212,19 @@ export default function MediaLibraryIndex({
                                                         <Download className="h-4 w-4" />
                                                     </a>
                                                 </Button>
-                                                <DeleteMediaButton
-                                                    itemLabel={
-                                                        item.type === 'audio'
-                                                            ? 'este audio'
-                                                            : 'esta imagen'
-                                                    }
-                                                    onConfirm={() =>
-                                                        handleDelete(item)
-                                                    }
-                                                />
+                                                {canDelete && (
+                                                    <DeleteMediaButton
+                                                        itemLabel={
+                                                            item.type ===
+                                                            'audio'
+                                                                ? 'este audio'
+                                                                : 'esta imagen'
+                                                        }
+                                                        onConfirm={() =>
+                                                            handleDelete(item)
+                                                        }
+                                                    />
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

@@ -103,17 +103,20 @@ test('accepting a cluster queues a job that creates the article', function () {
     expect($cluster->fresh()->status)->toBe('accepted');
 });
 
-test('a lower ranked role cannot trigger these ai jobs', function () {
-    $editor = User::factory()->create();
-    $editor->assignRole('editor');
+test('a user without an admin-area role cannot trigger these ai jobs', function () {
+    // Un editor SÍ puede generar imagen/audio para sus propias noticias
+    // (ver EditorPermissionsTest) — acá se prueba el límite real: alguien
+    // sin ningún rol del panel admin (superadmin/admin/editor) no entra
+    // ni a esto ni a nada de /admin.
+    $withoutRole = User::factory()->create();
 
     $article = NewsArticle::factory()->create();
 
-    $this->actingAs($editor)
+    $this->actingAs($withoutRole)
         ->postJson(route('admin.media.generate'), ['prompt' => 'x'])
         ->assertForbidden();
 
-    $this->actingAs($editor)
+    $this->actingAs($withoutRole)
         ->postJson(route('admin.news-articles.audio.generate', $article))
         ->assertForbidden();
 });

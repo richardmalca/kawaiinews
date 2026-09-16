@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BarChart3,
     BrainCircuit,
     CloudCog,
     DatabaseBackup,
@@ -34,6 +35,7 @@ import { index as backupIndex } from '@/routes/admin/backup';
 import { edit as siteSettingsEdit } from '@/routes/admin/site-settings';
 import { edit as storageSettingsEdit } from '@/routes/admin/storage-settings';
 import { index as commentsIndex } from '@/routes/admin/comments';
+import { index as authorStatsIndex } from '@/routes/admin/my-articles';
 import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
@@ -83,34 +85,50 @@ export function AppSidebar() {
           ]
         : [];
 
-    const contentNavItems: NavItem[] = isSuperadmin
-        ? [
-              {
-                  title: 'Revisar noticias',
-                  href: newsReviewIndex(),
-                  icon: Search,
-                  badge:
-                      moderationAlerts?.high_credibility_rumors || undefined,
-                  badgeTone: 'warning',
-              },
-              {
-                  title: 'Noticias',
-                  href: newsArticlesIndex(),
-                  icon: Newspaper,
-              },
-              {
-                  title: 'Biblioteca de medios',
-                  href: mediaLibraryIndex(),
-                  icon: Library,
-              },
-              {
-                  title: 'Comentarios',
-                  href: commentsIndex(),
-                  icon: MessagesSquare,
-                  badge: moderationAlerts?.blocked_comments || undefined,
-              },
-          ]
-        : [];
+    // Noticias, Mis noticias y Biblioteca de medios: lo que necesita
+    // cualquier editor para armar sus notas de punta a punta. Revisar
+    // noticias (acepta clusters con IA) y Comentarios (moderación) siguen
+    // reservados a superadmin.
+    const contentNavItems: NavItem[] = [
+        ...(isSuperadmin
+            ? [
+                  {
+                      title: 'Revisar noticias',
+                      href: newsReviewIndex(),
+                      icon: Search,
+                      badge:
+                          moderationAlerts?.high_credibility_rumors ||
+                          undefined,
+                      badgeTone: 'warning' as const,
+                  },
+              ]
+            : []),
+        {
+            title: 'Noticias',
+            href: newsArticlesIndex(),
+            icon: Newspaper,
+        },
+        {
+            title: 'Mis noticias',
+            href: authorStatsIndex(),
+            icon: BarChart3,
+        },
+        {
+            title: 'Biblioteca de medios',
+            href: mediaLibraryIndex(),
+            icon: Library,
+        },
+        ...(isSuperadmin
+            ? [
+                  {
+                      title: 'Comentarios',
+                      href: commentsIndex(),
+                      icon: MessagesSquare,
+                      badge: moderationAlerts?.blocked_comments || undefined,
+                  },
+              ]
+            : []),
+    ];
 
     const maintenanceNavItems: NavItem[] = isSuperadmin
         ? [
