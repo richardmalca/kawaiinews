@@ -26,8 +26,8 @@ function ActiveCard({
     autoGenerateLabel?: string;
 }) {
     return (
-        <Card>
-            <CardContent className="flex items-start gap-3">
+        <Card className="h-full">
+            <CardContent className="flex h-full items-start gap-3">
                 <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center">
                     <Icon className="text-muted-foreground h-5 w-5" />
                 </div>
@@ -46,9 +46,9 @@ function ActiveCard({
                             {autoGenerateLabel && (
                                 <Badge
                                     variant="outline"
-                                    className="mt-1 gap-1"
+                                    className="mt-1 h-auto gap-1 py-1 text-left whitespace-normal"
                                 >
-                                    <Sparkles className="h-3 w-3" />
+                                    <Sparkles className="h-3 w-3 shrink-0" />
                                     {autoGenerateLabel}
                                 </Badge>
                             )}
@@ -68,7 +68,7 @@ export default function AiProviderActiveOverview({ summary }: Props) {
     return (
         <div className="space-y-2">
             <h2 className="text-sm font-medium">Qué está activo ahora</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 <ActiveCard
                     icon={MessageSquareText}
                     label="Texto (redacción)"
@@ -80,7 +80,7 @@ export default function AiProviderActiveOverview({ summary }: Props) {
                     active={summary.active_image}
                     autoGenerateLabel={
                         summary.active_image?.auto_generate
-                            ? 'Portada automática activada'
+                            ? 'Portada automática'
                             : undefined
                     }
                 />
@@ -90,18 +90,18 @@ export default function AiProviderActiveOverview({ summary }: Props) {
                     active={summary.active_audio}
                     autoGenerateLabel={
                         summary.active_audio?.auto_generate
-                            ? 'Audio automático activado'
+                            ? 'Audio automático'
                             : undefined
                     }
                 />
                 <ActiveCard
                     icon={ShieldCheck}
-                    label="Moderación con IA (pago)"
+                    label="Moderación IA (pago)"
                     active={summary.active_moderation}
                 />
                 <ActiveCard
                     icon={ShieldCheck}
-                    label="Moderación gratis (filtro previo)"
+                    label="Moderación gratis"
                     active={
                         summary.free_moderation.configured
                             ? { label: 'Google Cloud Natural Language' }

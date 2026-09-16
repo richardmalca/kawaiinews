@@ -121,8 +121,8 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
     };
 
     return (
-        <Card>
-            <CardContent className="space-y-3">
+        <Card className="h-full">
+            <CardContent className="flex h-full flex-col space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                         <p className="font-medium">{entry.label}</p>
@@ -198,9 +198,7 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
                                     {activatable.map(({ key }) => (
                                         <DropdownMenuItem
                                             key={key}
-                                            onSelect={() =>
-                                                handleActivate(key)
-                                            }
+                                            onSelect={() => handleActivate(key)}
                                         >
                                             {CAPABILITY_LABELS[key]}
                                         </DropdownMenuItem>
