@@ -24,7 +24,7 @@ class GoogleAuthService
             return $user;
         }
 
-        return User::create([
+        $user = User::create([
             'name' => $googleUser->getName(),
             'email' => $googleUser->getEmail(),
             'google_id' => $googleUser->getId(),
@@ -32,5 +32,9 @@ class GoogleAuthService
             'password' => Hash::make(Str::random(32)),
             'email_verified_at' => now(),
         ]);
+
+        $user->assignRole('user');
+
+        return $user;
     }
 }

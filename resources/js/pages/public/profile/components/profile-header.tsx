@@ -1,7 +1,8 @@
-import { Link } from '@inertiajs/react';
-import { Heart, Newspaper, Settings, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Heart, Newspaper, Settings, Shield, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
 import type { PublicUserProfile } from '@/types';
 import { UserBadge } from '@/components/public/user-badge';
+import { dashboard } from '@/routes/admin';
 
 interface ProfileHeaderProps {
     profile: PublicUserProfile;
@@ -11,6 +12,8 @@ interface ProfileHeaderProps {
     onToggleFollow: () => void;
 }
 
+const privilegedRoles = ['superadmin', 'admin', 'editor'];
+
 export function ProfileHeader({
     profile,
     followersCount,
@@ -18,6 +21,10 @@ export function ProfileHeader({
     isSubmitting,
     onToggleFollow,
 }: ProfileHeaderProps) {
+    const { auth } = usePage().props;
+    const isPrivileged = auth?.user?.roles?.some((role: string) =>
+        privilegedRoles.includes(role),
+    );
     return (
         <div className="mb-10 overflow-hidden rounded-3xl border border-neutral-200/80 bg-white shadow-xs dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:shadow-none">
             {profile.banner ? (
@@ -65,13 +72,24 @@ export function ProfileHeader({
 
                     <div className="shrink-0 pb-1">
                         {profile.is_self ? (
-                            <Link
-                                href="/perfil/mi-cuenta/ajustes"
-                                className="inline-flex items-center gap-2 rounded-xl border border-neutral-200/90 bg-neutral-100/80 px-4 py-2.5 text-xs font-semibold text-neutral-800 shadow-xs transition-colors hover:bg-neutral-200 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-750"
-                            >
-                                <Settings className="h-3.5 w-3.5 text-neutral-500" />
-                                <span>Ajustes de cuenta</span>
-                            </Link>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {isPrivileged && (
+                                    <Link
+                                        href={dashboard()}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-rose-700 dark:bg-rose-500 dark:hover:bg-rose-600"
+                                    >
+                                        <Shield className="h-3.5 w-3.5" />
+                                        <span>Panel de Control</span>
+                                    </Link>
+                                )}
+                                <Link
+                                    href="/perfil/mi-cuenta/ajustes"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-neutral-200/90 bg-neutral-100/80 px-4 py-2.5 text-xs font-semibold text-neutral-800 shadow-xs transition-colors hover:bg-neutral-200 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-750"
+                                >
+                                    <Settings className="h-3.5 w-3.5 text-neutral-500" />
+                                    <span>Ajustes de cuenta</span>
+                                </Link>
+                            </div>
                         ) : (
                             <button
                                 type="button"
