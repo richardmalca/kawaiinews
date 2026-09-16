@@ -1,14 +1,19 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    AudioLines,
     FileText,
     ImageOff,
     Newspaper,
     Plus,
     Search,
     SquareCheckBig,
+    TriangleAlert,
+    X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -29,13 +34,21 @@ type Meta = {
     total: number;
 };
 
+type Missing = 'image' | 'audio' | null;
+
 type Props = {
     articles: NewsArticle[];
     meta: Meta;
     category: string | null;
     search: string | null;
+    missing: Missing;
     categories: string[];
     kpis: AdminNewsArticlesKpis;
+};
+
+const MISSING_LABELS: Record<'image' | 'audio', string> = {
+    image: 'Sin imagen destacada',
+    audio: 'Sin audio narrado',
 };
 
 export default function NewsArticlesIndex({
@@ -43,6 +56,7 @@ export default function NewsArticlesIndex({
     meta,
     category,
     search: initialSearch,
+    missing,
     categories,
     kpis,
 }: Props) {
@@ -63,6 +77,7 @@ export default function NewsArticlesIndex({
                 index().url,
                 {
                     ...(category ? { category } : {}),
+                    ...(missing ? { missing } : {}),
                     ...(search ? { search } : {}),
                 },
                 {
@@ -82,6 +97,7 @@ export default function NewsArticlesIndex({
             index().url,
             {
                 ...(search ? { search } : {}),
+                ...(missing ? { missing } : {}),
                 ...(value === 'all' ? {} : { category: value }),
             },
             {
@@ -92,12 +108,44 @@ export default function NewsArticlesIndex({
         );
     };
 
+    const applyMissingFilter = (value: 'image' | 'audio') => {
+        router.get(
+            index().url,
+            {
+                ...(category ? { category } : {}),
+                ...(search ? { search } : {}),
+                missing: value,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['articles', 'meta', 'missing'],
+            },
+        );
+    };
+
+    const clearMissingFilter = () => {
+        router.get(
+            index().url,
+            {
+                ...(category ? { category } : {}),
+                ...(search ? { search } : {}),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['articles', 'meta', 'missing'],
+            },
+        );
+    };
+
     const goToPage = (page: number) => {
         router.get(
             index().url,
             {
                 ...(category ? { category } : {}),
                 ...(search ? { search } : {}),
+                ...(missing ? { missing } : {}),
                 page,
             },
             {
@@ -159,7 +207,7 @@ export default function NewsArticlesIndex({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                     <KpiCard
                         icon={Newspaper}
                         label="Noticias totales"
@@ -184,7 +232,63 @@ export default function NewsArticlesIndex({
                         label="Sin imagen destacada"
                         value={kpis.without_image}
                     />
+                    <KpiCard
+                        icon={AudioLines}
+                        label="Sin audio narrado"
+                        value={kpis.without_audio}
+                    />
                 </div>
+
+                {!missing && (kpis.without_image > 0 || kpis.without_audio > 0) && (
+                    <Alert>
+                        <TriangleAlert className="h-4 w-4" />
+                        <AlertTitle>Hay noticias incompletas</AlertTitle>
+                        <AlertDescription>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {kpis.without_image > 0 && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            applyMissingFilter('image')
+                                        }
+                                    >
+                                        Ver {kpis.without_image} sin imagen
+                                    </Button>
+                                )}
+                                {kpis.without_audio > 0 && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            applyMissingFilter('audio')
+                                        }
+                                    >
+                                        Ver {kpis.without_audio} sin audio
+                                    </Button>
+                                )}
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {missing && (
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="gap-1.5">
+                            {MISSING_LABELS[missing]}
+                            <button
+                                type="button"
+                                onClick={clearMissingFilter}
+                                aria-label="Quitar filtro"
+                                className="hover:text-foreground"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    </div>
+                )}
 
                 <NewsArticlesTable articles={articles} canDelete={canDelete} />
 

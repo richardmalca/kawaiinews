@@ -98,6 +98,40 @@ test('kpis are scoped to the active category filter', function () {
     $response->assertInertia(fn ($page) => $page->where('kpis.total', 2));
 });
 
+test('articles index kpis include how many are missing image and how many are missing audio', function () {
+    NewsArticle::factory()->create(['featured_image' => null, 'audio_url' => null]);
+    NewsArticle::factory()->create(['featured_image' => 'https://example.test/a.png', 'audio_url' => null]);
+    NewsArticle::factory()->create(['featured_image' => 'https://example.test/b.png', 'audio_url' => 'https://example.test/a.mp3']);
+
+    $response = $this->get(route('admin.news-articles.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->where('kpis.without_image', 1)
+        ->where('kpis.without_audio', 2)
+    );
+});
+
+test('articles index can be filtered to only those missing an image or missing audio', function () {
+    $noImage = NewsArticle::factory()->create(['featured_image' => null, 'audio_url' => 'https://example.test/a.mp3']);
+    $noAudio = NewsArticle::factory()->create(['featured_image' => 'https://example.test/a.png', 'audio_url' => null]);
+    NewsArticle::factory()->create(['featured_image' => 'https://example.test/b.png', 'audio_url' => 'https://example.test/b.mp3']);
+
+    $this->get(route('admin.news-articles.index', ['missing' => 'image']))
+        ->assertInertia(fn ($page) => $page
+            ->has('articles', 1)
+            ->where('articles.0.id', $noImage->id)
+            ->where('missing', 'image')
+        );
+
+    $this->get(route('admin.news-articles.index', ['missing' => 'audio']))
+        ->assertInertia(fn ($page) => $page
+            ->has('articles', 1)
+            ->where('articles.0.id', $noAudio->id)
+            ->where('missing', 'audio')
+        );
+});
+
 test('articles index can be filtered by category', function () {
     NewsArticle::factory()->count(3)->create(['category' => 'anime']);
     NewsArticle::factory()->count(4)->create(['category' => 'geek']);

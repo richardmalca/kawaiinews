@@ -355,6 +355,9 @@ class NewsArticleService
             'without_image' => (clone $base)
                 ->where(fn ($query) => $query->whereNull('featured_image')->orWhere('featured_image', ''))
                 ->count(),
+            'without_audio' => (clone $base)
+                ->where(fn ($query) => $query->whereNull('audio_url')->orWhere('audio_url', ''))
+                ->count(),
             'this_week' => (clone $base)->whereDate('created_at', '>=', $weekAgo)->count(),
         ];
     }

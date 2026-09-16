@@ -319,6 +319,7 @@ export type AdminNewsArticlesKpis = {
     published: number;
     drafts: number;
     without_image: number;
+    without_audio: number;
     this_week: number;
 };
 

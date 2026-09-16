@@ -24,10 +24,13 @@ class NewsArticleController extends Controller
     {
         $category = $request->string('category')->value() ?: null;
         $search = $request->string('search')->value() ?: null;
+        $missing = $request->string('missing')->value() ?: null;
 
         $articles = NewsArticle::with(['tags', 'newsCluster.scrapedItems.newsSource'])
             ->when($category, fn ($query) => $query->where('category', $category))
             ->when($search, fn ($query) => $query->where('title', 'like', '%'.$search.'%'))
+            ->when($missing === 'image', fn ($query) => $query->where(fn ($q) => $q->whereNull('featured_image')->orWhere('featured_image', '')))
+            ->when($missing === 'audio', fn ($query) => $query->where(fn ($q) => $q->whereNull('audio_url')->orWhere('audio_url', '')))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -41,6 +44,7 @@ class NewsArticleController extends Controller
             ],
             'category' => $category,
             'search' => $search,
+            'missing' => $missing,
             'categories' => array_keys(config('news_sources_catalog')),
             'kpis' => $this->newsArticleService->adminKpis($category),
         ]);
