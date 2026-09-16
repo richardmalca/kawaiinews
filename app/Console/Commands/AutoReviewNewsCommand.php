@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('news:auto-review')]
-#[Description('Analiza con IA los clusters pendientes sin veredicto y rechaza automáticamente los marcados como descartables (los marcados como publicables siguen esperando aceptación manual)')]
+#[Description('Fusiona con IA los clusters pendientes que son la misma noticia real, analiza los que faltan y rechaza automáticamente los descartables o demasiado viejos (los marcados como publicables siguen esperando aceptación)')]
 class AutoReviewNewsCommand extends Command
 {
     /**
@@ -16,6 +16,10 @@ class AutoReviewNewsCommand extends Command
      */
     public function handle(NewsClusterService $newsClusterService): int
     {
+        $merged = $newsClusterService->autoMergeDuplicates();
+
+        $this->info("Fusionados automáticamente por ser la misma noticia: {$merged}");
+
         $result = $newsClusterService->analyzeWithAi();
 
         $this->info("Clusters analizados: {$result['analyzed']}");

@@ -228,6 +228,127 @@ class NewsClusterService
     private const BATCH_SIZE = 30;
 
     /**
+     * Días hacia atrás en los que tiene sentido buscar duplicados — más
+     * allá de eso ya se rechazan por antigüedad (ver autoRejectStale), no
+     * hace falta gastar en compararlos.
+     */
+    private const MERGE_LOOKBACK_DAYS = 2;
+
+    /**
+     * Detecta con IA clusters `pending` que en realidad son la misma
+     * noticia real cubierta con títulos distintos por distintas fuentes
+     * (el scraper a veces los separa) y los fusiona solo, sin que el admin
+     * tenga que hacerlo a mano desde "Fusionar con...". Importa hacerlo
+     * ANTES de analyzeWithAi(): una noticia de una sola fuente puede en
+     * realidad tener varias fuentes repartidas en clusters separados, y
+     * sin fusionar antes esa cobertura real no se refleja en
+     * `sources_count`/`relevance_score` a la hora de decidir si vale la
+     * pena publicarla.
+     *
+     * @return int cuántos clusters se fusionaron (quedaron `rejected`, no cuántos grupos)
+     */
+    public function autoMergeDuplicates(): int
+    {
+        $activeProvider = AiProvider::where('is_active', true)->first();
+
+        if (! $activeProvider || ! $activeProvider->hasApiKey()) {
+            return 0;
+        }
+
+        $merged = 0;
+
+        $clusters = NewsCluster::where('status', 'pending')
+            ->where('first_seen_at', '>=', now()->subDays(self::MERGE_LOOKBACK_DAYS))
+            ->get()
+            ->groupBy('category');
+
+        foreach ($clusters as $categoryClusters) {
+            foreach ($categoryClusters->chunk(self::BATCH_SIZE) as $batch) {
+                if ($batch->count() < 2) {
+                    continue;
+                }
+
+                try {
+                    $merged += $this->mergeDuplicatesInBatch($batch, $activeProvider);
+                } catch (Throwable) {
+                    // Si falla un lote seguimos con el resto — fusionar es
+                    // una mejora, no algo crítico como para frenar todo
+                    // news:auto-review por un error de un lote.
+                }
+            }
+        }
+
+        return $merged;
+    }
+
+    private function mergeDuplicatesInBatch(Collection $batch, AiProvider $activeProvider): int
+    {
+        $lines = $batch->map(fn (NewsCluster $cluster) => "ID:{$cluster->id} | ".Str::limit($cluster->title, 100, ''))->implode("\n");
+
+        $prompt = <<<PROMPT
+            Estas son noticias pendientes de revisión, todas de la misma categoría. El sistema que las agrupó por fuente a veces separa en dos o más la MISMA noticia real cuando el título varía entre fuentes. Encontrá esos casos.
+
+            {$lines}
+
+            Devolvé SOLO una línea por cada grupo de 2 o más IDs que sean el mismo hecho real, en este formato exacto, sin texto adicional:
+            GRUPO:id1,id2,id3
+
+            Si dos noticias son parecidas pero son hechos distintos (ej. dos anuncios distintos del mismo anime), NO los agrupes. Si ninguno es duplicado de otro, no devuelvas ninguna línea.
+            PROMPT;
+
+        $response = Prism::text()
+            ->using($activeProvider->provider, $activeProvider->default_model, [
+                'api_key' => $activeProvider->api_key,
+            ])
+            ->withClientOptions(['timeout' => 60])
+            ->withPrompt($prompt)
+            ->asText();
+
+        AiUsageLogger::record('analyze', $activeProvider->provider, $activeProvider->default_model, $response->usage);
+
+        return $this->applyMergeGroups($response->text, $batch);
+    }
+
+    private function applyMergeGroups(string $text, Collection $batch): int
+    {
+        $clustersById = $batch->keyBy('id');
+        $merged = 0;
+
+        preg_match_all('/GRUPO:\s*([\d,\s]+)/i', $text, $matches);
+
+        foreach ($matches[1] as $rawGroup) {
+            $groupClusters = collect(explode(',', $rawGroup))
+                ->map(fn ($id) => $clustersById->get((int) trim($id)))
+                ->filter()
+                ->values();
+
+            if ($groupClusters->count() < 2) {
+                continue;
+            }
+
+            $target = $groupClusters->sortByDesc('relevance_score')->first();
+
+            foreach ($groupClusters as $cluster) {
+                if ($cluster->id === $target->id) {
+                    continue;
+                }
+
+                // Puede que ya se haya fusionado en otro grupo de este
+                // mismo lote (si la IA lo repitió) — nos aseguramos de que
+                // siga pending antes de tocarlo.
+                if ($cluster->fresh()->status !== 'pending') {
+                    continue;
+                }
+
+                $target = $this->merge($cluster, $target);
+                $merged++;
+            }
+        }
+
+        return $merged;
+    }
+
+    /**
      * @return array{analyzed: int, error: ?string}
      */
     public function analyzeWithAi(): array
