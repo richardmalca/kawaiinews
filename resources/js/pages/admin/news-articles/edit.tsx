@@ -1,5 +1,11 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Check, FileText, ImageOff, Images } from 'lucide-react';
+import {
+    Check,
+    ClipboardCopy,
+    FileText,
+    ImageOff,
+    Images,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
@@ -52,6 +58,7 @@ export default function NewsArticleEdit({
         article.slug,
     );
     const [copiedText, setCopiedText] = useState(false);
+    const [copiedPrompt, setCopiedPrompt] = useState(false);
 
     // Un solo estado de generación de imagen compartido con el diálogo (ver
     // media-library-dialog.tsx): así arrancar la generación desde ahí
@@ -121,6 +128,24 @@ export default function NewsArticleEdit({
     const aiImagePrompt = isContentComplete
         ? `Cinematic editorial illustration in 16:9 widescreen format inspired by the topic: ${safeTitle}. Theme: ${safeExcerpt}. Background atmosphere: ${safeContext}. Art style: ${categoryStyle}, cinematic lighting, colorful scenic environment. Strict constraints: completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful fictional video game or anime artwork, no violence, no gore, no realistic human photos.`
         : null;
+
+    const handleCopyImagePrompt = async () => {
+        if (!aiImagePrompt) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(aiImagePrompt);
+            setCopiedPrompt(true);
+            toast.success(
+                'Prompt de la imagen copiado, pegalo en la IA que uses para generarla',
+            );
+            setTimeout(() => setCopiedPrompt(false), 2000);
+        } catch {
+            toast.error('No se pudo copiar el prompt');
+        }
+    };
+
     const canGenerateAudio = Boolean(
         article.title.trim() &&
         (article.excerpt ?? '').trim() &&
@@ -333,6 +358,34 @@ export default function NewsArticleEdit({
                                             imageGenerationStartedAt
                                         }
                                     />
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full"
+                                        disabled={!aiImagePrompt}
+                                        title={
+                                            aiImagePrompt
+                                                ? 'Copia el prompt armado con esta noticia, para pegarlo en otra IA (junto con una imagen de referencia si querés) y generar la imagen ahí'
+                                                : 'Completá título, resumen y contenido para armar el prompt'
+                                        }
+                                        onClick={handleCopyImagePrompt}
+                                    >
+                                        {copiedPrompt ? (
+                                            <>
+                                                <Check className="text-emerald-500" />
+                                                <span>Prompt copiado</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ClipboardCopy />
+                                                <span>
+                                                    Copiar prompt para otra IA
+                                                </span>
+                                            </>
+                                        )}
+                                    </Button>
 
                                     {featuredImage ? (
                                         <div className="space-y-2">
