@@ -20,6 +20,19 @@ class RemoteStorage
     {
         config(['filesystems.disks.'.self::DISK_NAME => ($settings ?? StorageSetting::current())->diskConfig()]);
 
+        // El manager de discos de Laravel cachea la instancia ya armada
+        // con el nombre "remote" durante toda la vida del proceso PHP. En
+        // un request normal no se nota (cada visita es un proceso
+        // nuevo), pero el worker de la cola es un proceso de larga
+        // duración: sin este olvido, seguiría usando para siempre las
+        // credenciales que estaban activas la primera vez que se resolvió
+        // este disco, ignorando cualquier cambio posterior en
+        // Configuración > Almacenamiento. En los tests se salta este
+        // paso para no pisar el disco falso que arma Storage::fake().
+        if (! app()->runningUnitTests()) {
+            Storage::forgetDisk(self::DISK_NAME);
+        }
+
         return Storage::disk(self::DISK_NAME);
     }
 }
