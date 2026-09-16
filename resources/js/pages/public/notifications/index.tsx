@@ -19,7 +19,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { readCsrfToken } from '@/pages/public/profile/lib/profile-utils';
-import type { AppNotificationItem } from '@/components/public/notification-bell';
+import { getNotificationTargetUrl, type AppNotificationItem } from '@/components/public/notification-bell';
 
 interface NotificationsPageProps {
     notifications: {
@@ -304,7 +304,7 @@ export default function NotificationsPage({
                         return (
                             <div
                                 key={item.id}
-                                onClick={() => handleMarkAsRead(item.id, item.data.url)}
+                                onClick={() => handleMarkAsRead(item.id, getNotificationTargetUrl(item.data))}
                                 className={`group flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 transition-colors cursor-pointer ${
                                     isUnread
                                         ? 'bg-rose-50/40 hover:bg-rose-50/70 dark:bg-rose-950/20 dark:hover:bg-rose-950/30'

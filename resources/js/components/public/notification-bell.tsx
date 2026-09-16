@@ -66,6 +66,7 @@ export interface AppNotificationItem {
         author_avatar?: string | null;
         reason?: 'author' | 'category' | 'tag' | string;
         reason_label?: string | null;
+        comment_id?: number;
         reply_preview?: string;
         mentioner_id?: number;
         mentioner_name?: string;
@@ -79,6 +80,27 @@ export interface AppNotificationItem {
     };
     read_at: string | null;
     created_at: string;
+}
+
+export function getNotificationTargetUrl(data?: AppNotificationItem['data']): string {
+    if (!data) return '/';
+
+    if (data.article_slug) {
+        const base = `/noticias/${data.article_slug}`;
+        return data.comment_id ? `${base}#comentario-${data.comment_id}` : base;
+    }
+
+    if (data.follower_username) {
+        return `/perfil/${data.follower_username}`;
+    }
+
+    if (data.url) {
+        return data.url.startsWith('/noticia/')
+            ? data.url.replace('/noticia/', '/noticias/')
+            : data.url;
+    }
+
+    return '/';
 }
 
 export function NotificationBell() {
@@ -222,13 +244,15 @@ export function NotificationBell() {
                                 : `A ${latest.data.liker_name ?? 'Alguien'} le gustó tu comentario`;
                         }
 
+                        const targetUrl = getNotificationTargetUrl(latest.data);
+
                         toast.info(title, {
                             id: `notif-${latest.id}`,
                             description: body,
-                            action: latest.data.url
+                            action: targetUrl
                                 ? {
                                       label: 'Ver',
-                                      onClick: () => handleMarkAsRead(latest.id, latest.data.url),
+                                      onClick: () => handleMarkAsRead(latest.id, targetUrl),
                                   }
                                 : undefined,
                         });
@@ -245,7 +269,7 @@ export function NotificationBell() {
                                 latest.data.follower_avatar ||
                                 siteLogoUrl ||
                                 '/android-chrome-192x192.png',
-                            url: latest.data.url,
+                            url: targetUrl,
                             tag: `notif-${latest.id}`,
                         });
                     }
@@ -477,7 +501,7 @@ export function NotificationBell() {
                                 return (
                                     <div
                                         key={item.id}
-                                        onClick={() => handleMarkAsRead(item.id, item.data.url)}
+                                        onClick={() => handleMarkAsRead(item.id, getNotificationTargetUrl(item.data))}
                                         className={`group flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${
                                             isUnread
                                                 ? 'bg-rose-500/5 hover:bg-rose-500/10 dark:bg-rose-500/10 dark:hover:bg-rose-500/15'
