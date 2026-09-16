@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Jobs\GenerateArticleFeaturedImageJob;
+use App\Jobs\GenerateArticleNarrationJob;
 use App\Jobs\SendNewArticleNotificationsJob;
 use App\Models\AiProvider;
 use App\Models\NewsArticle;
@@ -45,6 +46,12 @@ class NewsArticleService
         // YouTube si hay uno, o ninguna).
         if (AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
             GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
+        }
+
+        // Mismo criterio que la portada: nunca corre sin que el admin lo
+        // haya prendido a propósito en el proveedor activo para audio.
+        if (AiProvider::where('is_active_for_audio', true)->where('auto_generate_narration', true)->exists()) {
+            GenerateArticleNarrationJob::dispatch($newsArticle->id);
         }
 
         return $newsArticle;

@@ -75,6 +75,14 @@ class AiProviderService
         $aiProvider->update(['auto_generate_featured_image' => $enabled]);
     }
 
+    /**
+     * Prende/apaga la narración automática al crear un artículo.
+     */
+    public function setAutoGenerateNarration(AiProvider $aiProvider, bool $enabled): void
+    {
+        $aiProvider->update(['auto_generate_narration' => $enabled]);
+    }
+
     private function resolveDefaultModel(string $provider, ?string $submitted): string
     {
         if (filled($submitted)) {

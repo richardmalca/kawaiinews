@@ -16,6 +16,7 @@ import EditAiProviderDialog from '@/pages/admin/ai-providers/components/edit-ai-
 import {
     activate,
     toggleAutoGenerateFeaturedImage,
+    toggleAutoGenerateNarration,
 } from '@/routes/admin/ai-providers';
 import type {
     AiProvider,
@@ -83,13 +84,25 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
         router.post(activate(provider.id).url, { capability });
     };
 
-    const handleToggleAutoGenerate = (enabled: boolean) => {
+    const handleToggleAutoGenerateImage = (enabled: boolean) => {
         if (!provider) {
             return;
         }
 
         router.post(
             toggleAutoGenerateFeaturedImage(provider.id).url,
+            { enabled },
+            { preserveScroll: true },
+        );
+    };
+
+    const handleToggleAutoGenerateNarration = (enabled: boolean) => {
+        if (!provider) {
+            return;
+        }
+
+        router.post(
+            toggleAutoGenerateNarration(provider.id).url,
             { enabled },
             { preserveScroll: true },
         );
@@ -174,10 +187,29 @@ export default function AiProviderCatalogRow({ entry, provider }: Props) {
                                     checked={
                                         provider.auto_generate_featured_image
                                     }
-                                    onCheckedChange={handleToggleAutoGenerate}
+                                    onCheckedChange={
+                                        handleToggleAutoGenerateImage
+                                    }
                                 />
                                 <span className="text-muted-foreground">
                                     Portada automática al crear
+                                </span>
+                            </label>
+                        )}
+
+                        {provider.is_active_for_audio && (
+                            <label
+                                className="flex w-full items-center gap-2 pt-1 text-xs"
+                                title="Al crear un artículo, genera sola la narración de audio con este proveedor. Gasta créditos por cada artículo nuevo."
+                            >
+                                <Switch
+                                    checked={provider.auto_generate_narration}
+                                    onCheckedChange={
+                                        handleToggleAutoGenerateNarration
+                                    }
+                                />
+                                <span className="text-muted-foreground">
+                                    Audio automático al crear
                                 </span>
                             </label>
                         )}

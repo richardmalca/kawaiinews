@@ -32,6 +32,7 @@ export type AiProvider = {
     is_active_for_audio: boolean;
     is_active_for_moderation: boolean;
     auto_generate_featured_image: boolean;
+    auto_generate_narration: boolean;
     supports_image: boolean;
     supports_audio: boolean;
     last_verified_at: string | null;
