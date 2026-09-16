@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,6 +31,12 @@ class NewsClusterResource extends JsonResource
             'ai_credibility' => $this->ai_credibility,
             'first_seen_at' => $this->first_seen_at?->diffForHumans(),
             'published_at' => $earliestPublishedAt?->diffForHumans(),
+            // Para agrupar la bandeja como un calendario ("Hoy", "Ayer",
+            // "Esta semana", "Más antiguas") en vez de una tabla plana sin
+            // contexto temporal — se calcula sobre la fecha real de
+            // publicación de la fuente original si existe, y si no sobre
+            // cuándo lo detectó el scraper.
+            'date_bucket' => $this->dateBucket($earliestPublishedAt ?? $this->first_seen_at),
             'article_id' => $this->whenLoaded('article', fn () => $this->article?->id),
             'sources' => $this->whenLoaded('scrapedItems', fn () => $this->scrapedItems
                 ->map(fn ($item) => [
@@ -40,5 +47,26 @@ class NewsClusterResource extends JsonResource
                 ])
                 ->values()),
         ];
+    }
+
+    private function dateBucket(?CarbonInterface $date): string
+    {
+        if (! $date) {
+            return 'antes';
+        }
+
+        if ($date->isToday()) {
+            return 'hoy';
+        }
+
+        if ($date->isYesterday()) {
+            return 'ayer';
+        }
+
+        if ($date->greaterThanOrEqualTo(now()->subDays(7))) {
+            return 'semana';
+        }
+
+        return 'antes';
     }
 }

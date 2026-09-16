@@ -18,11 +18,19 @@ class NewsClusterService
 
     private const EARLIEST_PUBLISHED_AT_SQL = '(select min(published_at) from scraped_items where scraped_items.news_cluster_id = news_clusters.id)';
 
-    public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1, ?string $search = null): LengthAwarePaginator
+    /**
+     * @param  string  $view  'pending' (default, lo que todavía no está publicado en el sitio, para revisar/decidir) o 'published' (lo que ya se convirtió en artículo publicado, solo para consulta)
+     */
+    public function reviewQueue(string $sort = 'relevance', ?string $category = null, int $perPage = 20, int $page = 1, ?string $search = null, string $view = 'pending'): LengthAwarePaginator
     {
         $query = NewsCluster::query()
             ->selectRaw('news_clusters.*, '.self::EARLIEST_PUBLISHED_AT_SQL.' as earliest_published_at')
             ->whereIn('status', ['pending', 'accepted'])
+            ->when(
+                $view === 'published',
+                fn ($q) => $q->whereHas('article', fn ($aq) => $aq->where('status', 'published')),
+                fn ($q) => $q->where(fn ($qq) => $qq->whereDoesntHave('article', fn ($aq) => $aq->where('status', 'published')))
+            )
             ->when($category, fn ($q) => $q->where('category', $category))
             ->when($search, fn ($q) => $q->where('title', 'like', '%'.$search.'%'))
             ->with(['scrapedItems.newsSource', 'article']);
@@ -194,6 +202,22 @@ class NewsClusterService
     {
         return NewsCluster::where('status', 'pending')
             ->where('ai_verdict', 'discard')
+            ->update(['status' => 'rejected']);
+    }
+
+    /**
+     * Días que un cluster puede quedar `pending` sin publicarse antes de
+     * descartarse solo, sin importar su veredicto — una noticia de anime de
+     * hace más de una semana ya no tiene sentido publicarla como novedad, y
+     * sin este corte la bandeja se llena de temas viejos que nadie va a
+     * aceptar nunca a mano.
+     */
+    private const STALE_AFTER_DAYS = 5;
+
+    public function autoRejectStale(): int
+    {
+        return NewsCluster::where('status', 'pending')
+            ->where('first_seen_at', '<', now()->subDays(self::STALE_AFTER_DAYS))
             ->update(['status' => 'rejected']);
     }
 

@@ -28,6 +28,10 @@ class AutoReviewNewsCommand extends Command
 
         $this->info("Rechazados automáticamente por baja relevancia: {$rejected}");
 
+        $stale = $newsClusterService->autoRejectStale();
+
+        $this->info("Rechazados automáticamente por antigüedad: {$stale}");
+
         return self::SUCCESS;
     }
 }

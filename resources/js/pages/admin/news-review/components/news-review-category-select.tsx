@@ -7,13 +7,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { index } from '@/routes/admin/news-review';
-import type { NewsReviewSort } from '@/types/admin';
+import type { NewsReviewSort, NewsReviewView } from '@/types/admin';
 
 type Props = {
     value: string | null;
     categories: string[];
     sort: NewsReviewSort;
     search: string | null;
+    view: NewsReviewView;
 };
 
 export default function NewsReviewCategorySelect({
@@ -21,6 +22,7 @@ export default function NewsReviewCategorySelect({
     categories,
     sort,
     search,
+    view,
 }: Props) {
     const handleChange = (category: string) => {
         router.get(
@@ -29,6 +31,7 @@ export default function NewsReviewCategorySelect({
                 sort,
                 ...(search ? { search } : {}),
                 ...(category === 'all' ? {} : { category }),
+                ...(view !== 'pending' ? { view } : {}),
             },
             {
                 preserveState: true,

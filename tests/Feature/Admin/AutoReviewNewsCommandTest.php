@@ -114,5 +114,32 @@ test('it runs safely with nothing pending to analyze', function () {
     $this->artisan('news:auto-review')
         ->expectsOutputToContain('Clusters analizados: 0')
         ->expectsOutputToContain('Rechazados automáticamente por baja relevancia: 0')
+        ->expectsOutputToContain('Rechazados automáticamente por antigüedad: 0')
         ->assertExitCode(0);
+});
+
+test('it also rejects pending clusters older than 5 days, regardless of their ai verdict', function () {
+    $stalePublish = NewsCluster::factory()->create([
+        'status' => 'pending',
+        'ai_verdict' => 'publish',
+        'first_seen_at' => now()->subDays(6),
+    ]);
+    $staleUnanalyzed = NewsCluster::factory()->create([
+        'status' => 'pending',
+        'ai_verdict' => null,
+        'first_seen_at' => now()->subDays(10),
+    ]);
+    $recent = NewsCluster::factory()->create([
+        'status' => 'pending',
+        'ai_verdict' => 'publish',
+        'first_seen_at' => now()->subDays(2),
+    ]);
+
+    $this->artisan('news:auto-review')
+        ->expectsOutputToContain('Rechazados automáticamente por antigüedad: 2')
+        ->assertExitCode(0);
+
+    expect($stalePublish->fresh()->status)->toBe('rejected')
+        ->and($staleUnanalyzed->fresh()->status)->toBe('rejected')
+        ->and($recent->fresh()->status)->toBe('pending');
 });

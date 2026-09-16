@@ -64,6 +64,44 @@ test('the index exposes kpis: total in the queue, published, unpublished and ana
     );
 });
 
+test('the pending view excludes clusters whose article is already published, and the published view shows only those', function () {
+    $stillPending = NewsCluster::factory()->create(['status' => 'pending']);
+    $draftArticleCluster = NewsCluster::factory()->create(['status' => 'accepted']);
+    NewsArticle::factory()->create(['news_cluster_id' => $draftArticleCluster->id, 'status' => 'draft']);
+    $publishedArticleCluster = NewsCluster::factory()->create(['status' => 'accepted']);
+    NewsArticle::factory()->published()->create(['news_cluster_id' => $publishedArticleCluster->id]);
+
+    $this->get(route('admin.news-review.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('view', 'pending')
+            ->has('clusters', 2)
+        );
+
+    $this->get(route('admin.news-review.index', ['view' => 'published']))
+        ->assertInertia(fn ($page) => $page
+            ->where('view', 'published')
+            ->has('clusters', 1)
+            ->where('clusters.0.id', $publishedArticleCluster->id)
+        );
+});
+
+test('each cluster exposes a date_bucket so the review queue can be grouped like a calendar', function () {
+    $today = NewsCluster::factory()->create(['status' => 'pending', 'first_seen_at' => now()]);
+    $yesterday = NewsCluster::factory()->create(['status' => 'pending', 'first_seen_at' => now()->subDay()]);
+    $thisWeek = NewsCluster::factory()->create(['status' => 'pending', 'first_seen_at' => now()->subDays(3)]);
+    $older = NewsCluster::factory()->create(['status' => 'pending', 'first_seen_at' => now()->subDays(9)]);
+
+    $response = $this->get(route('admin.news-review.index'));
+
+    $response->assertOk();
+    $buckets = collect($response->viewData('page')['props']['clusters'])->pluck('date_bucket', 'id');
+
+    expect($buckets[$today->id])->toBe('hoy')
+        ->and($buckets[$yesterday->id])->toBe('ayer')
+        ->and($buckets[$thisWeek->id])->toBe('semana')
+        ->and($buckets[$older->id])->toBe('antes');
+});
+
 test('review queue can be filtered by category', function () {
     NewsCluster::factory()->count(3)->create(['status' => 'pending', 'category' => 'anime']);
     NewsCluster::factory()->count(2)->create(['status' => 'pending', 'category' => 'gaming']);

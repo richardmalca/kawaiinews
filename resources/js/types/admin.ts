@@ -129,8 +129,11 @@ export type NewsCluster = {
     article_id: number | null;
     first_seen_at: string | null;
     published_at: string | null;
+    date_bucket: 'hoy' | 'ayer' | 'semana' | 'antes';
     sources: NewsClusterSourceItem[];
 };
+
+export type NewsReviewView = 'pending' | 'published';
 
 export type NewsReviewSort = 'relevance' | 'newest' | 'oldest';
 

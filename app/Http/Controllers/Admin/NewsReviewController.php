@@ -34,8 +34,10 @@ class NewsReviewController extends Controller
         $category = $request->string('category')->value() ?: null;
         $search = $request->string('search')->value() ?: null;
         $page = max(1, $request->integer('page', 1));
+        $view = $request->string('view', 'pending')->value();
+        $view = in_array($view, ['pending', 'published'], true) ? $view : 'pending';
 
-        $clusters = $this->newsClusterService->reviewQueue($sort, $category, self::PER_PAGE, $page, $search);
+        $clusters = $this->newsClusterService->reviewQueue($sort, $category, self::PER_PAGE, $page, $search, $view);
 
         return Inertia::render('admin/news-review/index', [
             'clusters' => NewsClusterResource::collection($clusters->items())->resolve(),
@@ -44,6 +46,7 @@ class NewsReviewController extends Controller
             'sort' => $sort,
             'category' => $category,
             'search' => $search,
+            'view' => $view,
             'categories' => array_keys(config('news_sources_catalog')),
             'meta' => [
                 'current_page' => $clusters->currentPage(),

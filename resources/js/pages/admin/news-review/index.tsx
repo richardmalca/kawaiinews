@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
     BadgeCheck,
+    CalendarDays,
     Clock,
     Inbox,
     Search,
@@ -21,6 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import KpiCard from '@/pages/admin/dashboard/components/kpi-card';
 import AnalyzeWithAiButton from '@/pages/admin/news-review/components/analyze-with-ai-button';
 import ApplyAiVerdictsButton from '@/pages/admin/news-review/components/apply-ai-verdicts-button';
@@ -36,7 +38,22 @@ import type {
     AdminNewsReviewKpis,
     NewsCluster,
     NewsReviewSort,
+    NewsReviewView,
 } from '@/types/admin';
+
+const DATE_BUCKET_ORDER: NewsCluster['date_bucket'][] = [
+    'hoy',
+    'ayer',
+    'semana',
+    'antes',
+];
+
+const DATE_BUCKET_LABELS: Record<NewsCluster['date_bucket'], string> = {
+    hoy: 'Hoy',
+    ayer: 'Ayer',
+    semana: 'Esta semana',
+    antes: 'Más antiguas',
+};
 
 type Meta = {
     current_page: number;
@@ -61,6 +78,7 @@ type Props = {
     sort: NewsReviewSort;
     category: string | null;
     search: string | null;
+    view: NewsReviewView;
     categories: string[];
     meta: Meta;
     nextScrapeAt: NextRun | null;
@@ -77,6 +95,7 @@ export default function NewsReviewIndex({
     sort,
     category,
     search: initialSearch,
+    view,
     categories,
     meta,
     nextScrapeAt,
@@ -87,8 +106,11 @@ export default function NewsReviewIndex({
 }: Props) {
     const [search, setSearch] = useState(initialSearch ?? '');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const { bulkAccept, bulkReject, processing: bulkProcessing } =
-        useBulkNewsClusterActions();
+    const {
+        bulkAccept,
+        bulkReject,
+        processing: bulkProcessing,
+    } = useBulkNewsClusterActions();
 
     // Solo se pueden seleccionar los pendientes; los ya aceptados no tienen
     // acción en lote (ya son un artículo).
@@ -125,6 +147,7 @@ export default function NewsReviewIndex({
                     sort,
                     ...(category ? { category } : {}),
                     ...(search ? { search } : {}),
+                    ...(view !== 'pending' ? { view } : {}),
                 },
                 {
                     preserveState: true,
@@ -145,6 +168,7 @@ export default function NewsReviewIndex({
                 sort,
                 ...(category ? { category } : {}),
                 ...(search ? { search } : {}),
+                ...(view !== 'pending' ? { view } : {}),
                 page,
             },
             {
@@ -154,6 +178,38 @@ export default function NewsReviewIndex({
             },
         );
     };
+
+    const changeView = (nextView: string) => {
+        setSelectedIds([]);
+        router.get(
+            index().url,
+            {
+                sort,
+                ...(category ? { category } : {}),
+                ...(search ? { search } : {}),
+                view: nextView,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['clusters', 'meta', 'view'],
+            },
+        );
+    };
+
+    // Agrupa como un calendario ("Hoy", "Ayer", "Esta semana", "Más
+    // antiguas") solo en la bandeja de pendientes — en "Publicadas" ya no
+    // importa cuándo se detectaron, es solo un archivo de consulta.
+    const groupedByDate =
+        view === 'pending'
+            ? DATE_BUCKET_ORDER.map((bucket) => ({
+                  bucket,
+                  label: DATE_BUCKET_LABELS[bucket],
+                  items: clusters.filter(
+                      (cluster) => cluster.date_bucket === bucket,
+                  ),
+              })).filter((group) => group.items.length > 0)
+            : [{ bucket: 'all' as const, label: null, items: clusters }];
 
     return (
         <>
@@ -184,8 +240,8 @@ export default function NewsReviewIndex({
                         {nextAutoReviewAt && (
                             <span className="flex items-center gap-1.5">
                                 <Clock className="h-3.5 w-3.5" />
-                                Próximo análisis con IA: {nextAutoReviewAt.in}{' '}
-                                ({nextAutoReviewAt.at})
+                                Próximo análisis con IA: {nextAutoReviewAt.in} (
+                                {nextAutoReviewAt.at})
                             </span>
                         )}
                         {autoAccept.enabled && nextAutoAcceptAt && (
@@ -202,6 +258,17 @@ export default function NewsReviewIndex({
                     enabled={autoAccept.enabled}
                     dailyLimit={autoAccept.daily_limit}
                 />
+
+                <Tabs value={view} onValueChange={changeView}>
+                    <TabsList>
+                        <TabsTrigger value="pending">
+                            Pendientes de revisar
+                        </TabsTrigger>
+                        <TabsTrigger value="published">
+                            Ya publicadas
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
 
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <KpiCard
@@ -243,9 +310,9 @@ export default function NewsReviewIndex({
 
                 {clusters.length === 0 && !category && !search ? (
                     <p className="text-muted-foreground text-sm">
-                        No hay noticias pendientes de revisión. Prueba "Buscar
-                        noticias ahora" para traer novedades de tus fuentes
-                        activas.
+                        {view === 'pending'
+                            ? 'No hay noticias pendientes de revisión. Prueba "Buscar noticias ahora" para traer novedades de tus fuentes activas.'
+                            : 'Todavía no hay noticias publicadas desde esta bandeja.'}
                     </p>
                 ) : (
                     <div className="space-y-3">
@@ -254,9 +321,7 @@ export default function NewsReviewIndex({
                                 <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2" />
                                 <Input
                                     value={search}
-                                    onChange={(e) =>
-                                        setSearch(e.target.value)
-                                    }
+                                    onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Buscar por título..."
                                     className="pl-8"
                                 />
@@ -266,11 +331,13 @@ export default function NewsReviewIndex({
                                 categories={categories}
                                 sort={sort}
                                 search={search || null}
+                                view={view}
                             />
                             <NewsReviewSortSelect
                                 value={sort}
                                 category={category}
                                 search={search || null}
+                                view={view}
                             />
                         </div>
 
@@ -322,74 +389,103 @@ export default function NewsReviewIndex({
                                 No hay noticias que coincidan con el filtro.
                             </p>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-10">
-                                                <Checkbox
-                                                    checked={
-                                                        selectableIds.length >
-                                                            0 &&
-                                                        selectableIds.every(
-                                                            (id) =>
-                                                                selectedIds.includes(
-                                                                    id,
-                                                                ),
-                                                        )
-                                                    }
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) =>
-                                                        setSelectedIds(
-                                                            checked === true
-                                                                ? selectableIds
-                                                                : [],
-                                                        )
-                                                    }
-                                                    aria-label="Seleccionar todas"
-                                                />
-                                            </TableHead>
-                                            <TableHead>Tema</TableHead>
-                                            <TableHead className="hidden md:table-cell">
-                                                Categoría
-                                            </TableHead>
-                                            <TableHead className="hidden md:table-cell">
-                                                Fuentes
-                                            </TableHead>
-                                            <TableHead className="hidden lg:table-cell">
-                                                Fecha
-                                            </TableHead>
-                                            <TableHead>IA / Estado</TableHead>
-                                            <TableHead className="text-right">
-                                                Acciones
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {clusters.map((cluster) => (
-                                            <NewsClusterRow
-                                                key={cluster.id}
-                                                cluster={cluster}
-                                                selected={selectedIds.includes(
-                                                    cluster.id,
-                                                )}
-                                                onToggleSelected={
-                                                    toggleSelected
-                                                }
-                                                mergeCandidates={clusters.filter(
-                                                    (candidate) =>
-                                                        candidate.id !==
-                                                            cluster.id &&
-                                                        candidate.status !==
-                                                            'accepted' &&
-                                                        candidate.category ===
-                                                            cluster.category,
-                                                )}
-                                            />
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                            <div className="space-y-6">
+                                {groupedByDate.map((group) => (
+                                    <div
+                                        key={group.bucket}
+                                        className="space-y-2"
+                                    >
+                                        {group.label && (
+                                            <div className="text-muted-foreground flex items-center gap-1.5 text-sm font-medium">
+                                                <CalendarDays className="h-4 w-4" />
+                                                {group.label}
+                                                <span className="text-muted-foreground/70 font-normal">
+                                                    ({group.items.length})
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="overflow-x-auto rounded-md border">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-10">
+                                                            <Checkbox
+                                                                checked={
+                                                                    selectableIds.length >
+                                                                        0 &&
+                                                                    selectableIds.every(
+                                                                        (id) =>
+                                                                            selectedIds.includes(
+                                                                                id,
+                                                                            ),
+                                                                    )
+                                                                }
+                                                                onCheckedChange={(
+                                                                    checked,
+                                                                ) =>
+                                                                    setSelectedIds(
+                                                                        checked ===
+                                                                            true
+                                                                            ? selectableIds
+                                                                            : [],
+                                                                    )
+                                                                }
+                                                                aria-label="Seleccionar todas"
+                                                            />
+                                                        </TableHead>
+                                                        <TableHead>
+                                                            Tema
+                                                        </TableHead>
+                                                        <TableHead className="hidden md:table-cell">
+                                                            Categoría
+                                                        </TableHead>
+                                                        <TableHead className="hidden md:table-cell">
+                                                            Fuentes
+                                                        </TableHead>
+                                                        <TableHead className="hidden lg:table-cell">
+                                                            Fecha
+                                                        </TableHead>
+                                                        <TableHead>
+                                                            IA / Estado
+                                                        </TableHead>
+                                                        <TableHead className="text-right">
+                                                            Acciones
+                                                        </TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {group.items.map(
+                                                        (cluster) => (
+                                                            <NewsClusterRow
+                                                                key={cluster.id}
+                                                                cluster={
+                                                                    cluster
+                                                                }
+                                                                selected={selectedIds.includes(
+                                                                    cluster.id,
+                                                                )}
+                                                                onToggleSelected={
+                                                                    toggleSelected
+                                                                }
+                                                                mergeCandidates={clusters.filter(
+                                                                    (
+                                                                        candidate,
+                                                                    ) =>
+                                                                        candidate.id !==
+                                                                            cluster.id &&
+                                                                        candidate.status !==
+                                                                            'accepted' &&
+                                                                        candidate.category ===
+                                                                            cluster.category,
+                                                                )}
+                                                            />
+                                                        ),
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
