@@ -29,9 +29,9 @@ export function useSpeechNarrator(
                 const voices = window.speechSynthesis.getVoices();
                 const spanishVoices = voices.filter(
                     (v) =>
-                        v.lang.startsWith('es') ||
-                        v.lang.includes('es-') ||
-                        v.lang.includes('es_'),
+                        v.lang.toLowerCase().startsWith('es') ||
+                        v.lang.toLowerCase().includes('es-') ||
+                        v.lang.toLowerCase().includes('es_'),
                 );
 
                 const naturalVoice =
@@ -41,13 +41,14 @@ export function useSpeechNarrator(
                             v.name.includes('Online') ||
                             v.name.includes('Neural') ||
                             v.name.includes('Google') ||
+                            v.name.includes('Paulina') ||
+                            v.name.includes('Mónica') ||
                             v.name.includes('Sabina') ||
                             v.name.includes('Alvaro') ||
                             v.name.includes('Dalia') ||
                             v.name.includes('Jorge'),
                     ) ??
                     spanishVoices[0] ??
-                    voices[0] ??
                     null;
 
                 setAvailableVoices(
@@ -57,7 +58,9 @@ export function useSpeechNarrator(
             };
 
             updateVoices();
-            window.speechSynthesis.onvoiceschanged = updateVoices;
+            if ('onvoiceschanged' in window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = updateVoices;
+            }
 
             return () => {
                 window.speechSynthesis.cancel();
@@ -92,12 +95,15 @@ export function useSpeechNarrator(
     };
 
     const play = () => {
-        if (!isSupported || !text) {
+        if (!isSupported || !cleanText) {
             return;
         }
 
+        // On iOS Safari, resume() can silently fail if paused too long, so re-speak or resume:
         if (isPaused) {
-            window.speechSynthesis.resume();
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
             setIsPaused(false);
             setIsPlaying(true);
             timerRef.current = window.setInterval(() => {
@@ -115,19 +121,36 @@ export function useSpeechNarrator(
             return;
         }
 
+        // Fresh start: cancel previous
         window.speechSynthesis.cancel();
         clearTimer();
         setElapsedSeconds(0);
         setProgress(0);
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Find best voice available at invocation time
+        const currentVoices = window.speechSynthesis.getVoices();
+        const activeVoice =
+            selectedVoice ??
+            currentVoices.find(
+                (v) =>
+                    v.lang.toLowerCase().startsWith('es') ||
+                    v.lang.toLowerCase().includes('es-') ||
+                    v.lang.toLowerCase().includes('es_'),
+            ) ??
+            null;
 
-        if (selectedVoice) {
-            utterance.voice = selectedVoice;
+        if (activeVoice) {
+            utterance.voice = activeVoice;
+            utterance.lang = activeVoice.lang;
+        } else {
+            utterance.lang = 'es-ES';
         }
 
         utterance.rate = rate;
         utterance.pitch = pitch;
+        utterance.volume = 1.0;
 
         utterance.onboundary = (e) => {
             if (e.charIndex && cleanText.length > 0) {
@@ -142,6 +165,7 @@ export function useSpeechNarrator(
         utterance.onstart = () => {
             setIsPlaying(true);
             setIsPaused(false);
+            clearTimer();
             timerRef.current = window.setInterval(() => {
                 setElapsedSeconds((prev) => {
                     const next = prev + 1;
@@ -163,13 +187,23 @@ export function useSpeechNarrator(
             setProgress(100);
         };
 
-        utterance.onerror = () => {
+        utterance.onerror = (e) => {
+            // Ignore interruption errors caused by cancel()
+            if (e.error === 'interrupted' || e.error === 'canceled') {
+                return;
+            }
             setIsPlaying(false);
             setIsPaused(false);
             clearTimer();
         };
 
         utteranceRef.current = utterance;
+
+        // Workaround for iOS Safari audio engine activation:
+        // Ensure paused state is cleared before calling speak
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+        }
         window.speechSynthesis.speak(utterance);
     };
 

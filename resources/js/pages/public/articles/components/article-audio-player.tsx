@@ -238,9 +238,9 @@ export function ArticleAudioPlayer({
                         )}
                     </span>
 
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-neutral-800 sm:text-xs dark:text-neutral-200">
-                        <Mic className="h-3 w-3 text-rose-500 sm:h-3.5 sm:w-3.5" />
-                        <span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold leading-none text-neutral-800 sm:text-xs dark:text-neutral-200">
+                        <Mic className="h-3 w-3 shrink-0 text-rose-500 sm:h-3.5 sm:w-3.5" />
+                        <span className="leading-none">
                             {activePlaying
                                 ? 'Pausar'
                                 : activePaused
@@ -248,7 +248,7 @@ export function ArticleAudioPlayer({
                                   : 'Escuchar'}
                         </span>
                         {!isInteracting && totalSeconds > 0 && (
-                            <span className="ml-0.5 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                            <span className="ml-0.5 inline-flex items-center text-[10px] font-medium leading-none text-neutral-400 dark:text-neutral-500">
                                 ({Math.max(1, Math.ceil(totalSeconds / 60))} min)
                             </span>
                         )}
