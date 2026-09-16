@@ -2,7 +2,12 @@
 
 use App\Models\User;
 use App\Services\Auth\GoogleAuthService;
+use Database\Seeders\RoleSeeder;
 use Laravel\Socialite\Two\User as SocialiteUser;
+
+beforeEach(function () {
+    $this->seed(RoleSeeder::class);
+});
 
 function fakeGoogleUser(string $id, string $email, string $name = 'Test User', string $avatar = 'https://example.test/avatar.png'): SocialiteUser
 {
