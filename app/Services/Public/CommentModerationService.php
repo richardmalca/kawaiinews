@@ -22,12 +22,12 @@ use Throwable;
  * cada comentario antes de guardarlo. Si algo matchea, el comentario se
  * guarda igual pero queda `pending` (oculto al público).
  *
- * Capa 1.5 (resolveWithPerspective, gratis): solo si hay una API key de
- * Perspective cargada (proveedor "perspective" en /admin/ai-providers).
- * Le pasa el texto a Perspective antes de gastar en la IA de pago — si
- * el puntaje de toxicidad es muy alto o muy bajo, decide sola sin
- * consultar nada más. Si el puntaje queda en un rango dudoso, no decide
- * y pasa a la Capa 2.
+ * Capa 1.5 (resolveWithGoogleModeration, gratis): solo si hay una API
+ * key cargada para el proveedor "google-moderation" (Cloud Natural
+ * Language API) en /admin/ai-providers. Le pasa el texto antes de
+ * gastar en la IA de pago — si el puntaje de alguna categoría dañina es
+ * muy alto o muy bajo, decide sola sin consultar nada más. Si el
+ * puntaje queda en un rango dudoso, no decide y pasa a la Capa 2.
  *
  * Capa 2 (reviewWithAi, opcional, de pago): solo para los que ya
  * cayeron en `pending` por la Capa 1 y que la 1.5 no pudo resolver. Le
@@ -38,9 +38,19 @@ use Throwable;
  */
 class CommentModerationService
 {
-    private const PERSPECTIVE_BLOCK_THRESHOLD = 0.85;
+    private const MODERATION_BLOCK_THRESHOLD = 0.85;
 
-    private const PERSPECTIVE_APPROVE_THRESHOLD = 0.15;
+    private const MODERATION_APPROVE_THRESHOLD = 0.15;
+
+    /**
+     * De las 16 categorías que devuelve moderateText, solo estas
+     * importan para decidir si un comentario es hostil — categorías
+     * como "Política" o "Finanzas" no tienen nada que ver con si alguien
+     * está insultando a otro usuario, así que no cuentan acá.
+     *
+     * @var array<int, string>
+     */
+    private const MODERATION_HARMFUL_CATEGORIES = ['Toxic', 'Insult', 'Profanity', 'Derogatory'];
 
     public function shouldHoldForReview(User $user, string $body): bool
     {
@@ -62,7 +72,7 @@ class CommentModerationService
             return;
         }
 
-        if ($this->resolveWithPerspective($comment)) {
+        if ($this->resolveWithGoogleModeration($comment)) {
             return;
         }
 
@@ -120,9 +130,9 @@ class CommentModerationService
      * falla, devuelve false — que decida la Capa 2 como si esto no
      * existiera.
      */
-    private function resolveWithPerspective(Comment $comment): bool
+    private function resolveWithGoogleModeration(Comment $comment): bool
     {
-        $provider = AiProvider::where('provider', 'perspective')
+        $provider = AiProvider::where('provider', 'google-moderation')
             ->whereNotNull('api_key')
             ->first();
 
@@ -132,11 +142,9 @@ class CommentModerationService
 
         try {
             $response = Http::timeout(10)->post(
-                "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key={$provider->api_key}",
+                "https://language.googleapis.com/v1/documents:moderateText?key={$provider->api_key}",
                 [
-                    'comment' => ['text' => $comment->body],
-                    'languages' => ['es'],
-                    'requestedAttributes' => ['TOXICITY' => (object) []],
+                    'document' => ['type' => 'PLAIN_TEXT', 'content' => $comment->body],
                 ]
             );
 
@@ -144,13 +152,16 @@ class CommentModerationService
                 return false;
             }
 
-            $score = $response->json('attributeScores.TOXICITY.summaryScore.value');
+            $categories = collect($response->json('moderationCategories', []));
+            $score = $categories
+                ->whereIn('name', self::MODERATION_HARMFUL_CATEGORIES)
+                ->max('confidence');
 
             if ($score === null) {
                 return false;
             }
 
-            if ($score >= self::PERSPECTIVE_BLOCK_THRESHOLD) {
+            if ($score >= self::MODERATION_BLOCK_THRESHOLD) {
                 $comment->update([
                     'status' => 'blocked',
                     'moderation_reason' => 'Comentario tóxico detectado automáticamente',
@@ -160,7 +171,7 @@ class CommentModerationService
                 return true;
             }
 
-            if ($score <= self::PERSPECTIVE_APPROVE_THRESHOLD) {
+            if ($score <= self::MODERATION_APPROVE_THRESHOLD) {
                 $comment->update(['status' => 'visible', 'moderation_reason' => null]);
 
                 return true;

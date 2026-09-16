@@ -60,15 +60,18 @@ return [
         // narrar noticias todos los días.
         'audio_model' => 'eleven_turbo_v2_5',
     ],
-    'perspective' => [
-        // Perspective API (Google/Jigsaw): detecta toxicidad en texto,
-        // gratis, sin límite de uso publicado. Se usa como filtro previo,
-        // gratis, antes de la Capa 2 de moderación de comentarios (que sí
-        // paga por token) — ver CommentModerationService::resolveWithPerspective().
-        // No es un proveedor de texto/imagen/audio como los demás, por
-        // eso 'models' queda vacío: solo sirve para guardar su API key
-        // con el mismo formulario genérico de "Agregar proveedor".
-        'label' => 'Perspective API (moderación gratis)',
+    'google-moderation' => [
+        // Cloud Natural Language API (moderateText): reemplazo oficial de
+        // Google para Perspective API (descontinuada, ya no acepta
+        // cuentas nuevas desde febrero de 2026) — mismo propósito,
+        // detectar toxicidad/insultos, gratis hasta cierto volumen. Se
+        // usa como filtro previo a la Capa 2 de moderación de comentarios
+        // (que sí paga por token) — ver
+        // CommentModerationService::resolveWithGoogleModeration(). No es
+        // un proveedor de texto/imagen/audio como los demás, por eso
+        // 'models' queda vacío: solo sirve para guardar su API key con el
+        // mismo formulario genérico de "Agregar proveedor".
+        'label' => 'Google Cloud Natural Language (moderación gratis)',
         'models' => [],
     ],
     'google-tts' => [
