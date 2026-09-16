@@ -147,12 +147,23 @@ class NewsClusterService
     }
 
     /**
+     * Cuántos clusters se aceptan como máximo en una sola corrida del
+     * comando programado — así, aunque el tope diario sea 5, no se
+     * publican las 5 de golpe: el comando corre varias veces al día (ver
+     * routes/console.php) y va soltando de a una, repartidas en el
+     * tiempo, hasta agotar el tope diario.
+     */
+    private const AUTO_ACCEPT_PER_RUN_LIMIT = 1;
+
+    /**
      * Versión acotada de acceptAllPublishVerdicts() para el comando
-     * programado diario (news:auto-accept): solo corre si el admin lo
-     * activó explícitamente, y solo toma las mejor puntuadas hasta el
-     * tope diario que haya configurado — así la redacción con noticias
-     * queda funcionando sola, pero sin que se dispare de golpe con todo
-     * lo que haya pendiente ni sin que el admin lo haya pedido.
+     * programado (news:auto-accept, corre varias veces al día): solo
+     * corre si el admin lo activó explícitamente, y solo toma como
+     * mucho AUTO_ACCEPT_PER_RUN_LIMIT por corrida, sin pasarse del tope
+     * diario configurado — cuenta lo ya aceptado hoy (status accepted,
+     * actualizado hoy) para saber cuánto margen le queda. Así la
+     * redacción automática queda funcionando sola pero repartida a lo
+     * largo del día en vez de todas juntas a la misma hora.
      *
      * @return array{applied: int, article_ids: array<int, int>}
      */
@@ -164,7 +175,19 @@ class NewsClusterService
             return ['applied' => 0, 'article_ids' => []];
         }
 
-        return $this->acceptAllPublishVerdicts($settings->auto_accept_news_daily_limit);
+        $acceptedToday = NewsCluster::where('status', 'accepted')
+            ->whereDate('updated_at', today())
+            ->count();
+
+        $remainingToday = max(0, $settings->auto_accept_news_daily_limit - $acceptedToday);
+
+        if ($remainingToday === 0) {
+            return ['applied' => 0, 'article_ids' => []];
+        }
+
+        $limit = min($remainingToday, self::AUTO_ACCEPT_PER_RUN_LIMIT);
+
+        return $this->acceptAllPublishVerdicts($limit);
     }
 
     public function autoRejectDiscarded(): int

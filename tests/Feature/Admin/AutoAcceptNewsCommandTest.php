@@ -30,7 +30,7 @@ test('it does nothing when auto-accept is off', function () {
     expect(NewsArticle::count())->toBe(0);
 });
 
-test('it accepts only the best publish-verdict clusters up to the configured daily limit', function () {
+test('each run only accepts the single best publish-verdict cluster, never the whole daily limit at once', function () {
     AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
     SiteSetting::current()->update(['auto_accept_news_enabled' => true, 'auto_accept_news_daily_limit' => 2]);
 
@@ -38,17 +38,33 @@ test('it accepts only the best publish-verdict clusters up to the configured dai
     $mid = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish', 'relevance_score' => 50]);
     $high = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish', 'relevance_score' => 90]);
 
-    Prism::fake([fakeDraftResponse(), fakeDraftResponse()]);
+    Prism::fake([fakeDraftResponse()]);
 
     $this->artisan('news:auto-accept')
-        ->expectsOutputToContain('Noticias aceptadas automáticamente: 2')
+        ->expectsOutputToContain('Noticias aceptadas automáticamente: 1')
         ->assertExitCode(0);
 
     expect($high->fresh()->status)->toBe('accepted')
-        ->and($mid->fresh()->status)->toBe('accepted')
+        ->and($mid->fresh()->status)->toBe('pending')
         ->and($low->fresh()->status)->toBe('pending');
 
-    expect(NewsArticle::where('status', 'draft')->count())->toBe(2);
+    expect(NewsArticle::where('status', 'draft')->count())->toBe(1);
+});
+
+test('it stops for the day once the daily limit is reached across separate runs', function () {
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+    SiteSetting::current()->update(['auto_accept_news_enabled' => true, 'auto_accept_news_daily_limit' => 2]);
+
+    NewsCluster::factory()->count(3)->create(['status' => 'pending', 'ai_verdict' => 'publish']);
+
+    Prism::fake([fakeDraftResponse(), fakeDraftResponse()]);
+
+    $this->artisan('news:auto-accept')->expectsOutputToContain('Noticias aceptadas automáticamente: 1');
+    $this->artisan('news:auto-accept')->expectsOutputToContain('Noticias aceptadas automáticamente: 1');
+    $this->artisan('news:auto-accept')->expectsOutputToContain('Noticias aceptadas automáticamente: 0');
+
+    expect(NewsCluster::where('status', 'accepted')->count())->toBe(2)
+        ->and(NewsCluster::where('status', 'pending')->count())->toBe(1);
 });
 
 test('it does not touch clusters that are not marked publish', function () {

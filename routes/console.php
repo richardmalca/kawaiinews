@@ -20,13 +20,13 @@ Schedule::command('news:auto-review')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Una vez al día (no controla que se ejecute, decide adentro solo si el
-// admin lo activó en Configuración del sitio): acepta y convierte en
-// borrador las mejores noticias publicables pendientes, hasta el tope
-// diario configurado — así el admin no tiene que entrar a apretar
-// "Aplicar veredictos de IA" a mano todos los días si no quiere.
+// Varias veces al día, 20 minutos después de auto-review (no controla que
+// se ejecute, decide adentro solo si el admin lo activó en Configuración
+// del sitio): suelta como mucho 1 noticia publicable por corrida hasta
+// agotar el tope diario configurado — así no se publican todas juntas de
+// golpe a la misma hora, quedan repartidas a lo largo del día.
 Schedule::command('news:auto-accept')
-    ->dailyAt('08:00')
+    ->cron('20 */3 * * *')
     ->withoutOverlapping()
     ->onOneServer();
 
