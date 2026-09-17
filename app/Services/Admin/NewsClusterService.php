@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AiProvider;
 use App\Models\NewsCluster;
 use App\Models\SiteSetting;
+use App\Models\User;
 use App\Support\AiUsageLogger;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -143,11 +144,20 @@ class NewsClusterService
             $query->limit($limit);
         }
 
+        // Sin un admin puntual detrás (esto corre desde un job en cola, no
+        // un request HTTP), la noticia queda a nombre del superadmin en
+        // vez de sin autor — el admin pidió explícitamente que ninguna
+        // noticia quede atribuida "al sistema". Se consulta la relación
+        // directo (no el scope role() de Spatie) porque ese scope tira
+        // una excepción si el rol "superadmin" todavía no existe, en vez
+        // de simplemente no encontrar nada.
+        $authorId = User::whereHas('roles', fn ($query) => $query->where('name', 'superadmin'))->first()?->id;
+
         $articleIds = [];
 
         foreach ($query->get() as $cluster) {
             $this->accept($cluster);
-            $article = $this->newsArticleService->createFromCluster($cluster);
+            $article = $this->newsArticleService->createFromCluster($cluster, $authorId);
             $articleIds[] = $article->id;
         }
 

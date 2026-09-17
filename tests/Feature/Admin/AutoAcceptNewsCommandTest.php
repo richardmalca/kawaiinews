@@ -30,6 +30,23 @@ test('it does nothing when auto-accept is off', function () {
     expect(NewsArticle::count())->toBe(0);
 });
 
+test('articles created by the auto-accept cron are attributed to the superadmin, not left without an author', function () {
+    $this->seed(RoleSeeder::class);
+    $admin = User::factory()->create();
+    $admin->assignRole('superadmin');
+
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+    SiteSetting::current()->update(['auto_accept_news_enabled' => true, 'auto_accept_news_daily_limit' => 1]);
+
+    NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish']);
+
+    Prism::fake([fakeDraftResponse()]);
+
+    $this->artisan('news:auto-accept')->assertExitCode(0);
+
+    expect(NewsArticle::first()->author_id)->toBe($admin->id);
+});
+
 test('each run only accepts the single best publish-verdict cluster, never the whole daily limit at once', function () {
     AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
     SiteSetting::current()->update(['auto_accept_news_enabled' => true, 'auto_accept_news_daily_limit' => 2]);
