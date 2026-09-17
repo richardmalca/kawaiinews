@@ -18,8 +18,12 @@ return [
     'ssr' => [
         'enabled' => true,
         'url' => 'http://127.0.0.1:13714',
-        // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
-
+        // El entry de Inertia es resources/js/app.tsx, así que
+        // @inertiajs/vite nombra el bundle de salida "app.js" (no el
+        // "ssr.mjs" que trae comentado por defecto) — sin esto el daemon
+        // de Forge que corre `inertia:start-ssr` se cae al toque porque
+        // busca un archivo que no existe.
+        'bundle' => base_path('bootstrap/ssr/app.js'),
     ],
 
     /*
