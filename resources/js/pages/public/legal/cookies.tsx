@@ -44,15 +44,19 @@ export default function CookiesPage({ categories }: LegalProps) {
 
                         <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 dark:border-neutral-800/80 dark:bg-neutral-900/80">
                             <h3 className="font-bold text-neutral-900 dark:text-white text-xs sm:text-sm">
-                                B. Cookies de publicidad y analítica (Banners no intrusivos)
+                                B. Cookies de publicidad y analítica (Google AdSense)
                             </h3>
                             <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
-                                KawaiiNews es un proyecto independiente y gratuito. Para solventar los costos de servidores, mostramos banners publicitarios no invasivos.
+                                KawaiiNews utiliza los servicios de <strong>Google AdSense</strong> para financiar los costos operativos y de servidores. Google y sus socios publicitarios utilizan cookies (como la cookie de DoubleClick) para:
                             </p>
                             <ul className="mt-2 list-disc pl-5 text-xs text-neutral-600 dark:text-neutral-300 space-y-1">
-                                <li>Permiten que los anunciantes muestren anuncios relevantes y eviten mostrarte el mismo anuncio una y otra vez.</li>
-                                <li>No recopilan datos personales sensibles como contraseñas o chats.</li>
+                                <li>Publicar anuncios basados en visitas previas a este u otros sitios web.</li>
+                                <li>Limitar la frecuencia con la que ves un mismo anuncio y evaluar la efectividad de las campañas.</li>
+                                <li>No recopilar información confidencial como nombres, correos ni datos bancarios.</li>
                             </ul>
+                            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                                Puedes administrar o inhabilitar la personalización de anuncios en <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-rose-600 underline dark:text-rose-400">Configuración de anuncios de Google</a> o a través de <a href="https://aboutads.info" target="_blank" rel="noopener noreferrer" className="font-semibold text-rose-600 underline dark:text-rose-400">aboutads.info</a>.
+                            </p>
                         </div>
                     </div>
                 </section>

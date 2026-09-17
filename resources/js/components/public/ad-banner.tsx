@@ -1,20 +1,45 @@
-﻿import type { HTMLAttributes } from 'react';
+import { useEffect, useRef, type HTMLAttributes } from 'react';
+
+declare global {
+    interface Window {
+        adsbygoogle?: Array<Record<string, unknown>>;
+    }
+}
 
 interface AdBannerProps extends HTMLAttributes<HTMLDivElement> {
     format?: 'leaderboard' | 'rectangle' | 'inline';
     label?: string;
+    slot?: string;
+    client?: string;
 }
 
 export function AdBanner({
     format = 'leaderboard',
     label = 'Publicidad',
+    slot,
+    client = 'ca-pub-2454606039462818',
     className = '',
     ...props
 }: AdBannerProps) {
-    // Proporciones fijas recomendadas para evitar saltos bruscos en pantalla (CLS)
+    const adRef = useRef<HTMLModElement | null>(null);
+    const hasRequestedAdRef = useRef(false);
+
+    useEffect(() => {
+        if (!slot) return;
+
+        if (!hasRequestedAdRef.current) {
+            try {
+                (window.adsbygoogle = window.adsbygoogle || []).push({});
+                hasRequestedAdRef.current = true;
+            } catch {
+                // Silencioso si los scripts de anuncios están bloqueados o aún no cargan
+            }
+        }
+    }, [slot]);
+
     const formatStyles = {
-        leaderboard: 'w-full min-h-[90px] max-h-[120px]',
-        rectangle: 'w-full min-h-[250px] max-h-[280px]',
+        leaderboard: 'w-full min-h-[90px]',
+        rectangle: 'w-full min-h-[250px]',
         inline: 'w-full min-h-[100px]',
     }[format];
 
@@ -30,20 +55,28 @@ export function AdBanner({
             </div>
 
             <div
-                className={`flex items-center justify-center rounded-2xl bg-neutral-50/50 p-2 text-xs text-neutral-600 dark:bg-neutral-900/40 dark:text-neutral-400 ${formatStyles}`}
+                className={`flex w-full items-center justify-center rounded-2xl bg-neutral-50/50 p-2 text-xs text-neutral-600 dark:bg-neutral-900/40 dark:text-neutral-400 ${formatStyles}`}
             >
-                {/* 
-                  Espacio reservado para script de AdSense / Red publicitaria. 
-                  Al ser un banner estático/placeholder, no intrusivo y adaptable.
-                */}
-                <div className="flex flex-col items-center gap-1">
-                    <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                        Espacio publicitario no intrusivo
-                    </span>
-                    <span className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                        Anuncios seleccionados para apoyar a KawaiiNews
-                    </span>
-                </div>
+                {slot ? (
+                    <ins
+                        ref={adRef}
+                        className="adsbygoogle"
+                        style={{ display: 'block', width: '100%', textAlign: 'center' }}
+                        data-ad-client={client}
+                        data-ad-slot={slot}
+                        data-ad-format="auto"
+                        data-full-width-responsive="true"
+                    />
+                ) : (
+                    <div className="flex flex-col items-center gap-1 py-4">
+                        <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                            Espacio publicitario no intrusivo
+                        </span>
+                        <span className="text-[11px] text-neutral-500 dark:text-neutral-500">
+                            Anuncios seleccionados para apoyar a KawaiiNews
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     );

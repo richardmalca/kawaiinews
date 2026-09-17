@@ -61,7 +61,7 @@ export default function PrivacyPage({ categories }: LegalProps) {
                             <strong>Herramientas de Inteligencia Artificial (Anthropic, OpenAI):</strong> Las usamos internamente como apoyo para redactar, resumir o curar el contenido informativo de las noticias e ilustrar artículos. <em>Bajo ninguna circunstancia enviamos tus datos personales, comentarios ni correos a estos proveedores de IA; solo procesan contenido editorial público.</em>
                         </li>
                         <li>
-                            <strong>Publicidad y analítica:</strong> Mostramos banners publicitarios no intrusivos que pueden usar cookies técnicas para mostrar anuncios relevantes sin interferir con tu lectura ni saturar tu pantalla.
+                            <strong>Publicidad y Google AdSense:</strong> Utilizamos el servicio de publicidad de <strong>Google AdSense</strong> (operado por Google LLC). Google utiliza cookies (como la cookie de DoubleClick o identificadores de publicidad) para publicar anuncios basados en las visitas anteriores de los usuarios a este u otros sitios web. Los usuarios pueden inhabilitar la publicidad personalizada visitando la <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-rose-600 underline hover:text-rose-500 dark:text-rose-400">Configuración de anuncios de Google</a> o consultar cómo gestiona Google los datos en <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer" className="font-semibold text-rose-600 underline hover:text-rose-500 dark:text-rose-400">Política de publicidad de Google</a>.
                         </li>
                     </ul>
                 </section>
