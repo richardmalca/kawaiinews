@@ -13,6 +13,7 @@ declare global {
 
 export function usePwa() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+    const [isIos, setIsIos] = useState(false);
     const [isInstalled, setIsInstalled] = useState<boolean>(() => {
         if (typeof window === 'undefined') return false;
         const isStandalone =
@@ -33,6 +34,11 @@ export function usePwa() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
+
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        const isIosDevice = /iphone|ipad|ipod/.test(userAgent) ||
+            (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+        setIsIos(isIosDevice);
 
         const checkStandalone = () => {
             const standalone =
@@ -110,9 +116,10 @@ export function usePwa() {
     }, [deferredPrompt]);
 
     return {
-        isInstallable: !!deferredPrompt && !isInstalled,
+        isInstallable: (!!deferredPrompt || isIos) && !isInstalled,
         isInstalled,
         isStandalone,
+        isIos,
         installPwa,
     };
 }
