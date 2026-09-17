@@ -184,6 +184,15 @@
             <script type="application/ld+json">{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
 
+        {{-- Google Analytics (gtag.js) --}}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-GNT069MNL0"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-GNT069MNL0');
+        </script>
+
         {{-- Google AdSense --}}
         <meta name="google-adsense-account" content="ca-pub-2454606039462818">
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2454606039462818" crossorigin="anonymous"></script>
