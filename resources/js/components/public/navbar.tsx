@@ -166,7 +166,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 <img
                                     src={siteLogoUrl}
                                     alt={name || 'KawaiiNews'}
-                                    className="h-8 w-8 md:h-9 md:w-9 rounded-xl object-contain transition-transform group-hover:scale-105"
+                                    className="h-8 w-8 md:h-9 md:w-9 rounded-md object-contain transition-transform group-hover:scale-105"
                                 />
                             ) : (
                                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
@@ -408,7 +408,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                                 <img
                                                     src={siteLogoUrl}
                                                     alt={name || 'KawaiiNews'}
-                                                    className="h-8 w-8 rounded-xl object-contain"
+                                                    className="h-8 w-8 rounded-md object-contain"
                                                 />
                                             ) : (
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-md text-white">
