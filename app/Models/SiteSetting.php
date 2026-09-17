@@ -119,7 +119,9 @@ class SiteSetting extends Model
             return $this->contact_email;
         }
 
-        $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
+        $host = (request()?->getHost() && ! str_contains(request()->getHost(), 'localhost'))
+            ? request()->getHost()
+            : (parse_url(config('app.url'), PHP_URL_HOST) ?: 'kawaiinews.net');
 
         return "legal@{$host}";
     }
