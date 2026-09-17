@@ -20,13 +20,18 @@ Schedule::command('news:auto-review')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Varias veces al día, 20 minutos después de auto-review (no controla que
-// se ejecute, decide adentro solo si el admin lo activó en Configuración
-// del sitio): suelta como mucho 1 noticia publicable por corrida hasta
-// agotar el tope diario configurado — así no se publican todas juntas de
-// golpe a la misma hora, quedan repartidas a lo largo del día.
+// Cada hora (no controla que se ejecute, decide adentro solo si el admin
+// lo activó en Configuración del sitio): suelta como mucho 1 noticia
+// publicable por corrida hasta agotar el tope diario configurado — así no
+// se publican todas juntas de golpe, quedan repartidas a lo largo del
+// día. La frecuencia (cada hora en vez de cada 3h) es a propósito más
+// seguido de lo estrictamente necesario para el tope diario típico (ej.
+// 5/día alcanzaría con cada 3h), para poder sostener temporadas de tope
+// más alto (ej. 10-15/día mientras se genera contenido) sin tocar el
+// código de nuevo — igual nunca se pasa del tope, solo permite llegar a
+// él en un solo día si el admin lo pide.
 Schedule::command('news:auto-accept')
-    ->cron('20 */3 * * *')
+    ->hourlyAt(20)
     ->withoutOverlapping()
     ->onOneServer();
 
