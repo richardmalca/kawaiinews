@@ -56,17 +56,14 @@
             <link rel="icon" href="{{ $siteSettings->favicon192Url() }}" sizes="192x192" type="image/png">
         @endif
         <link rel="apple-touch-icon" href="{{ $siteSettings->appleTouchIconUrl() ?? '/apple-touch-icon.png' }}">
-        @if ($siteSettings->theme_color)
-            <meta name="theme-color" content="{{ $siteSettings->theme_color }}">
-        @else
-            <meta name="theme-color" content="#e11d48">
-        @endif
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a">
 
         {{-- PWA Manifest & Mobile Capability --}}
         <link rel="manifest" href="/manifest.json">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="{{ $siteSettings->name ?? 'KawaiiNews' }}">
 
         <script>

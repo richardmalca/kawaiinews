@@ -157,7 +157,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     };
 
     return (
-        <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/90 backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-950/90">
+        <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-950/90">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-6">
@@ -403,7 +403,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                         {/* Sheet del menú móvil lateral */}
                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                            <SheetContent side="right" className="w-80 p-0 flex flex-col justify-between">
+                            <SheetContent side="right" className="w-80 p-0 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] flex flex-col justify-between">
                                 <div className="p-6">
                                     <SheetHeader className="text-left pb-4 border-b border-neutral-200 dark:border-neutral-800">
                                         <div className="flex items-center gap-2">
