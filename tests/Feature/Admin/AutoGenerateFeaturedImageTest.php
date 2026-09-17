@@ -264,6 +264,59 @@ test('generateFeaturedImage does nothing when the article content is still incom
     expect($media)->toBeNull();
 });
 
+test('GenerateArticleFeaturedImageJob retries once if the first attempt fails with a transient error', function () {
+    $article = NewsArticle::factory()->create(['featured_image' => null]);
+
+    $mock = $this->mock(MediaLibraryService::class);
+    $mock->shouldReceive('generateFeaturedImage')
+        ->once()
+        ->andThrow(new RuntimeException('timeout transitorio del proveedor'));
+    $mock->shouldReceive('generateFeaturedImage')
+        ->once()
+        ->andReturnUsing(function () use ($article) {
+            $article->update(['featured_image' => 'https://example.test/generada.webp']);
+
+            return Media::factory()->make();
+        });
+
+    (new GenerateArticleFeaturedImageJob($article->id))->handle($mock);
+
+    expect($article->fresh()->featured_image)->toBe('https://example.test/generada.webp');
+})->group('slow');
+
+test('GenerateArticleFeaturedImageJob gives up silently after 2 failed attempts', function () {
+    $article = NewsArticle::factory()->create(['featured_image' => null]);
+
+    $mock = $this->mock(MediaLibraryService::class);
+    $mock->shouldReceive('generateFeaturedImage')
+        ->twice()
+        ->andThrow(new RuntimeException('el proveedor sigue fallando'));
+
+    (new GenerateArticleFeaturedImageJob($article->id))->handle($mock);
+
+    expect($article->fresh()->featured_image)->toBeNull();
+})->group('slow')->throwsNoExceptions();
+
+test('GenerateArticleFeaturedImageJob does not retry if the article already ended up with an image', function () {
+    $article = NewsArticle::factory()->create(['featured_image' => null]);
+
+    $mock = $this->mock(MediaLibraryService::class);
+    $mock->shouldReceive('generateFeaturedImage')
+        ->once()
+        ->andReturnUsing(function () use ($article) {
+            // Alguien cargó una portada a mano justo mientras la IA
+            // generaba la suya, y lo que sigue tira una excepción (ej.
+            // al intentar guardar el resultado) — no debería reintentar.
+            $article->update(['featured_image' => 'https://example.test/a-mano.webp']);
+
+            throw new RuntimeException('fallo después de que ya se cargó una portada');
+        });
+
+    (new GenerateArticleFeaturedImageJob($article->id))->handle($mock);
+
+    expect($article->fresh()->featured_image)->toBe('https://example.test/a-mano.webp');
+});
+
 test('a superadmin can toggle auto-generate featured image for a provider', function () {
     $this->seed(RoleSeeder::class);
     $user = User::factory()->create();
