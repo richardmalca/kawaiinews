@@ -52,7 +52,8 @@ export default function ShowArticle({
 
     useEffect(() => {
         const handleScroll = () => {
-            const current = window.scrollY || document.documentElement.scrollTop || 0;
+            const current =
+                window.scrollY || document.documentElement.scrollTop || 0;
             setIsScrolled(current > 260);
         };
 
@@ -104,7 +105,9 @@ export default function ShowArticle({
                     <ArrowLeft className="h-3.5 w-3.5" />
                     <span>
                         <span className="sm:hidden">Volver</span>
-                        <span className="hidden sm:inline">Volver a la portada</span>
+                        <span className="hidden sm:inline">
+                            Volver a la portada
+                        </span>
                     </span>
                 </Link>
 
@@ -155,14 +158,20 @@ export default function ShowArticle({
                         <Heart
                             className={`h-3 w-3 ${liked ? 'fill-rose-500 text-rose-500 dark:fill-rose-400 dark:text-rose-400' : ''}`}
                         />
-                        <span>{likersCount > 0 ? likersCount : 'Me gusta'}</span>
+                        <span>
+                            {likersCount > 0 ? likersCount : 'Me gusta'}
+                        </span>
                     </button>
 
                     <button
                         type="button"
                         onClick={toggleFavorite}
                         disabled={isFavoriting}
-                        title={favorited ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                        title={
+                            favorited
+                                ? 'Quitar de favoritos'
+                                : 'Guardar en favoritos'
+                        }
                         className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                             favorited
                                 ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:border-amber-400/30 dark:bg-amber-500/20 dark:text-amber-400'
@@ -195,7 +204,9 @@ export default function ShowArticle({
                                 <FileText className="h-3 w-3 text-rose-500" />
                                 <span>
                                     <span className="sm:hidden">Copiar</span>
-                                    <span className="hidden sm:inline">Copiar texto</span>
+                                    <span className="hidden sm:inline">
+                                        Copiar texto
+                                    </span>
                                 </span>
                             </>
                         )}
@@ -244,27 +255,29 @@ export default function ShowArticle({
                         <figure className="my-6">
                             <div className="relative overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60">
                                 <div className="relative aspect-video max-h-[460px] w-full overflow-hidden">
-                                    <img
-                                        src={item.featured_image}
-                                        alt=""
-                                        aria-hidden="true"
-                                        className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-40 dark:opacity-30 pointer-events-none"
-                                    />
+                                    {/* Antes había una segunda <img> con la
+                                    misma URL, desenfocada de fondo, solo
+                                    decorativa — competía con la imagen real
+                                    por prioridad justo en el LCP. Se saca. */}
                                     <img
                                         src={item.featured_image}
                                         alt={`Ilustración conceptual referencial de ${item.title}`}
                                         className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
                                         loading="eager"
+                                        fetchPriority="high"
                                     />
 
-                                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-xs">
+                                    <div className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white/90 shadow-xs backdrop-blur-md">
                                         <Sparkles className="h-3 w-3 text-amber-300" />
                                         <span>Ilustración referencial IA</span>
                                     </div>
                                 </div>
                             </div>
                             <figcaption className="mt-2 text-center text-[11px] text-neutral-400 dark:text-neutral-500">
-                                Ilustración conceptual generada con IA con fines editoriales. Todos los derechos de los personajes y obras pertenecen a sus autores originales.
+                                Ilustración conceptual generada con IA con fines
+                                editoriales. Todos los derechos de los
+                                personajes y obras pertenecen a sus autores
+                                originales.
                             </figcaption>
                         </figure>
                     )}
@@ -274,7 +287,10 @@ export default function ShowArticle({
                     </div>
 
                     <div className="pt-4">
-                        <ArticleTags tags={item.tags} tagItems={item.tag_items} />
+                        <ArticleTags
+                            tags={item.tags}
+                            tagItems={item.tag_items}
+                        />
                     </div>
 
                     <ArticleMetaFooter

@@ -3,7 +3,16 @@ import { QuickFavoriteButton } from '@/components/public/quick-favorite-button';
 import { estimateReadingTime } from '@/lib/utils';
 import type { PublicArticle } from '@/types';
 import { Link } from '@inertiajs/react';
-import { ArrowRight, BookOpen, Bookmark, Calendar, Eye, Flame, Heart, Share2 } from 'lucide-react';
+import {
+    ArrowRight,
+    BookOpen,
+    Bookmark,
+    Calendar,
+    Eye,
+    Flame,
+    Heart,
+    Share2,
+} from 'lucide-react';
 
 interface HeroFeaturedProps {
     article: PublicArticle;
@@ -22,22 +31,25 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
         >
             <article>
                 <div className="grid grid-cols-1 gap-0 lg:grid-cols-12">
-                    <div className="relative min-h-[280px] h-72 sm:h-80 overflow-hidden bg-neutral-950 lg:col-span-7 lg:min-h-[420px] lg:h-full">
+                    <div className="relative h-72 min-h-[280px] overflow-hidden bg-neutral-950 sm:h-80 lg:col-span-7 lg:h-full lg:min-h-[420px]">
                         {article.featured_image ? (
                             <>
-                                <img
-                                    src={article.featured_image}
-                                    alt=""
-                                    aria-hidden="true"
-                                    className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-35 pointer-events-none"
-                                />
+                                {/* Antes había una segunda <img> con la misma
+                                URL, desenfocada de fondo, solo decorativa —
+                                el navegador la trataba como otro candidato a
+                                LCP y competía por prioridad con la imagen
+                                real justo en el momento más crítico de la
+                                carga. Ese halo se ve mínimamente detrás de
+                                object-cover, así que no vale la pena el
+                                costo: se saca y listo. */}
                                 <img
                                     src={article.featured_image}
                                     alt={article.title}
                                     className="relative h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-103"
                                     loading="eager"
+                                    fetchPriority="high"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-black/60 dark:from-neutral-950 dark:via-neutral-950/20 dark:lg:to-neutral-950/80 pointer-events-none" />
+                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-black/60 dark:from-neutral-950 dark:via-neutral-950/20 dark:lg:to-neutral-950/80" />
                             </>
                         ) : (
                             <div className="flex h-full w-full items-center justify-center bg-neutral-900 text-neutral-600">
@@ -117,7 +129,9 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                                                 : ''
                                         }`}
                                     />
-                                    <span className="text-xs font-semibold">{likersCount}</span>
+                                    <span className="text-xs font-semibold">
+                                        {likersCount}
+                                    </span>
                                 </span>
 
                                 <span
@@ -135,7 +149,9 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                                                 : ''
                                         }`}
                                     />
-                                    <span className="text-xs font-semibold">{favoritesCount}</span>
+                                    <span className="text-xs font-semibold">
+                                        {favoritesCount}
+                                    </span>
                                 </span>
 
                                 <span
@@ -147,7 +163,9 @@ export function HeroFeatured({ article }: HeroFeaturedProps) {
                                     }`}
                                 >
                                     <Share2 className="h-3.5 w-3.5" />
-                                    <span className="text-xs font-semibold">{sharesCount}</span>
+                                    <span className="text-xs font-semibold">
+                                        {sharesCount}
+                                    </span>
                                 </span>
                             </div>
 

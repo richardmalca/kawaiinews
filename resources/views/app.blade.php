@@ -32,7 +32,19 @@
 
         @php
             $siteSettings = \App\Models\SiteSetting::current();
+            $storageSettings = \App\Models\StorageSetting::current();
         @endphp
+
+        {{-- Si las imágenes de artículos viven en un dominio aparte (R2/S3),
+        arrancamos la conexión (DNS + TLS) apenas se parsea el <head>, en vez
+        de esperar a que el navegador descubra el primer <img> — eso corta
+        tiempo real de la carga de la imagen del LCP (hero de la home,
+        portada del artículo), que es justo la más lenta cuando el dominio
+        es nuevo para el navegador. --}}
+        @if ($storageSettings->active_for_media && $storageSettings->public_url)
+            <link rel="preconnect" href="{{ $storageSettings->public_url }}" crossorigin>
+            <link rel="dns-prefetch" href="{{ $storageSettings->public_url }}">
+        @endif
 
         @if ($siteSettings->faviconUrl())
             <link rel="icon" href="{{ $siteSettings->faviconUrl() }}" sizes="32x32" type="image/png">
