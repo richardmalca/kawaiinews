@@ -68,13 +68,8 @@ export function AdBanner({
                         data-full-width-responsive="true"
                     />
                 ) : (
-                    <div className="flex flex-col items-center gap-1 py-4">
-                        <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                            Espacio publicitario no intrusivo
-                        </span>
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-500">
-                            Anuncios seleccionados para apoyar a KawaiiNews
-                        </span>
+                    <div className="flex items-center justify-center py-6 text-neutral-400 dark:text-neutral-500 text-xs">
+                        <span>Anuncio</span>
                     </div>
                 )}
             </div>
