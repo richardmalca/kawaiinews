@@ -15,6 +15,7 @@ import {
     Maximize2,
     Minus,
     Plus,
+    Sparkles,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -240,22 +241,32 @@ export default function ShowArticle({
                     <ArticleHeader article={item} />
 
                     {item.featured_image && (
-                        <div className="relative my-6 overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60">
-                            <div className="relative aspect-video max-h-[460px] w-full overflow-hidden">
-                                <img
-                                    src={item.featured_image}
-                                    alt=""
-                                    aria-hidden="true"
-                                    className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-40 dark:opacity-30 pointer-events-none"
-                                />
-                                <img
-                                    src={item.featured_image}
-                                    alt={item.title}
-                                    className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
-                                    loading="eager"
-                                />
+                        <figure className="my-6">
+                            <div className="relative overflow-hidden rounded-3xl border border-neutral-200/80 bg-neutral-100 shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60">
+                                <div className="relative aspect-video max-h-[460px] w-full overflow-hidden">
+                                    <img
+                                        src={item.featured_image}
+                                        alt=""
+                                        aria-hidden="true"
+                                        className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125 opacity-40 dark:opacity-30 pointer-events-none"
+                                    />
+                                    <img
+                                        src={item.featured_image}
+                                        alt={`Ilustración conceptual referencial de ${item.title}`}
+                                        className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
+                                        loading="eager"
+                                    />
+
+                                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-md shadow-xs">
+                                        <Sparkles className="h-3 w-3 text-amber-300" />
+                                        <span>Ilustración referencial IA</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                            <figcaption className="mt-2 text-center text-[11px] text-neutral-400 dark:text-neutral-500">
+                                Ilustración conceptual generada con IA con fines editoriales. Todos los derechos de los personajes y obras pertenecen a sus autores originales.
+                            </figcaption>
+                        </figure>
                     )}
 
                     <div className="pt-2">

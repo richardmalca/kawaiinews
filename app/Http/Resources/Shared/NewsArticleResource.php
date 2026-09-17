@@ -55,6 +55,16 @@ class NewsArticleResource extends JsonResource
                     ->where('news_article_id', $this->id)
                     ->value('reaction')
                 : null,
+            'references' => $this->whenLoaded('newsCluster', fn () => $this->newsCluster?->relationLoaded('scrapedItems')
+                ? $this->newsCluster->scrapedItems
+                    ->map(fn ($item) => [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'url' => $item->url,
+                        'source_label' => $item->newsSource?->label ?? 'Fuente externa',
+                    ])
+                    ->values()
+                : null),
         ];
     }
 

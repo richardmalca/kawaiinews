@@ -168,7 +168,7 @@ class NewsService
     public function findPublishedBySlug(string $slug): NewsArticle
     {
         return NewsArticle::query()
-            ->with(['tags', 'author'])
+            ->with(['tags', 'author', 'newsCluster.scrapedItems.newsSource'])
             ->withCount(['shares', 'likers', 'comments'])
             ->where('slug', $slug)
             ->where('status', 'published')
