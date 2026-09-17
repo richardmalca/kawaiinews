@@ -41,4 +41,19 @@ class GenerateMediaJob implements ShouldQueue
             }
         }
     }
+
+    /**
+     * Cubre el caso en que el job muere antes de llegar a handle() (ej. el
+     * worker se reinicia a mitad de camino) — sin esto el frontend queda
+     * esperando indefinidamente en vez de ver el error, y el candado de
+     * generación se queda trabado para ese artículo.
+     */
+    public function failed(Throwable $exception): void
+    {
+        JobRunStatus::fail($this->runId, FriendlyAiError::forException($exception));
+
+        if ($this->newsArticleId) {
+            app(MediaLibraryService::class)->unlockGeneration($this->newsArticleId);
+        }
+    }
 }

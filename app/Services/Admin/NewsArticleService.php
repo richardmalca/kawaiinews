@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Jobs\GenerateArticleFeaturedImageJob;
 use App\Jobs\GenerateArticleNarrationJob;
+use App\Jobs\PublishArticleWhenReadyJob;
 use App\Jobs\SendNewArticleNotificationsJob;
 use App\Models\AiProvider;
 use App\Models\NewsArticle;
@@ -12,6 +13,7 @@ use App\Models\Tag;
 use App\Support\AiUsageLogger;
 use App\Support\PublicNewsCacheVersion;
 use App\Support\YoutubeVideo;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -38,21 +40,27 @@ class NewsArticleService
 
         $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
 
-        // Solo si el admin activó explícitamente esta opción (consume
-        // créditos de IA por cada artículo, así que nunca corre sin que
-        // la prendan ellos primero en Modelo de IA). Con imagen de la
-        // fuente o sin ella: generateFeaturedImage() decide sola qué
-        // referencia usar (la de la fuente, la miniatura del tráiler de
-        // YouTube si hay uno, o ninguna).
+        // Encadenamos en orden: portada -> audio -> publicar, cada uno
+        // corre solo si el admin activó esa generación automática (consume
+        // créditos de IA por cada artículo, nunca sin que la prendan ellos
+        // primero en Modelo de IA). El último eslabón siempre va: aceptar
+        // el cluster ya fue la decisión de publicarlo, así que una vez que
+        // termina de intentar generar lo automático (le haya salido bien o
+        // no — esos jobs fallan en silencio) se publica solo, sin que el
+        // admin tenga que entrar a apretar "Publicar" a mano.
+        $jobs = [];
+
         if (AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
-            GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
+            $jobs[] = new GenerateArticleFeaturedImageJob($newsArticle->id);
         }
 
-        // Mismo criterio que la portada: nunca corre sin que el admin lo
-        // haya prendido a propósito en el proveedor activo para audio.
         if (AiProvider::where('is_active_for_audio', true)->where('auto_generate_narration', true)->exists()) {
-            GenerateArticleNarrationJob::dispatch($newsArticle->id);
+            $jobs[] = new GenerateArticleNarrationJob($newsArticle->id);
         }
+
+        $jobs[] = new PublishArticleWhenReadyJob($newsArticle->id);
+
+        Bus::chain($jobs)->dispatch();
 
         return $newsArticle;
     }
@@ -136,6 +144,29 @@ class NewsArticleService
         PublicNewsCacheVersion::bump();
 
         return $newsArticle;
+    }
+
+    /**
+     * Publica un artículo que sigue en borrador, sin tocar los que ya
+     * están publicados (idempotente: si algo más ya lo publicó mientras
+     * tanto, no hace nada). Lo usa PublishArticleWhenReadyJob al final de
+     * la cadena de aceptar un cluster, para que el admin no tenga que
+     * publicar a mano después de que se generó la imagen/audio.
+     */
+    public function publishIfDraft(NewsArticle $newsArticle): void
+    {
+        if ($newsArticle->status !== 'draft') {
+            return;
+        }
+
+        $newsArticle->update([
+            'status' => 'published',
+            'published_at' => $newsArticle->published_at ?? now(),
+        ]);
+
+        SendNewArticleNotificationsJob::dispatch($newsArticle->id);
+
+        PublicNewsCacheVersion::bump();
     }
 
     public function toggleStatus(NewsArticle $newsArticle): NewsArticle

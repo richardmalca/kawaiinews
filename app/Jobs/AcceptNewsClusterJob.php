@@ -46,4 +46,17 @@ class AcceptNewsClusterJob implements ShouldQueue
             JobRunStatus::fail($this->runId, $exception->getMessage());
         }
     }
+
+    /**
+     * Laravel llama esto cuando el job muere ANTES de que handle() llegue a
+     * correr (ej. MaxAttemptsExceededException si el worker se reinició a
+     * mitad de camino, o se agotó el timeout) — el try/catch de adentro de
+     * handle() no cubre esos casos, y sin esto el frontend se queda
+     * esperando un runId que nunca va a completarse hasta que expire el
+     * caché (15 minutos), pareciendo colgado en vez de fallado.
+     */
+    public function failed(Throwable $exception): void
+    {
+        JobRunStatus::fail($this->runId, $exception->getMessage());
+    }
 }

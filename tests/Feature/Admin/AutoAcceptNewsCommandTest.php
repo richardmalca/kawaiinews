@@ -48,7 +48,10 @@ test('each run only accepts the single best publish-verdict cluster, never the w
         ->and($mid->fresh()->status)->toBe('pending')
         ->and($low->fresh()->status)->toBe('pending');
 
-    expect(NewsArticle::where('status', 'draft')->count())->toBe(1);
+    // Se acepta y se publica sola: la decisión de aceptar el cluster ya
+    // implica publicarlo, sin que el admin tenga que entrar a apretar
+    // "Publicar" a mano (ver PublishArticleWhenReadyJob).
+    expect(NewsArticle::where('status', 'published')->count())->toBe(1);
 });
 
 test('it stops for the day once the daily limit is reached across separate runs', function () {
