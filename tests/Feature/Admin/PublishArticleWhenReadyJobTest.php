@@ -24,7 +24,7 @@ function fakeArticleDraftResponse(): TextResponseFake
         TXT);
 }
 
-test('createFromCluster chains publish after the image/audio jobs instead of dispatching them loose', function () {
+test('createFromCluster dispatches the image job loose and delays publish, instead of chaining them', function () {
     Bus::fake();
 
     AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
@@ -41,10 +41,10 @@ test('createFromCluster chains publish after the image/audio jobs instead of dis
 
     app(NewsArticleService::class)->createFromCluster($cluster);
 
-    Bus::assertChained([
-        GenerateArticleFeaturedImageJob::class,
-        PublishArticleWhenReadyJob::class,
-    ]);
+    // Sueltos, no encadenados: si el chain existiera, un fallo del job de
+    // imagen a nivel del framework se llevaría puesto el de publicar.
+    Bus::assertDispatched(GenerateArticleFeaturedImageJob::class);
+    Bus::assertDispatched(fn (PublishArticleWhenReadyJob $job) => $job->delay !== null);
 });
 
 test('an accepted article ends up published once the chain runs, with no image or audio provider active', function () {
@@ -96,7 +96,7 @@ test('when a job dies before handle() runs (ej. MaxAttemptsExceededException por
         ->and($status['error'])->toBe('el worker murió a mitad de camino');
 });
 
-test('the narration job is chained before publish too, when audio auto-generate is on', function () {
+test('the narration job is also dispatched loose, when audio auto-generate is on', function () {
     Bus::fake();
 
     AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
@@ -113,8 +113,46 @@ test('the narration job is chained before publish too, when audio auto-generate 
 
     app(NewsArticleService::class)->createFromCluster($cluster);
 
-    Bus::assertChained([
-        GenerateArticleNarrationJob::class,
-        PublishArticleWhenReadyJob::class,
+    Bus::assertDispatched(GenerateArticleNarrationJob::class);
+    Bus::assertDispatched(fn (PublishArticleWhenReadyJob $job) => $job->delay !== null);
+});
+
+test('createFromCluster publishes right away, with no delay, when no image or audio job is dispatched', function () {
+    Bus::fake();
+
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+
+    Prism::fake([fakeArticleDraftResponse()]);
+
+    $cluster = NewsCluster::factory()->create(['category' => 'anime']);
+
+    app(NewsArticleService::class)->createFromCluster($cluster);
+
+    Bus::assertNotDispatched(GenerateArticleFeaturedImageJob::class);
+    Bus::assertNotDispatched(GenerateArticleNarrationJob::class);
+    Bus::assertDispatched(fn (PublishArticleWhenReadyJob $job) => $job->delay === null);
+});
+
+test('publishing does not depend on the image job succeeding: it still publishes even if that job fails at the framework level', function () {
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+    AiProvider::factory()->create([
+        'provider' => 'gemini',
+        'is_active_for_images' => true,
+        'auto_generate_featured_image' => true,
+        'api_key' => 'test-key',
     ]);
+
+    Prism::fake([fakeArticleDraftResponse()]);
+
+    $cluster = NewsCluster::factory()->create(['category' => 'anime']);
+    $article = app(NewsArticleService::class)->createFromCluster($cluster);
+
+    // Simula lo que pasó en producción: el job de portada nunca llega a
+    // correr su handle() (ej. MaxAttemptsExceededException por un
+    // reinicio del worker a mitad de camino) — acá directamente no lo
+    // ejecutamos. Publicar no dependía de él: al no estar encadenados, el
+    // suyo (con su propio timing/delay independiente) sigue en pie.
+    (new PublishArticleWhenReadyJob($article->id))->handle(app(NewsArticleService::class));
+
+    expect($article->fresh()->status)->toBe('published');
 });

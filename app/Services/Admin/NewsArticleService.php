@@ -13,7 +13,6 @@ use App\Models\Tag;
 use App\Support\AiUsageLogger;
 use App\Support\PublicNewsCacheVersion;
 use App\Support\YoutubeVideo;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
@@ -40,27 +39,34 @@ class NewsArticleService
 
         $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
 
-        // Encadenamos en orden: portada -> audio -> publicar, cada uno
-        // corre solo si el admin activó esa generación automática (consume
-        // créditos de IA por cada artículo, nunca sin que la prendan ellos
-        // primero en Modelo de IA). El último eslabón siempre va: aceptar
-        // el cluster ya fue la decisión de publicarlo, así que una vez que
-        // termina de intentar generar lo automático (le haya salido bien o
-        // no — esos jobs fallan en silencio) se publica solo, sin que el
-        // admin tenga que entrar a apretar "Publicar" a mano.
-        $jobs = [];
+        // Portada y audio se disparan sueltos, no encadenados: un
+        // Bus::chain() se cancela entero si un eslabón "falla" a nivel del
+        // framework (ej. MaxAttemptsExceededException porque el worker se
+        // reinició a mitad de camino de un deploy — nos pasó en producción
+        // y dejó un artículo sin publicar) aunque el job en sí ya maneja
+        // sus propios errores de negocio con try/catch. Publicar no debe
+        // depender de que la generación automática haya terminado bien.
+        $hasImageJob = AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists();
+        $hasAudioJob = AiProvider::where('is_active_for_audio', true)->where('auto_generate_narration', true)->exists();
 
-        if (AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists()) {
-            $jobs[] = new GenerateArticleFeaturedImageJob($newsArticle->id);
+        if ($hasImageJob) {
+            GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
         }
 
-        if (AiProvider::where('is_active_for_audio', true)->where('auto_generate_narration', true)->exists()) {
-            $jobs[] = new GenerateArticleNarrationJob($newsArticle->id);
+        if ($hasAudioJob) {
+            GenerateArticleNarrationJob::dispatch($newsArticle->id);
         }
 
-        $jobs[] = new PublishArticleWhenReadyJob($newsArticle->id);
+        // Aceptar el cluster ya fue la decisión de publicarlo. Si hay algo
+        // generándose, le damos un margen (más que de sobra: en la
+        // práctica portada + audio tardan ~15s en total) antes de publicar
+        // solo, sin que el admin tenga que apretar "Publicar" a mano; si
+        // no hay nada que generar, se publica ya mismo.
+        $publishJob = PublishArticleWhenReadyJob::dispatch($newsArticle->id);
 
-        Bus::chain($jobs)->dispatch();
+        if ($hasImageJob || $hasAudioJob) {
+            $publishJob->delay(now()->addMinutes(3));
+        }
 
         return $newsArticle;
     }
