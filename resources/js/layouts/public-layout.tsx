@@ -6,6 +6,7 @@ import { PublicNavbar } from '@/components/public/navbar';
 import { UsernameRequiredBanner } from '@/components/public/username-required-banner';
 import { ChooseUsernameDialog } from '@/components/public/choose-username-dialog';
 import { CookieConsentBanner } from '@/components/public/cookie-consent-banner';
+import { PwaInstallBanner } from '@/components/public/pwa-install-banner';
 import { useFlashToast } from '@/hooks/use-flash-toast';
 
 interface PublicLayoutProps {
@@ -32,6 +33,7 @@ export default function PublicLayout({
             <BackToTop />
             <ChooseUsernameDialog />
             <CookieConsentBanner />
+            <PwaInstallBanner />
         </div>
     );
 }

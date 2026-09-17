@@ -1,8 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Heart, Sparkles } from 'lucide-react';
+import { Heart, Smartphone, Sparkles } from 'lucide-react';
+import { usePwa } from '@/hooks/use-pwa';
 
 export function PublicFooter() {
     const { name, siteLogoUrl } = usePage().props;
+    const { isInstallable, isInstalled, installPwa } = usePwa();
 
     return (
         <footer className="border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom,0px)] text-xs text-neutral-600 dark:border-neutral-900 dark:bg-neutral-950 dark:text-neutral-400">
@@ -115,6 +117,18 @@ export function PublicFooter() {
                                     Política de Cookies
                                 </Link>
                             </li>
+                            {!isInstalled && isInstallable && (
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={() => void installPwa()}
+                                        className="inline-flex items-center gap-1.5 font-medium text-rose-600 transition-colors hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
+                                    >
+                                        <Smartphone className="h-3.5 w-3.5" />
+                                        <span>Instalar App</span>
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     </div>
 

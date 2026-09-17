@@ -26,11 +26,13 @@ import {
     Search,
     Settings,
     Shield,
+    Smartphone,
     Sparkles,
     User,
     X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { usePwa } from '@/hooks/use-pwa';
 import { ThemeToggle } from './theme-toggle';
 import { NotificationBell } from './notification-bell';
 import {
@@ -50,6 +52,7 @@ const privilegedRoles = ['superadmin', 'admin', 'editor'];
 export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const { auth, name, siteLogoUrl } = usePage().props;
     const url = usePage().url;
+    const { isInstallable, isInstalled, installPwa } = usePwa();
     const isPrivileged = auth.user?.roles.some((role) =>
         privilegedRoles.includes(role),
     );
@@ -467,6 +470,20 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                             <Headphones className="h-4 w-4 text-rose-500" />
                                             <span>Canal RSS</span>
                                         </Link>
+
+                                        {!isInstalled && isInstallable && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsMobileMenuOpen(false);
+                                                    void installPwa();
+                                                }}
+                                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                                            >
+                                                <Smartphone className="h-4 w-4 text-rose-500" />
+                                                <span>Instalar App</span>
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
