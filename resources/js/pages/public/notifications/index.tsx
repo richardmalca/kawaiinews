@@ -81,7 +81,6 @@ export default function NotificationsPage({
                 ),
             );
         } catch {
-            // Ignorar
         }
 
         if (url) {
@@ -175,7 +174,6 @@ export default function NotificationsPage({
                 description="Centro de notificaciones e interacciones de tu cuenta en KawaiiNews."
             />
 
-            {/* Breadcrumb / Regresar */}
             <div className="mb-4 flex items-center justify-between">
                 <Link
                     href="/"
@@ -186,7 +184,6 @@ export default function NotificationsPage({
                 </Link>
             </div>
 
-            {/* Encabezado limpio y estándar del sitio */}
             <div className="mb-6 flex flex-col gap-4 border-b border-neutral-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800/80">
                 <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400">
@@ -209,7 +206,6 @@ export default function NotificationsPage({
                     </div>
                 </div>
 
-                {/* Acciones de gestión */}
                 <div className="flex items-center gap-2">
                     {unread > 0 && (
                         <button
@@ -237,7 +233,6 @@ export default function NotificationsPage({
                 </div>
             </div>
 
-            {/* Pestañas de filtrado (estilo pestañas de perfil / noticias) */}
             <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-neutral-100 dark:border-neutral-800/60">
                 {FILTERS.map((f) => {
                     const active = currentFilter === f.id;
@@ -263,7 +258,6 @@ export default function NotificationsPage({
                 })}
             </div>
 
-            {/* Listado de notificaciones */}
             {items.length > 0 ? (
                 <div className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-xs dark:border-neutral-800/80 dark:bg-neutral-900/60 divide-y divide-neutral-100 dark:divide-neutral-800/60">
                     {items.map((item) => {
@@ -312,7 +306,6 @@ export default function NotificationsPage({
                                 }`}
                             >
                                 <div className="flex items-start gap-3 min-w-0 flex-1">
-                                    {/* Indicador de no leído */}
                                     <div className="pt-2 shrink-0">
                                         <div
                                             className={`h-2 w-2 rounded-full ${
@@ -321,7 +314,6 @@ export default function NotificationsPage({
                                         />
                                     </div>
 
-                                    {/* Avatar / Icono */}
                                     <div className="relative shrink-0 mt-0.5">
                                         {isNewArticle && item.data.featured_image ? (
                                             <div className="h-10 w-10 sm:h-11 sm:w-11 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
@@ -343,7 +335,6 @@ export default function NotificationsPage({
                                             </div>
                                         )}
 
-                                        {/* Insignia pequeña en la esquina */}
                                         <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-neutral-900 ring-1 ring-neutral-200 dark:ring-neutral-800">
                                             {(isLiked || isCommentLiked) && <Heart className="h-2.5 w-2.5 fill-rose-500 text-rose-500" />}
                                             {isSaved && <Bookmark className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />}
@@ -355,7 +346,6 @@ export default function NotificationsPage({
                                         </div>
                                     </div>
 
-                                    {/* Texto y detalles */}
                                     <div className="min-w-0 flex-1 space-y-0.5">
                                         <p className="text-xs sm:text-sm text-neutral-800 dark:text-neutral-200 leading-snug">
                                             {isReply && (
@@ -548,7 +538,6 @@ export default function NotificationsPage({
                                     </div>
                                 </div>
 
-                                {/* Botón eliminar fila */}
                                 <button
                                     type="button"
                                     onClick={(e) => handleDelete(item.id, e)}
@@ -573,7 +562,6 @@ export default function NotificationsPage({
                 </div>
             )}
 
-            {/* Paginación limpia estándar */}
             {notifications.last_page > 1 && (
                 <div className="flex items-center justify-between border-t border-neutral-100 pt-4 mt-6 dark:border-neutral-800">
                     <div>

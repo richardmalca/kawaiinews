@@ -20,7 +20,6 @@ class NotificationController extends Controller
         $user = $request->user();
         $filter = $request->query('filtro', 'todas');
 
-        // Para peticiones AJAX de la campanita en el navbar
         if ($request->wantsJson()) {
             $notifications = $user->notifications()
                 ->latest()
@@ -39,7 +38,6 @@ class NotificationController extends Controller
             ]);
         }
 
-        // Para la página completa /notificaciones (Centro de Notificaciones)
         $query = $user->notifications()->latest();
 
         if ($filter === 'no_leidas') {
@@ -84,7 +82,7 @@ class NotificationController extends Controller
 
     public function markAllAsRead(Request $request): JsonResponse
     {
-        $request->user()->unreadNotifications->markAsRead();
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
 
         return response()->json([
             'success' => true,

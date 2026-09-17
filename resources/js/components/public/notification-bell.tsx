@@ -129,7 +129,6 @@ export function NotificationBell() {
         soundEnabledRef.current = soundEnabled;
     }, [soundEnabled]);
 
-    // Actualizar estado de permiso al montar
     useEffect(() => {
         if (isBrowserNotificationSupported()) {
             setBrowserPermission(getNotificationPermission());
@@ -183,19 +182,16 @@ export function NotificationBell() {
                 const fetchedNotifications: AppNotificationItem[] = data.notifications ?? [];
                 const newUnreadCount = data.unread_count ?? 0;
 
-                // Detectar si hay nuevas notificaciones que no estaban en la carga previa
                 if (!isInitialFetchRef.current) {
                     const newItems = fetchedNotifications.filter(
                         (n) => !n.read_at && !prevNotificationIdsRef.current.has(n.id),
                     );
 
                     if (newItems.length > 0) {
-                        // 1. Sonido en pantalla si está habilitado
                         if (soundEnabledRef.current) {
                             playNotificationSound();
                         }
 
-                        // 2. Notificación en pantalla y sistema operativo (PC / Móvil)
                         const latest = newItems[0];
                         let title = 'Nueva notificación';
                         let body = 'Tienes una nueva interacción en KawaiiNews';
@@ -208,34 +204,28 @@ export function NotificationBell() {
                             body = latest.data.comment_preview || 'Te etiquetaron en un comentario';
                         } else if (latest.data.type === 'user_follow') {
                             title = 'Nuevo seguidor';
-                            body = `${latest.data.follower_name ?? 'Un usuario'} ha comenzado a seguirte`;
+                            body = `${latest.data.follower_name ?? 'Un usuario'} comenzó a seguirte`;
                         } else if (latest.data.type === 'new_article') {
                             title = 'Nueva noticia publicada';
-                            body = latest.data.article_title || 'Hay un nuevo artículo disponible';
+                            body = latest.data.article_title ?? 'Nueva publicación disponible';
                         } else if (latest.data.type === 'article_liked') {
                             const othersCount = (latest.data.total_reactions ?? 1) - 1;
                             title = '¡Reacción en tu noticia!';
                             body = othersCount > 0
-                                ? `A ${latest.data.liker_name ?? 'Alguien'} y a otras ${othersCount} personas les gusta tu noticia`
-                                : `A ${latest.data.liker_name ?? 'Alguien'} le gusta tu noticia "${latest.data.article_title ?? ''}"`;
+                                ? `A ${latest.data.liker_name ?? 'Alguien'} y a otras ${othersCount} personas les gustó tu noticia`
+                                : `A ${latest.data.liker_name ?? 'Alguien'} le gustó tu noticia`;
                         } else if (latest.data.type === 'article_saved') {
                             const othersCount = (latest.data.total_saves ?? 1) - 1;
                             title = '¡Noticia guardada!';
                             body = othersCount > 0
                                 ? `${latest.data.saver_name ?? 'Alguien'} y otras ${othersCount} personas guardaron tu noticia`
-                                : `${latest.data.saver_name ?? 'Alguien'} guardó en favoritos tu noticia "${latest.data.article_title ?? ''}"`;
+                                : `${latest.data.saver_name ?? 'Alguien'} guardó tu noticia`;
                         } else if (latest.data.type === 'article_shared') {
-                            const othersCount = (latest.data.total_shares ?? 1) - 1;
                             title = '¡Noticia compartida!';
-                            body = othersCount > 0
-                                ? `${latest.data.sharer_name ?? 'Alguien'} y otras ${othersCount} personas compartieron tu noticia`
-                                : `${latest.data.sharer_name ?? 'Alguien'} compartió tu noticia "${latest.data.article_title ?? ''}"`;
+                            body = `${latest.data.sharer_name ?? 'Alguien'} compartió tu noticia`;
                         } else if (latest.data.type === 'article_commented') {
-                            const othersCount = (latest.data.total_comments ?? 1) - 1;
-                            title = '¡Nuevo comentario en tu noticia!';
-                            body = othersCount > 0
-                                ? `${latest.data.commenter_name ?? 'Alguien'} y otras ${othersCount} personas comentaron tu noticia`
-                                : `${latest.data.commenter_name ?? 'Alguien'} comentó en tu noticia "${latest.data.article_title ?? ''}"`;
+                            title = `${latest.data.commenter_name ?? 'Alguien'} comentó en tu noticia`;
+                            body = latest.data.comment_preview || latest.data.article_title || 'Nuevo comentario';
                         } else if (latest.data.type === 'comment_liked') {
                             const othersCount = (latest.data.total_reactions ?? 1) - 1;
                             title = '¡Me gusta en tu comentario!';
@@ -284,7 +274,6 @@ export function NotificationBell() {
                 setNotifications(fetchedNotifications);
             }
         } catch {
-            // Ignorar errores en fetch silencioso
         } finally {
             isFetchingRef.current = false;
         }
@@ -294,7 +283,13 @@ export function NotificationBell() {
         if (!isAuthenticated) return;
         fetchNotifications();
 
-        const interval = setInterval(fetchNotifications, 25000);
+        const interval = setInterval(() => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+                return;
+            }
+            fetchNotifications();
+        }, 25000);
+
         return () => clearInterval(interval);
     }, [isAuthenticated]);
 
@@ -386,7 +381,6 @@ export function NotificationBell() {
                 prev.map((n) => ({ ...n, read_at: new Date().toISOString() })),
             );
         } catch {
-            // Error capturado por toast.promise
         } finally {
             setIsLoading(false);
         }
@@ -432,7 +426,6 @@ export function NotificationBell() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {/* Toggle Sonido */}
                             <button
                                 type="button"
                                 onClick={toggleSound}
@@ -465,7 +458,6 @@ export function NotificationBell() {
                         </div>
                     </div>
 
-                    {/* Banner para activar notificaciones de escritorio / móvil si no están concedidas */}
                     {isBrowserNotificationSupported() && browserPermission === 'default' && (
                         <div className="mt-2 mb-1.5 flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-rose-500/10 to-amber-500/10 p-2.5 text-xs dark:from-rose-500/15 dark:to-amber-500/15">
                             <div className="flex items-center gap-2">
@@ -762,7 +754,6 @@ export function NotificationBell() {
                         )}
                     </div>
 
-                    {/* Footer: ir al centro de notificaciones completo */}
                     <div className="border-t border-neutral-100 bg-neutral-50/70 p-2 text-center dark:border-neutral-800 dark:bg-neutral-900/60">
                         <Link
                             href="/notificaciones"

@@ -172,6 +172,10 @@
             <script type="application/ld+json">{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
 
+        {{-- Google AdSense --}}
+        <meta name="google-adsense-account" content="ca-pub-2454606039462818">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2454606039462818" crossorigin="anonymous"></script>
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         <x-inertia::head>
