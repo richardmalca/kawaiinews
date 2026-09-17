@@ -50,6 +50,24 @@ const applyTheme = (appearance: Appearance): void => {
 
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+    const themeColor = isDark ? '#0a0a0a' : '#ffffff';
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])');
+    if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.setAttribute('name', 'theme-color');
+        document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.setAttribute('content', themeColor);
+
+    const mediaLight = document.querySelector('meta[name="theme-color"][media*="light"]');
+    if (mediaLight) {
+        mediaLight.setAttribute('content', themeColor);
+    }
+    const mediaDark = document.querySelector('meta[name="theme-color"][media*="dark"]');
+    if (mediaDark) {
+        mediaDark.setAttribute('content', themeColor);
+    }
 };
 
 const subscribe = (callback: () => void) => {
