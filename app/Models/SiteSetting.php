@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\RemoteStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -125,26 +126,53 @@ class SiteSetting extends Model
 
     public function logoUrl(): ?string
     {
-        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+        return $this->resolveUrl($this->logo_path);
     }
 
     public function faviconUrl(): ?string
     {
-        return $this->favicon_path ? Storage::disk('public')->url($this->favicon_path) : null;
+        return $this->resolveUrl($this->favicon_path);
     }
 
     public function favicon192Url(): ?string
     {
-        return $this->favicon_192_path ? Storage::disk('public')->url($this->favicon_192_path) : null;
+        return $this->resolveUrl($this->favicon_192_path);
     }
 
     public function appleTouchIconUrl(): ?string
     {
-        return $this->apple_touch_icon_path ? Storage::disk('public')->url($this->apple_touch_icon_path) : null;
+        return $this->resolveUrl($this->apple_touch_icon_path);
     }
 
     public function ogImageUrl(): ?string
     {
-        return $this->og_image_path ? Storage::disk('public')->url($this->og_image_path) : null;
+        return $this->resolveUrl($this->og_image_path);
+    }
+
+    /**
+     * El path guardado (ej. "site/logo.png") no dice por sí solo en qué
+     * disco vive: pudo subirse con el almacenamiento externo activado o
+     * no. Se prueba primero en el disco remoto (si está configurado y
+     * activado para medios) y si no está ahí, se cae al local — mismo
+     * criterio que MediaLibraryService::diskForUrl() para no romper
+     * archivos subidos antes de cambiar la configuración.
+     */
+    private function resolveUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        $storageSettings = StorageSetting::current();
+
+        if ($storageSettings->active_for_media && $storageSettings->isConfigured()) {
+            $remoteDisk = RemoteStorage::disk($storageSettings);
+
+            if ($remoteDisk->exists($path)) {
+                return $remoteDisk->url($path);
+            }
+        }
+
+        return Storage::disk('public')->url($path);
     }
 }

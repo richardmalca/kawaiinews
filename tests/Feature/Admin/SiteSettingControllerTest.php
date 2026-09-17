@@ -2,7 +2,9 @@
 
 use App\Models\ActivityLog;
 use App\Models\SiteSetting;
+use App\Models\StorageSetting;
 use App\Models\User;
+use App\Support\RemoteStorage;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -129,6 +131,25 @@ test('uploading a logo stores it and exposes its url', function () {
     $settings = SiteSetting::current();
     expect($settings->logo_path)->not->toBeNull();
     Storage::disk('public')->assertExists($settings->logo_path);
+});
+
+test('uploading a logo stores it on the remote disk when storage is active for media', function () {
+    Storage::fake(RemoteStorage::DISK_NAME);
+
+    StorageSetting::current()->update([
+        'access_key' => 'a', 'secret_key' => 's', 'bucket' => 'b', 'endpoint' => 'https://e.test',
+        'active_for_media' => true,
+    ]);
+
+    $file = UploadedFile::fake()->image('logo.png', 400, 400);
+
+    $this->post(route('admin.site-settings.logo.update'), ['logo' => $file])
+        ->assertRedirect();
+
+    $settings = SiteSetting::current();
+    expect($settings->logo_path)->not->toBeNull();
+    Storage::disk(RemoteStorage::DISK_NAME)->assertExists($settings->logo_path);
+    Storage::disk('public')->assertMissing($settings->logo_path);
 });
 
 test('removing the logo deletes the file and clears the path', function () {

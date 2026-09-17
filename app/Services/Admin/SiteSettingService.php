@@ -3,6 +3,9 @@
 namespace App\Services\Admin;
 
 use App\Models\SiteSetting;
+use App\Models\StorageSetting;
+use App\Support\RemoteStorage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -15,6 +18,25 @@ use RuntimeException;
  */
 class SiteSettingService
 {
+    /**
+     * Mismo criterio que MediaLibraryService::mediaDisk(): Wasabi/R2 si
+     * está configurado y activado para medios en Configuración de
+     * almacenamiento, el disco local ("public") si no — así el logo y los
+     * favicons no se quedan siempre en el servidor mientras el resto de
+     * los medios (imágenes/audio de artículos) sí va al almacenamiento
+     * externo.
+     */
+    private function disk(): Filesystem
+    {
+        $storageSettings = StorageSetting::current();
+
+        if ($storageSettings->active_for_media && $storageSettings->isConfigured()) {
+            return RemoteStorage::disk($storageSettings);
+        }
+
+        return Storage::disk('public');
+    }
+
     /**
      * @param  array{name: string, description: ?string, keywords: array<int, string>, theme_color: ?string, twitter_handle: ?string}  $data
      */
@@ -29,7 +51,8 @@ class SiteSettingService
     {
         $this->deleteIfExists($settings->logo_path);
 
-        $path = $file->store('site', 'public');
+        $path = 'site/'.$file->hashName();
+        $this->disk()->put($path, $file->get());
 
         $settings->update(['logo_path' => $path]);
 
@@ -150,14 +173,33 @@ class SiteSettingService
         $contents = ob_get_clean();
         imagedestroy($canvas);
 
-        Storage::disk('public')->put($path, $contents);
+        $this->disk()->put($path, $contents);
 
         return $path;
     }
 
+    /**
+     * Borra un archivo viejo sin asumir en qué disco vive: puede haberse
+     * subido cuando el almacenamiento externo estaba desactivado (local) y
+     * borrarse después de activarlo (o al revés) — se prueba en el disco
+     * que esté activo ahora y, si no está ahí, en el local, para no dejar
+     * basura huérfana en ningún lado.
+     */
     private function deleteIfExists(?string $path): void
     {
-        if ($path && Storage::disk('public')->exists($path)) {
+        if (! $path) {
+            return;
+        }
+
+        $activeDisk = $this->disk();
+
+        if ($activeDisk->exists($path)) {
+            $activeDisk->delete($path);
+
+            return;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
         }
     }
