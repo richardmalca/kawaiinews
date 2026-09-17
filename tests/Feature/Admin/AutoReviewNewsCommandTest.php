@@ -2,7 +2,6 @@
 
 use App\Models\AiProvider;
 use App\Models\NewsCluster;
-use App\Models\ScrapedItem;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Testing\TextResponseFake;
 
@@ -13,12 +12,9 @@ test('it analyzes pending clusters without a verdict and auto-rejects the discar
         'api_key' => 'test-key',
     ]);
 
-    // Categorías distintas para que autoMergeDuplicates() (que corre antes
-    // del análisis) no las agrupe en el mismo lote y consuma sin querer la
-    // respuesta fake que preparamos para analyzeWithAi() más abajo.
-    $toPublish = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null, 'category' => 'anime']);
-    $toDiscard = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null, 'category' => 'gaming']);
-    $alreadyAnalyzed = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish', 'category' => 'geek']);
+    $toPublish = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+    $toDiscard = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+    $alreadyAnalyzed = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => 'publish']);
 
     Prism::fake([
         TextResponseFake::make()->withText(
@@ -49,8 +45,8 @@ test('it saves whether a cluster is a rumor and how credible it looks', function
         'api_key' => 'test-key',
     ]);
 
-    $rumor = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null, 'category' => 'anime']);
-    $confirmed = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null, 'category' => 'gaming']);
+    $rumor = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
+    $confirmed = NewsCluster::factory()->create(['status' => 'pending', 'ai_verdict' => null]);
 
     Prism::fake([
         TextResponseFake::make()->withText(
@@ -116,64 +112,9 @@ test('it runs safely with no active ai provider configured', function () {
 
 test('it runs safely with nothing pending to analyze', function () {
     $this->artisan('news:auto-review')
-        ->expectsOutputToContain('Fusionados automáticamente por ser la misma noticia: 0')
         ->expectsOutputToContain('Clusters analizados: 0')
         ->expectsOutputToContain('Rechazados automáticamente por baja relevancia: 0')
         ->expectsOutputToContain('Rechazados automáticamente por antigüedad: 0')
-        ->assertExitCode(0);
-});
-
-test('it merges pending clusters that the ai says are the same real story before analyzing them', function () {
-    AiProvider::factory()->create([
-        'provider' => 'anthropic',
-        'is_active' => true,
-        'api_key' => 'test-key',
-    ]);
-
-    $weak = NewsCluster::factory()->create([
-        'status' => 'pending',
-        'category' => 'anime',
-        'title' => 'Fuente A anuncia la temporada 2',
-        'relevance_score' => 5,
-    ]);
-    ScrapedItem::factory()->create(['news_cluster_id' => $weak->id]);
-    $strong = NewsCluster::factory()->create([
-        'status' => 'pending',
-        'category' => 'anime',
-        'title' => 'Se confirma la segunda temporada según Fuente B',
-        'relevance_score' => 20,
-    ]);
-    ScrapedItem::factory()->create(['news_cluster_id' => $strong->id]);
-    // Categoría distinta, no debería entrar en el mismo lote de fusión.
-    $unrelated = NewsCluster::factory()->create([
-        'status' => 'pending',
-        'category' => 'gaming',
-        'title' => 'Un juego nuevo cualquiera',
-    ]);
-
-    Prism::fake([
-        TextResponseFake::make()->withText("GRUPO:{$weak->id},{$strong->id}"),
-        TextResponseFake::make()->withText(
-            "ID:{$strong->id}:PUBLICAR:buena cobertura\nID:{$unrelated->id}:PUBLICAR:buena cobertura"
-        ),
-    ]);
-
-    $this->artisan('news:auto-review')
-        ->expectsOutputToContain('Fusionados automáticamente por ser la misma noticia: 1')
-        ->assertExitCode(0);
-
-    expect($weak->fresh()->status)->toBe('rejected')
-        ->and($strong->fresh())
-        ->status->toBe('pending')
-        ->sources_count->toBe(2)
-        ->ai_verdict->toBe('publish');
-});
-
-test('it does not try to merge duplicates when there is no active ai provider', function () {
-    NewsCluster::factory()->count(2)->create(['status' => 'pending', 'category' => 'anime']);
-
-    $this->artisan('news:auto-review')
-        ->expectsOutputToContain('Fusionados automáticamente por ser la misma noticia: 0')
         ->assertExitCode(0);
 });
 

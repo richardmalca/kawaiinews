@@ -13,6 +13,15 @@ Schedule::command('news:scrape')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Una vez al día alcanza de sobra para agarrar duplicados (el scraper no
+// suele tardar más de un día en traer la misma noticia desde otra
+// fuente) — corría junto con news:auto-review cada 3h y eso duplicaba el
+// gasto en IA de analizar la bandeja sin necesidad real.
+Schedule::command('news:auto-merge')
+    ->dailyAt('05:00')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // 10 minutos después del scrape (":10", ":03:10", etc.) para darle tiempo a
 // que termine de agrupar los clusters nuevos antes de analizarlos.
 Schedule::command('news:auto-review')
