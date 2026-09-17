@@ -11,18 +11,36 @@ import {
 
 const DISMISS_KEY = 'kawaiinews_pwa_banner_dismissed';
 
+function getDismissed(): boolean {
+    if (typeof window === 'undefined') return true;
+    try {
+        if (localStorage.getItem(DISMISS_KEY) === 'true') return true;
+        return document.cookie.split('; ').some((row) => row.startsWith(`${DISMISS_KEY}=true`));
+    } catch {
+        return false;
+    }
+}
+
+function saveDismissed() {
+    try {
+        localStorage.setItem(DISMISS_KEY, 'true');
+    } catch {}
+    try {
+        const date = new Date();
+        date.setFullYear(date.getFullYear() + 1);
+        document.cookie = `${DISMISS_KEY}=true; expires=${date.toUTCString()}; path=/; SameSite=Lax`;
+    } catch {}
+}
+
 export function PwaInstallBanner() {
     const { isInstallable, isInstalled, isIos, installPwa } = usePwa();
-    const [isDismissed, setIsDismissed] = useState<boolean>(() => {
-        if (typeof window === 'undefined') return true;
-        return sessionStorage.getItem(DISMISS_KEY) === 'true';
-    });
+    const [isDismissed, setIsDismissed] = useState<boolean>(getDismissed);
     const [isInstalling, setIsInstalling] = useState(false);
     const [isIosModalOpen, setIsIosModalOpen] = useState(false);
 
     const handleDismiss = () => {
         setIsDismissed(true);
-        sessionStorage.setItem(DISMISS_KEY, 'true');
+        saveDismissed();
     };
 
     const handleInstall = async () => {
