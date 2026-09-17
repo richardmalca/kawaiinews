@@ -15,6 +15,7 @@ declare module '@inertiajs/core' {
             siteDescription?: string | null;
             siteOgImageUrl?: string | null;
             siteUrl: string;
+            currentUrl: string;
             contactEmail: string;
             auth: Auth;
             sidebarOpen: boolean;

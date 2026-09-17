@@ -50,6 +50,13 @@ class HandleInertiaRequests extends Middleware
             // cualquier página, pública o admin, arma links/emails/textos
             // sin tipear el dominio a mano y sin desincronizarse si cambia.
             'siteUrl' => rtrim(url('/'), '/'),
+            // Para armar <link rel="canonical"> y las URLs de OG/JSON-LD sin
+            // depender de window.location: con SSR activo, el HTML que
+            // ven Google y cualquier auditor externo se genera en el
+            // servidor, donde `window` no existe — sin esto esas etiquetas
+            // quedaban vacías en el HTML crudo aunque se vieran bien una
+            // vez que el navegador hidrataba la página.
+            'currentUrl' => $request->fullUrl(),
             'contactEmail' => $siteSettings->contactEmail(),
             'auth' => [
                 'user' => $request->user() ? [

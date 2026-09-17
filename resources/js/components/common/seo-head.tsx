@@ -23,7 +23,7 @@ export function SeoHead({
     profile,
     noIndex = false,
 }: SeoHeadProps) {
-    const { name: sharedName, siteSeoTitle, siteDescription, siteOgImageUrl, siteLogoUrl } = usePage().props;
+    const { name: sharedName, siteSeoTitle, siteDescription, siteOgImageUrl, siteLogoUrl, siteUrl, currentUrl } = usePage().props;
     const siteName = sharedName || 'KawaiiNews';
     const defaultDescription =
         siteDescription ||
@@ -55,6 +55,7 @@ export function SeoHead({
     const computedUrl =
         canonicalUrl ||
         article?.canonical_url ||
+        currentUrl ||
         (typeof window !== 'undefined' ? window.location.href : '');
 
     const computedImage =
@@ -93,7 +94,7 @@ export function SeoHead({
                         '@type': 'Person',
                         name: article.author.name,
                         url: article.author.username
-                            ? `${typeof window !== 'undefined' ? window.location.origin : ''}/perfil/${article.author.username}`
+                            ? `${siteUrl || (typeof window !== 'undefined' ? window.location.origin : '')}/perfil/${article.author.username}`
                             : undefined,
                     }
                   : {
@@ -115,11 +116,11 @@ export function SeoHead({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
               name: siteName,
-              url: typeof window !== 'undefined' ? window.location.origin : '',
+              url: siteUrl || (typeof window !== 'undefined' ? window.location.origin : ''),
               description: defaultDescription,
               potentialAction: {
                   '@type': 'SearchAction',
-                  target: `${typeof window !== 'undefined' ? window.location.origin : ''}/?q={search_term_string}`,
+                  target: `${siteUrl || (typeof window !== 'undefined' ? window.location.origin : '')}/?q={search_term_string}`,
                   'query-input': 'required name=search_term_string',
               },
           };
