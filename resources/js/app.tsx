@@ -24,7 +24,7 @@ router.on('navigate', (event) => {
 });
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => title,
     layout: (name) => {
         switch (true) {
             case name === 'welcome' || name.startsWith('public/'):
