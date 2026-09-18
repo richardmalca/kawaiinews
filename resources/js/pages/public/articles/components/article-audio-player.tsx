@@ -2,6 +2,7 @@ import { useSpeechNarrator } from '@/hooks/use-speech-narrator';
 import {
     AlertCircle,
     ArrowUp,
+    FastForward,
     Headphones,
     Loader2,
     Mic,
@@ -12,7 +13,7 @@ import {
     Volume2,
     X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface ArticleAudioPlayerProps {
     title: string;
@@ -34,6 +35,9 @@ export function ArticleAudioPlayer({
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const progressBarRef = useRef<HTMLDivElement | null>(null);
+    const isDraggingRef = useRef(false);
+
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -100,6 +104,48 @@ export function ArticleAudioPlayer({
 
         speech.stop();
         speech.play();
+    };
+
+    const handleSkip = (seconds: number) => {
+        if (isAiAudio && audioRef.current && duration > 0) {
+            const nextTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + seconds));
+            audioRef.current.currentTime = nextTime;
+            setCurrentTime(nextTime);
+        }
+    };
+
+    const seekToClientX = (clientX: number) => {
+        if (!progressBarRef.current) return;
+        const rect = progressBarRef.current.getBoundingClientRect();
+        if (rect.width <= 0) return;
+        const clampedX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const percent = (clampedX / rect.width) * 100;
+
+        if (isAiAudio && audioRef.current && duration > 0) {
+            const newTime = (percent / 100) * duration;
+            audioRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isAiAudio || duration <= 0) return;
+        isDraggingRef.current = true;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        seekToClientX(e.clientX);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDraggingRef.current) return;
+        seekToClientX(e.clientX);
+    };
+
+    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDraggingRef.current) return;
+        isDraggingRef.current = false;
+        try {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch {}
     };
 
     const handleClosePlayer = () => {
@@ -187,7 +233,9 @@ export function ArticleAudioPlayer({
                         }
                     }}
                     onTimeUpdate={(e) => {
-                        setCurrentTime(e.currentTarget.currentTime);
+                        if (!isDraggingRef.current) {
+                            setCurrentTime(e.currentTarget.currentTime);
+                        }
                     }}
                     onPlay={() => {
                         setIsPlaying(true);
@@ -286,11 +334,29 @@ export function ArticleAudioPlayer({
 
             {isInteracting && (
                 <div className="animate-in slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 pb-[env(safe-area-inset-bottom,0px)] shadow-2xl backdrop-blur-md duration-300 dark:border-neutral-800/80 dark:bg-neutral-950/95">
-                    <div className="relative h-1 w-full overflow-hidden bg-neutral-200 dark:bg-neutral-800">
-                        <div
-                            className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 transition-all duration-150"
-                            style={{ width: `${progressPercent}%` }}
-                        />
+                    <div
+                        ref={progressBarRef}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        className={`group relative flex h-4 w-full select-none items-center touch-none ${
+                            isAiAudio && duration > 0 ? 'cursor-pointer' : ''
+                        }`}
+                    >
+                        <div className="relative h-1.5 w-full overflow-hidden bg-neutral-200 transition-all group-hover:h-2 dark:bg-neutral-800">
+                            <div
+                                className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500"
+                                style={{ width: `${progressPercent}%` }}
+                            />
+                        </div>
+
+                        {isAiAudio && duration > 0 && (
+                            <div
+                                className="pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-rose-500 shadow-sm transition-transform group-hover:scale-125 dark:border-neutral-900"
+                                style={{ left: `${progressPercent}%` }}
+                            />
+                        )}
                     </div>
 
                     <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
@@ -315,7 +381,7 @@ export function ArticleAudioPlayer({
                             </div>
                         </div>
 
-                        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
                             {isAiAudio && (
                                 <button
                                     type="button"
@@ -327,15 +393,41 @@ export function ArticleAudioPlayer({
                                 </button>
                             )}
 
-                            <button
-                                type="button"
-                                onClick={handleRestart}
-                                className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
-                                title="Reiniciar"
-                                aria-label="Reiniciar audio"
-                            >
-                                <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </button>
+                            {isAiAudio && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSkip(-10)}
+                                        className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:scale-95 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                        title="Retroceder 10 segundos"
+                                        aria-label="Retroceder 10 segundos"
+                                    >
+                                        <span className="text-[11px] sm:text-xs font-bold font-mono">-10s</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSkip(10)}
+                                        className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:scale-95 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                        title="Adelantar 10 segundos"
+                                        aria-label="Adelantar 10 segundos"
+                                    >
+                                        <span className="text-[11px] sm:text-xs font-bold font-mono">+10s</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {!isAiAudio && (
+                                <button
+                                    type="button"
+                                    onClick={handleRestart}
+                                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:scale-95 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+                                    title="Reiniciar"
+                                    aria-label="Reiniciar audio"
+                                >
+                                    <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                </button>
+                            )}
 
                             <button
                                 type="button"
