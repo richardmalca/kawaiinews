@@ -25,10 +25,9 @@ class AiCostEstimator
         $hasUnknownPricing = false;
 
         foreach ($rows as $row) {
-            $pricing = config("ai_pricing.{$row->provider}.{$row->model}");
-            $cost = $pricing
-                ? ($row->prompt_tokens / 1_000_000 * $pricing['input']) + ($row->completion_tokens / 1_000_000 * $pricing['output'])
-                : null;
+            $cost = $row->kind === 'image'
+                ? self::imageCost($row)
+                : self::tokenCost($row);
 
             if ($cost === null) {
                 $hasUnknownPricing = true;
@@ -48,5 +47,32 @@ class AiCostEstimator
             'total_cost_usd' => round($totalCost, 2),
             'has_unknown_pricing' => $hasUnknownPricing,
         ];
+    }
+
+    /**
+     * @param  object{provider: string, model: string, prompt_tokens: int, completion_tokens: int}  $row
+     */
+    private static function tokenCost(object $row): ?float
+    {
+        $pricing = config("ai_pricing.{$row->provider}.{$row->model}");
+
+        if (! $pricing) {
+            return null;
+        }
+
+        return ($row->prompt_tokens / 1_000_000 * $pricing['input']) + ($row->completion_tokens / 1_000_000 * $pricing['output']);
+    }
+
+    /**
+     * La generación de imagen se cobra por imagen, no por token de texto —
+     * ver el comentario de "image_per_call" en config/ai_pricing.php.
+     *
+     * @param  object{provider: string, model: string, calls: int}  $row
+     */
+    private static function imageCost(object $row): ?float
+    {
+        $pricePerImage = config("ai_pricing.image_per_call.{$row->provider}.{$row->model}");
+
+        return $pricePerImage ? $row->calls * $pricePerImage : null;
     }
 }

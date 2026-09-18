@@ -32,4 +32,20 @@ return [
     'google-tts' => [
         'es-US-Wavenet-B' => ['input' => 4.0, 'output' => 0.0],
     ],
+
+    // Generación de imagen no se cobra por token de texto sino por imagen
+    // generada (el precio varía según proveedor, calidad y tamaño) — por
+    // eso va en su propia tabla, precio fijo en USD por imagen, en vez de
+    // la fórmula input/output por millón de tokens de arriba. Aproximado a
+    // partir del precio público del proveedor para la calidad/tamaño que
+    // usa la app (ver MediaLibraryService::IMAGE_ASPECT_OPTIONS) — no es
+    // exacto, pero es mejor estimado que $0.
+    'image_per_call' => [
+        'openai' => [
+            'gpt-image-1' => 0.04, // calidad media, 1536x1024 (paisaje)
+        ],
+        'gemini' => [
+            'gemini-3.1-flash-image-preview' => 0.04,
+        ],
+    ],
 ];
