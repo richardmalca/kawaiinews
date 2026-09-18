@@ -130,6 +130,26 @@ class User extends Authenticatable implements PasskeyUser
             ->exists();
     }
 
+    /**
+     * A diferencia de toggleFollowCategory(), nunca deja de seguir — solo
+     * agrega la categoría si todavía no la sigue. Lo usa
+     * CategoryAutoFollow para sumar el seguimiento solo, sin arriesgarse
+     * a sacarle uno que el usuario haya elegido a propósito.
+     */
+    public function followCategory(string $category): void
+    {
+        if ($this->isFollowingCategory($category)) {
+            return;
+        }
+
+        DB::table('category_user')->insert([
+            'user_id' => $this->id,
+            'category' => $category,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     public function toggleFollowCategory(string $category): bool
     {
         $existing = DB::table('category_user')

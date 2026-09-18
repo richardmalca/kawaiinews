@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\ArticleLikedNotification;
 use App\Notifications\ArticleSavedNotification;
 use App\Notifications\ArticleSharedNotification;
+use App\Support\CategoryAutoFollow;
 
 class ArticleInteractionService
 {
@@ -18,9 +19,14 @@ class ArticleInteractionService
     public function toggleLike(User $user, NewsArticle $article): array
     {
         $user->toggleLike($article);
+        $liked = $user->hasLiked($article);
+
+        if ($liked) {
+            CategoryAutoFollow::afterLike($user, $article);
+        }
 
         return [
-            'liked' => $user->hasLiked($article),
+            'liked' => $liked,
             'total_likers' => $article->likers()->count(),
         ];
     }
@@ -32,6 +38,10 @@ class ArticleInteractionService
     {
         $user->toggleFavorite($article);
         $favorited = $user->hasFavorited($article);
+
+        if ($favorited) {
+            CategoryAutoFollow::afterFavorite($user, $article);
+        }
 
         // Notificar al autor si guardó la noticia y no es el autor mismo
         if ($favorited && $article->author_id && $article->author_id !== $user->id) {
@@ -82,6 +92,8 @@ class ArticleInteractionService
                 ['user_id' => $user->id, 'news_article_id' => $article->id],
                 ['channel' => $channel, 'updated_at' => now(), 'created_at' => now()]
             );
+
+            CategoryAutoFollow::afterShare($user, $article);
         } else {
             Share::create([
                 'user_id' => null,
