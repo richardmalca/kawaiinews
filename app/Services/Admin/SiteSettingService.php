@@ -69,14 +69,17 @@ class SiteSettingService
 
     /**
      * Genera, a partir de una sola imagen subida, todos los tamaños de
-     * favicon que hacen falta: 32x32 (pestaña del navegador), 192x192
-     * (Android/PWA) y 180x180 (apple-touch-icon, iOS). Recorta al centro
-     * en cuadrado si la imagen no es cuadrada, así no queda deformado.
+     * favicon que hacen falta: 32x32 (pestaña del navegador), 192x192 y
+     * 512x512 (ícono de Android/PWA, este último para el splash screen y
+     * el ícono de "agregar a pantalla de inicio") y 180x180
+     * (apple-touch-icon, iOS). Recorta al centro en cuadrado si la imagen
+     * no es cuadrada, así no queda deformado.
      */
     public function updateFavicon(SiteSetting $settings, UploadedFile $file): SiteSetting
     {
         $this->deleteIfExists($settings->favicon_path);
         $this->deleteIfExists($settings->favicon_192_path);
+        $this->deleteIfExists($settings->favicon_512_path);
         $this->deleteIfExists($settings->apple_touch_icon_path);
 
         $source = $this->loadImage($file);
@@ -84,6 +87,7 @@ class SiteSettingService
         $paths = [
             'favicon_path' => $this->resizeSquareAndStore($source, 32, 'site/favicon-32.png'),
             'favicon_192_path' => $this->resizeSquareAndStore($source, 192, 'site/favicon-192.png'),
+            'favicon_512_path' => $this->resizeSquareAndStore($source, 512, 'site/favicon-512.png'),
             'apple_touch_icon_path' => $this->resizeSquareAndStore($source, 180, 'site/apple-touch-icon.png'),
         ];
 

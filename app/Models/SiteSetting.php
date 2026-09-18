@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $logo_path
  * @property string|null $favicon_path
  * @property string|null $favicon_192_path
+ * @property string|null $favicon_512_path
  * @property string|null $apple_touch_icon_path
  * @property string|null $og_image_path
  * @property string|null $theme_color
@@ -29,7 +30,7 @@ use Illuminate\Support\Facades\Storage;
  * @property bool $auto_accept_news_enabled
  * @property int $auto_accept_news_daily_limit
  */
-#[Fillable(['name', 'seo_title', 'description', 'contact_email', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled', 'auto_accept_news_enabled', 'auto_accept_news_daily_limit'])]
+#[Fillable(['name', 'seo_title', 'description', 'contact_email', 'keywords', 'logo_path', 'favicon_path', 'favicon_192_path', 'favicon_512_path', 'apple_touch_icon_path', 'og_image_path', 'theme_color', 'twitter_handle', 'facebook_url', 'instagram_url', 'tiktok_url', 'search_box_enabled', 'auto_accept_news_enabled', 'auto_accept_news_daily_limit'])]
 class SiteSetting extends Model
 {
     private const CACHE_KEY = 'site-settings:singleton';
@@ -139,6 +140,11 @@ class SiteSetting extends Model
     public function favicon192Url(): ?string
     {
         return $this->resolveUrl($this->favicon_192_path);
+    }
+
+    public function favicon512Url(): ?string
+    {
+        return $this->resolveUrl($this->favicon_512_path);
     }
 
     public function appleTouchIconUrl(): ?string

@@ -63,7 +63,7 @@
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a">
 
         {{-- PWA Manifest & Mobile Capability --}}
-        <link rel="manifest" href="/manifest.json">
+        <link rel="manifest" href="{{ route('manifest') }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">

@@ -23,6 +23,7 @@ use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\LegalController;
+use App\Http\Controllers\Public\ManifestController;
 use App\Http\Controllers\Public\NotificationController;
 use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
@@ -42,6 +43,7 @@ Route::get('buscar/sugerencias', SearchSuggestionController::class)
 Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('manifest.json', ManifestController::class)->name('manifest');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
 Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
