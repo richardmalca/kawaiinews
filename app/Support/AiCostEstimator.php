@@ -54,7 +54,7 @@ class AiCostEstimator
      */
     private static function tokenCost(object $row): ?float
     {
-        $pricing = config("ai_pricing.{$row->provider}.{$row->model}");
+        $pricing = self::modelPricing($row->provider, $row->model);
 
         if (! $pricing) {
             return null;
@@ -71,8 +71,25 @@ class AiCostEstimator
      */
     private static function imageCost(object $row): ?float
     {
-        $pricePerImage = config("ai_pricing.image_per_call.{$row->provider}.{$row->model}");
+        $pricePerImage = self::modelPricing($row->provider, $row->model, 'image_per_call');
 
         return $pricePerImage ? $row->calls * $pricePerImage : null;
+    }
+
+    /**
+     * Busca el precio de un modelo dentro de config/ai_pricing.php sin
+     * armar la ruta como un string con puntos (config("ai_pricing.{$provider}.{$model}")):
+     * varios nombres de modelo tienen un punto (gpt-4.1,
+     * gemini-3.1-flash-image-preview), y Laravel interpreta cada punto de
+     * un string de config como un nivel anidado más — así que ese modelo
+     * nunca se encontraba, aunque estuviera cargado en la tabla. Acá se
+     * trae el array del proveedor entero y se indexa el modelo como clave
+     * literal, no como parte de una ruta.
+     */
+    private static function modelPricing(string $provider, string $model, string $table = ''): mixed
+    {
+        $key = $table !== '' ? "ai_pricing.{$table}.{$provider}" : "ai_pricing.{$provider}";
+
+        return (config($key) ?? [])[$model] ?? null;
     }
 }

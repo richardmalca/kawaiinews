@@ -40,6 +40,20 @@ test('image generation is priced per call, not per token', function () {
         ->and($result['total_cost_usd'])->toBe(0.12);
 });
 
+test('a model name containing a dot is priced correctly (regression: config() treats dots as nested keys)', function () {
+    $rows = new Collection([
+        usageRow(['kind' => 'draft', 'provider' => 'openai', 'model' => 'gpt-4.1', 'prompt_tokens' => 1_000_000, 'completion_tokens' => 1_000_000]),
+        usageRow(['kind' => 'image', 'provider' => 'gemini', 'model' => 'gemini-3.1-flash-image-preview', 'calls' => 2]),
+    ]);
+
+    $result = AiCostEstimator::estimate($rows);
+
+    // gpt-4.1: $2 input + $8 output por millón de tokens.
+    expect($result['by_kind']['draft']['estimated_cost_usd'])->toBe(10.0)
+        ->and($result['by_kind']['image']['estimated_cost_usd'])->toBe(0.08)
+        ->and($result['has_unknown_pricing'])->toBeFalse();
+});
+
 test('a model missing from the pricing table does not add to the total, and flags has_unknown_pricing', function () {
     $rows = new Collection([
         usageRow(['kind' => 'image', 'provider' => 'openai', 'model' => 'some-future-model', 'calls' => 5]),
