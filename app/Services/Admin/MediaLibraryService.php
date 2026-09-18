@@ -616,11 +616,37 @@ class MediaLibraryService
 
     private function buildNarrationScript(NewsArticle $newsArticle): string
     {
-        $plainBody = trim(preg_replace('/\s+/', ' ', strip_tags((string) $newsArticle->body)) ?? '');
+        $plainBody = implode(' ', $this->textBlocks((string) $newsArticle->body));
 
         $script = trim($newsArticle->title.". \n".($newsArticle->excerpt ?? '')." \n".$plainBody);
 
         return Str::limit($script, self::AUDIO_MAX_CHARS, '');
+    }
+
+    /**
+     * Separa el cuerpo por sus bloques de HTML (<h3> de subtítulo, <p> de
+     * párrafo, <li>, etc.) ANTES de sacar las etiquetas, y le agrega un
+     * punto final a cada bloque que no termine ya en uno. Sin esto,
+     * strip_tags() + colapsar espacios deja el subtítulo pegado
+     * directamente al párrafo siguiente ("Subtítulo El párrafo..."), sin
+     * ninguna puntuación entre medio — y la voz de la narración lo lee
+     * todo corrido, sin la pausa que sí hace al final de una oración.
+     *
+     * @return array<int, string>
+     */
+    private function textBlocks(string $html): array
+    {
+        $withBreaks = preg_replace('/<\/(h[1-6]|p|li|blockquote)>/i', "$0\n", $html) ?? $html;
+        $withBreaks = preg_replace('/<br\s*\/?>/i', "\n", $withBreaks) ?? $withBreaks;
+
+        $blocks = preg_split('/\n+/', strip_tags($withBreaks)) ?: [];
+
+        return collect($blocks)
+            ->map(fn (string $block) => trim(preg_replace('/\s+/', ' ', $block) ?? ''))
+            ->filter()
+            ->map(fn (string $block) => preg_match('/[.!?:]$/', $block) ? $block : "{$block}.")
+            ->values()
+            ->all();
     }
 
     /**

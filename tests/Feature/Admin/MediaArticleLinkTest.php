@@ -86,6 +86,35 @@ test('generating a narration with Google Cloud Text-to-Speech calls its REST API
         ->and($log->completion_tokens)->toBe(0);
 });
 
+test('the narration script adds a pause after subheadings instead of reading them glued to the next paragraph', function () {
+    AiProvider::factory()->create([
+        'provider' => 'google-tts',
+        'api_key' => 'test-key',
+    ]);
+
+    Http::fake([
+        'texttospeech.googleapis.com/*' => Http::response([
+            'audioContent' => base64_encode('fake-mp3-bytes'),
+        ]),
+    ]);
+
+    $article = NewsArticle::factory()->create([
+        'title' => 'Título',
+        'excerpt' => null,
+        'body' => '<h3>Un subtítulo sin punto</h3><p>El párrafo que sigue.</p>',
+    ]);
+
+    app(MediaLibraryService::class)->generateNarration($article);
+
+    Http::assertSent(function ($request) {
+        $text = $request['input']['text'];
+
+        // Antes: "Un subtítulo sin punto El párrafo que sigue." (sin
+        // puntuación entre medio, la voz no hacía ninguna pausa ahí).
+        return str_contains($text, 'Un subtítulo sin punto. El párrafo que sigue.');
+    });
+});
+
 test('audio library only lists audio media, not images', function () {
     $article = NewsArticle::factory()->create();
     Media::factory()->create(['news_article_id' => $article->id]);
