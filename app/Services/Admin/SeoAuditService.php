@@ -8,6 +8,7 @@ use App\Support\AiUsageLogger;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Prism\Prism\Facades\Prism;
 use Throwable;
 
@@ -188,5 +189,86 @@ class SeoAuditService
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Genera una versión corregida de título, descripción y palabras clave
+     * a partir de lo que la auditoría encontró — para que el admin no
+     * tenga que redactarlas a mano, solo revisar y guardar. Solo cubre lo
+     * que un texto puede arreglar (no logo/favicon/imagen OG, que son
+     * archivos que hay que subir).
+     *
+     * @param  array<string, mixed>  $tags
+     * @param  array<int, array{key: string, label: string, status: string, detail: string}>  $checks
+     * @return array{seo_title: string, description: string, keywords: array<int, string>}|null
+     */
+    public function suggestFixes(SiteSetting $settings, array $tags, array $checks): ?array
+    {
+        $provider = AiProvider::where('is_active', true)->first();
+
+        if (! $provider || ! $provider->hasApiKey()) {
+            return null;
+        }
+
+        $checksSummary = collect($checks)
+            ->map(fn ($check) => "- {$check['label']}: {$check['status']} ({$check['detail']})")
+            ->implode("\n");
+
+        $currentKeywords = filled($settings->keywords) ? implode(', ', $settings->keywords) : '(ninguna cargada)';
+
+        $prompt = <<<PROMPT
+            Sos un consultor SEO. A partir de este sitio de noticias de anime, manga y videojuegos, redactá una versión mejorada del título para Google, la descripción y las palabras clave — pensada para arreglar lo que el checklist marcó como falla o advertencia.
+
+            Título actual: {$tags['title']}
+            Descripción actual: {$tags['description']}
+            Palabras clave actuales: {$currentKeywords}
+
+            Checklist automático:
+            {$checksSummary}
+
+            Devolvé la respuesta EXACTAMENTE en este formato, sin texto adicional:
+            TITULO: (hasta 60 caracteres, atractivo para buscar en Google, sin comillas)
+            DESCRIPCION: (hasta 155 caracteres, resume el sitio y da ganas de entrar)
+            PALABRAS_CLAVE: (3 a 6 palabras o frases cortas separadas por coma, sin el símbolo #)
+            PROMPT;
+
+        try {
+            $response = Prism::text()
+                ->using($provider->provider, $provider->default_model, [
+                    'api_key' => $provider->api_key,
+                ])
+                ->withPrompt($prompt)
+                ->asText();
+
+            AiUsageLogger::record('seo_audit', $provider->provider, $provider->default_model, $response->usage);
+
+            return $this->parseFixSuggestion($response->text, $settings);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array{seo_title: string, description: string, keywords: array<int, string>}
+     */
+    private function parseFixSuggestion(string $text, SiteSetting $settings): array
+    {
+        preg_match('/TITULO:\s*(.+)/i', $text, $titleMatch);
+        preg_match('/DESCRIPCION:\s*(.+?)(?=PALABRAS_CLAVE:|$)/is', $text, $descriptionMatch);
+        preg_match('/PALABRAS_CLAVE:\s*(.+)/i', $text, $keywordsMatch);
+
+        $keywords = isset($keywordsMatch[1])
+            ? collect(explode(',', $keywordsMatch[1]))
+                ->map(fn (string $keyword) => trim($keyword, " \t\n\r\0\x0B#."))
+                ->filter()
+                ->values()
+                ->all()
+            : $settings->keywords;
+
+        return [
+            'seo_title' => trim($titleMatch[1] ?? '') ?: $settings->seoTitle(),
+            'description' => Str::squish(trim($descriptionMatch[1] ?? '')) ?: (string) $settings->description,
+            'keywords' => $keywords ?: [],
+        ];
     }
 }

@@ -63,6 +63,39 @@ test('the seo audit includes an ai review when a text provider is active', funct
     expect($response->json('ai_review'))->toBe('Todo bien, mejorá la descripción.');
 });
 
+test('seo audit fix generates a corrected title, description and keywords with ai', function () {
+    AiProvider::factory()->create(['is_active' => true, 'api_key' => 'test-key']);
+    Prism::fake([TextResponseFake::make()->withText(
+        "TITULO: Kawaii News - Anime, Manga y Videojuegos\n".
+        "DESCRIPCION: Las últimas noticias de anime y manga, actualizadas todos los días.\n".
+        'PALABRAS_CLAVE: anime, manga, videojuegos, otaku'
+    )]);
+
+    $response = $this->postJson(route('admin.site-settings.seo-audit.fix'), [
+        'tags' => ['title' => 'Kawaii News', 'description' => null],
+        'checks' => [
+            ['key' => 'title_length', 'label' => 'Largo del título', 'status' => 'fail', 'detail' => 'x'],
+        ],
+    ]);
+
+    $response->assertOk();
+    $response->assertJson([
+        'seo_title' => 'Kawaii News - Anime, Manga y Videojuegos',
+        'description' => 'Las últimas noticias de anime y manga, actualizadas todos los días.',
+        'keywords' => ['anime', 'manga', 'videojuegos', 'otaku'],
+    ]);
+});
+
+test('seo audit fix fails clearly when there is no active ai provider', function () {
+    $response = $this->postJson(route('admin.site-settings.seo-audit.fix'), [
+        'tags' => ['title' => 'Kawaii News'],
+        'checks' => [],
+    ]);
+
+    $response->assertStatus(422);
+    expect($response->json('error'))->not->toBeNull();
+});
+
 test('a superadmin can toggle the google search box', function () {
     $response = $this->post(route('admin.site-settings.search-box.update'), ['enabled' => true]);
 

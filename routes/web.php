@@ -256,6 +256,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('site-settings/seo-audit', [SiteSettingController::class, 'seoAudit'])
                 ->middleware('throttle:ai-costly')
                 ->name('site-settings.seo-audit');
+            Route::post('site-settings/seo-audit/fix', [SiteSettingController::class, 'seoAuditFix'])
+                ->middleware('throttle:ai-costly')
+                ->name('site-settings.seo-audit.fix');
         });
     });
 

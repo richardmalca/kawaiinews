@@ -94,6 +94,22 @@ class SiteSettingController extends Controller
         return response()->json($this->seoAuditService->audit(SiteSetting::current()));
     }
 
+    public function seoAuditFix(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'tags' => ['required', 'array'],
+            'checks' => ['array'],
+        ]);
+
+        $fix = $this->seoAuditService->suggestFixes(SiteSetting::current(), $data['tags'], $data['checks'] ?? []);
+
+        if (! $fix) {
+            return response()->json(['error' => 'No hay un proveedor de IA de texto activo para generar la corrección.'], 422);
+        }
+
+        return response()->json($fix);
+    }
+
     public function updateOgImage(Request $request): RedirectResponse
     {
         $request->validate([

@@ -89,8 +89,67 @@ export default function SiteSettingsIndex({ settings }: Props) {
         settings.search_box_enabled,
     );
     const [searchBoxProcessing, setSearchBoxProcessing] = useState(false);
-    const { result: auditResult, loading: auditLoading, runAudit } =
-        useSeoAudit();
+    const {
+        result: auditResult,
+        loading: auditLoading,
+        runAudit,
+        fixing: auditFixing,
+        fixWithAi,
+    } = useSeoAudit();
+    const FIXABLE_SEO_CHECKS = [
+        'title_length',
+        'description_length',
+        'keywords',
+        'favicon',
+        'og_image',
+        'logo',
+        'social',
+    ];
+    const [activeTab, setActiveTab] = useState('identity');
+
+    // Qué pestaña y campo corresponde arreglar por cada chequeo que puede
+    // fallar en la auditoría — así "Arreglar" lleva directo al lugar en
+    // vez de dejar al admin buscando dónde está cada cosa.
+    const SEO_CHECK_FIELDS: Record<string, { tab: string; fieldId: string }> =
+        {
+            title_length: { tab: 'identity', fieldId: 'site-seo-title' },
+            description_length: {
+                tab: 'identity',
+                fieldId: 'site-description',
+            },
+            keywords: { tab: 'identity', fieldId: 'tags-input' },
+            favicon: { tab: 'images', fieldId: 'field-favicon' },
+            og_image: { tab: 'images', fieldId: 'field-og-image' },
+            logo: { tab: 'images', fieldId: 'field-logo' },
+            social: { tab: 'social', fieldId: 'twitter-handle' },
+        };
+
+    const applyAiFix = () => {
+        fixWithAi((suggestion) => {
+            setSeoTitle(suggestion.seo_title);
+            setDescription(suggestion.description);
+            setKeywords(suggestion.keywords);
+            goToField('title_length');
+        });
+    };
+
+    const goToField = (checkKey: string) => {
+        const target = SEO_CHECK_FIELDS[checkKey];
+
+        if (!target) {
+            return;
+        }
+
+        setActiveTab(target.tab);
+
+        // Un tick para que el contenido de la pestaña recién activada ya
+        // esté en el DOM antes de intentar hacer scroll/foco.
+        requestAnimationFrame(() => {
+            const el = document.getElementById(target.fieldId);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el?.focus({ preventScroll: true });
+        });
+    };
 
     const logoUpload = useSiteImageUpload(
         siteSettingsRoutes.logo.update().url,
@@ -185,7 +244,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                     description="Nombre, logo, favicon e imagen que se usan en el sitio y al compartir un link en redes"
                 />
 
-                <Tabs defaultValue="identity">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList>
                         <TabsTrigger value="identity">
                             Identidad y SEO
@@ -419,18 +478,37 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <Button
-                                    type="button"
-                                    disabled={auditLoading}
-                                    onClick={runAudit}
-                                >
-                                    {auditLoading ? (
-                                        <Spinner />
-                                    ) : (
-                                        <Search className="h-4 w-4" />
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        type="button"
+                                        disabled={auditLoading}
+                                        onClick={runAudit}
+                                    >
+                                        {auditLoading ? (
+                                            <Spinner />
+                                        ) : (
+                                            <Search className="h-4 w-4" />
+                                        )}
+                                        Analizar ahora
+                                    </Button>
+
+                                    {auditResult?.ai_review && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={auditFixing}
+                                            onClick={applyAiFix}
+                                        >
+                                            {auditFixing ? (
+                                                <Spinner />
+                                            ) : (
+                                                <Sparkles className="h-4 w-4" />
+                                            )}
+                                            Arreglar título/descripción/
+                                            palabras clave con IA
+                                        </Button>
                                     )}
-                                    Analizar ahora
-                                </Button>
+                                </div>
 
                                 {auditResult && (
                                     <div className="grid gap-4 sm:grid-cols-2">
@@ -440,6 +518,10 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                             </p>
                                             <SeoChecklist
                                                 checks={auditResult.checks}
+                                                fixableKeys={
+                                                    FIXABLE_SEO_CHECKS
+                                                }
+                                                onFix={goToField}
                                             />
                                         </div>
                                         <div>
@@ -466,6 +548,81 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                                     </AlertDescription>
                                                 </Alert>
                                             )}
+                                        </div>
+
+                                        <div>
+                                            <p className="mb-2 text-sm font-medium">
+                                                Así se ve ahora mismo en
+                                                Google
+                                            </p>
+                                            <p className="text-muted-foreground mb-2 text-xs">
+                                                Armado con lo que el sitio
+                                                REALMENTE está sirviendo
+                                                (arriba), no con lo que
+                                                tengas escrito sin guardar en
+                                                "Identidad y SEO".
+                                            </p>
+                                            <GoogleSerpPreview
+                                                title={
+                                                    String(
+                                                        auditResult.tags
+                                                            .title ?? '',
+                                                    )
+                                                }
+                                                description={String(
+                                                    auditResult.tags
+                                                        .description ?? '',
+                                                )}
+                                                url={
+                                                    String(
+                                                        auditResult.tags
+                                                            .canonical ?? '',
+                                                    ) || settings.canonical_url
+                                                }
+                                                faviconUrl={
+                                                    settings.favicon_url
+                                                }
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <p className="mb-2 text-sm font-medium">
+                                                ¿Está indexado en Google?
+                                            </p>
+                                            <Alert>
+                                                <AlertTitle>
+                                                    Esto no lo podemos medir
+                                                    automáticamente
+                                                </AlertTitle>
+                                                <AlertDescription>
+                                                    Saber si Google ya indexó
+                                                    tus páginas requiere
+                                                    conectar Google Search
+                                                    Console (necesita
+                                                    credenciales de Google que
+                                                    todavía no tenemos
+                                                    configuradas) — este
+                                                    checklist solo puede
+                                                    revisar lo que el sitio
+                                                    sirve, no lo que Google
+                                                    ya guardó de él.
+                                                    Mientras tanto, revisalo
+                                                    vos mismo:
+                                                </AlertDescription>
+                                            </Alert>
+                                            <a
+                                                href={`https://www.google.com/search?q=site:${encodeURIComponent(String(settings.canonical_url).replace(/^https?:\/\//, ''))}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary mt-2 inline-block text-sm underline"
+                                            >
+                                                Buscar site:
+                                                {settings.canonical_url.replace(
+                                                    /^https?:\/\//,
+                                                    '',
+                                                )}{' '}
+                                                en Google →
+                                            </a>
                                         </div>
 
                                         <div className="sm:col-span-2">
@@ -499,7 +656,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
 
                     <TabsContent value="images">
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <Card>
+                            <Card id="field-logo" tabIndex={-1}>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium">
                                         Logo
@@ -566,7 +723,7 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card id="field-favicon" tabIndex={-1}>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium">
                                         Favicon
