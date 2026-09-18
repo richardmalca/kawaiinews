@@ -486,7 +486,7 @@ class MediaLibraryService
         $model = config("ai_catalog.{$provider->provider}.audio_model");
 
         $audioBase64 = $provider->provider === 'google-tts'
-            ? $this->generateGoogleTtsAudio($script, $provider->api_key, $model)
+            ? $this->generateGoogleTtsAudio($this->buildNarrationSsml($newsArticle), $provider->api_key, $model)
             : $this->generateAudioWithPrism($provider->provider, $model, $provider->api_key, $script);
 
         // Google Cloud TTS cobra por carácter narrado, no por token — se
@@ -534,7 +534,7 @@ class MediaLibraryService
      * directo a su API REST — es simple, solo necesita la clave como
      * parámetro de consulta, nada de credenciales de service account.
      */
-    private function generateGoogleTtsAudio(string $script, ?string $apiKey, string $voiceName): string
+    private function generateGoogleTtsAudio(string $ssml, ?string $apiKey, string $voiceName): string
     {
         if (! $apiKey) {
             throw new RuntimeException('Falta la API key de Google Cloud Text-to-Speech.');
@@ -543,7 +543,7 @@ class MediaLibraryService
         $response = Http::timeout(30)->post(
             "https://texttospeech.googleapis.com/v1/text:synthesize?key={$apiKey}",
             [
-                'input' => ['text' => $script],
+                'input' => ['ssml' => $ssml],
                 'voice' => ['languageCode' => 'es-US', 'name' => $voiceName],
                 'audioConfig' => ['audioEncoding' => 'MP3'],
             ]
@@ -616,30 +616,60 @@ class MediaLibraryService
 
     private function buildNarrationScript(NewsArticle $newsArticle): string
     {
-        $plainBody = implode(' ', $this->textBlocks((string) $newsArticle->body));
+        $plainBody = implode(' ', $this->narrationBlocks($newsArticle));
 
-        $script = trim($newsArticle->title.". \n".($newsArticle->excerpt ?? '')." \n".$plainBody);
-
-        return Str::limit($script, self::AUDIO_MAX_CHARS, '');
+        return Str::limit($plainBody, self::AUDIO_MAX_CHARS, '');
     }
 
     /**
-     * Separa el cuerpo por sus bloques de HTML (<h3> de subtítulo, <p> de
-     * párrafo, <li>, etc.) ANTES de sacar las etiquetas, y le agrega un
-     * punto final a cada bloque que no termine ya en uno. Sin esto,
-     * strip_tags() + colapsar espacios deja el subtítulo pegado
+     * Igual que buildNarrationScript(), pero como SSML con una pausa
+     * explícita entre bloques (<break time="650ms"/>) en vez de confiar en
+     * que el punto solo alcance — para Google Cloud Text-to-Speech, que sí
+     * soporta SSML a diferencia de los proveedores que pasan por Prism, un
+     * punto normal de oración se lee con una pausa demasiado corta para
+     * notarse como el corte real que hace falta entre un subtítulo y el
+     * párrafo siguiente.
+     */
+    private function buildNarrationSsml(NewsArticle $newsArticle): string
+    {
+        $blocks = [];
+        $length = 0;
+
+        foreach ($this->narrationBlocks($newsArticle) as $block) {
+            $length += mb_strlen($block) + 1;
+
+            if ($length > self::AUDIO_MAX_CHARS) {
+                break;
+            }
+
+            $blocks[] = $block;
+        }
+
+        $escaped = array_map(fn (string $block) => htmlspecialchars($block, ENT_XML1 | ENT_QUOTES, 'UTF-8'), $blocks);
+
+        return '<speak>'.implode(' <break time="650ms"/> ', $escaped).'</speak>';
+    }
+
+    /**
+     * Título, resumen y cuerpo (separado por sus bloques de HTML — <h3> de
+     * subtítulo, <p> de párrafo, <li>, etc. — ANTES de sacarle las
+     * etiquetas), cada uno con un punto final si no termina ya en uno. Sin
+     * esto, strip_tags() + colapsar espacios deja el subtítulo pegado
      * directamente al párrafo siguiente ("Subtítulo El párrafo..."), sin
      * ninguna puntuación entre medio — y la voz de la narración lo lee
      * todo corrido, sin la pausa que sí hace al final de una oración.
      *
      * @return array<int, string>
      */
-    private function textBlocks(string $html): array
+    private function narrationBlocks(NewsArticle $newsArticle): array
     {
-        $withBreaks = preg_replace('/<\/(h[1-6]|p|li|blockquote)>/i', "$0\n", $html) ?? $html;
+        $withBreaks = preg_replace('/<\/(h[1-6]|p|li|blockquote)>/i', "$0\n", (string) $newsArticle->body) ?? (string) $newsArticle->body;
         $withBreaks = preg_replace('/<br\s*\/?>/i', "\n", $withBreaks) ?? $withBreaks;
 
-        $blocks = preg_split('/\n+/', strip_tags($withBreaks)) ?: [];
+        $blocks = array_merge(
+            [$newsArticle->title, $newsArticle->excerpt ?? ''],
+            preg_split('/\n+/', strip_tags($withBreaks)) ?: [],
+        );
 
         return collect($blocks)
             ->map(fn (string $block) => trim(preg_replace('/\s+/', ' ', $block) ?? ''))

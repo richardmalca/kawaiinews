@@ -78,7 +78,8 @@ test('generating a narration with Google Cloud Text-to-Speech calls its REST API
         ->and($media->provider)->toBe('google-tts');
 
     Http::assertSent(fn ($request) => str_contains($request->url(), 'texttospeech.googleapis.com')
-        && $request['voice']['name'] === 'es-US-Wavenet-B');
+        && $request['voice']['name'] === 'es-US-Wavenet-B'
+        && str_starts_with($request['input']['ssml'], '<speak>'));
 
     $log = AiUsageLog::where('kind', 'audio')->where('provider', 'google-tts')->first();
     expect($log)->not->toBeNull()
@@ -86,7 +87,7 @@ test('generating a narration with Google Cloud Text-to-Speech calls its REST API
         ->and($log->completion_tokens)->toBe(0);
 });
 
-test('the narration script adds a pause after subheadings instead of reading them glued to the next paragraph', function () {
+test('the Google TTS narration inserts an explicit SSML break after subheadings, not just a period', function () {
     AiProvider::factory()->create([
         'provider' => 'google-tts',
         'api_key' => 'test-key',
@@ -106,12 +107,35 @@ test('the narration script adds a pause after subheadings instead of reading the
 
     app(MediaLibraryService::class)->generateNarration($article);
 
-    Http::assertSent(function ($request) {
-        $text = $request['input']['text'];
+    // Antes: un punto normal de oración, que Google TTS lee con una pausa
+    // demasiado corta para notarse entre el subtítulo y el párrafo. Ahora:
+    // una pausa SSML explícita entre cada bloque.
+    Http::assertSent(fn ($request) => str_contains(
+        $request['input']['ssml'],
+        'Un subtítulo sin punto. <break time="650ms"/> El párrafo que sigue.'
+    ));
+});
 
-        // Antes: "Un subtítulo sin punto El párrafo que sigue." (sin
-        // puntuación entre medio, la voz no hacía ninguna pausa ahí).
-        return str_contains($text, 'Un subtítulo sin punto. El párrafo que sigue.');
+test('the narration script for non-SSML providers still gets a period after subheadings', function () {
+    AiProvider::factory()->create([
+        'provider' => 'openai',
+        'api_key' => 'test-key',
+    ]);
+
+    $fake = Prism::fake([
+        new AudioResponse(audio: new GeneratedAudio(base64: base64_encode('fake-mp3-bytes'), type: 'audio/mpeg')),
+    ]);
+
+    $article = NewsArticle::factory()->create([
+        'title' => 'Título',
+        'excerpt' => null,
+        'body' => '<h3>Un subtítulo sin punto</h3><p>El párrafo que sigue.</p>',
+    ]);
+
+    app(MediaLibraryService::class)->generateNarration($article);
+
+    $fake->assertRequest(function (array $requests) {
+        expect($requests[0]->input())->toContain('Un subtítulo sin punto. El párrafo que sigue.');
     });
 });
 
