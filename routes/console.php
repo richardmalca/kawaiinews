@@ -48,3 +48,12 @@ Schedule::command('views:flush')
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+// 1 vez por semana: manda a todos los usuarios (sigan algo o no) las
+// pocas noticias más populares de los últimos 7 días — así la app le
+// avisa algo hasta al que nunca siguió nada, sin mandar todos los días
+// (sería spam, no recomendación).
+Schedule::command('news:send-recommendations')
+    ->weeklyOn(1, '09:00')
+    ->withoutOverlapping()
+    ->onOneServer();
