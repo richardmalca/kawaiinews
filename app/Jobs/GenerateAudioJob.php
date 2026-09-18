@@ -35,16 +35,21 @@ class GenerateAudioJob implements ShouldQueue
             JobRunStatus::complete($this->runId, (new MediaResource($media))->resolve());
         } catch (Throwable $exception) {
             JobRunStatus::fail($this->runId, FriendlyAiError::forException($exception));
+        } finally {
+            $mediaLibraryService->unlockGeneration($this->newsArticle->id, 'audio');
         }
     }
 
     /**
      * Cubre el caso en que el job muere antes de llegar a handle() (ej. el
      * worker se reinicia a mitad de camino) — sin esto el frontend queda
-     * esperando indefinidamente en vez de ver el error.
+     * esperando indefinidamente en vez de ver el error, y el candado de
+     * generación se queda trabado para ese artículo.
      */
     public function failed(Throwable $exception): void
     {
         JobRunStatus::fail($this->runId, FriendlyAiError::forException($exception));
+
+        app(MediaLibraryService::class)->unlockGeneration($this->newsArticle->id, 'audio');
     }
 }

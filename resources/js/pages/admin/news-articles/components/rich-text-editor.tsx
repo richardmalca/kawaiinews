@@ -13,7 +13,7 @@ import {
     UnnestBlockButton,
     useCreateBlockNote,
 } from '@blocknote/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
 
 type Props = {
@@ -21,7 +21,29 @@ type Props = {
     onChange: (value: string) => void;
 };
 
-export default function RichTextEditor({ value, onChange }: Props) {
+/**
+ * BlockNote es un editor pensado para correr solo en el navegador (toca
+ * `window`/el DOM al armar su estado interno) — renderizarlo durante SSR
+ * (la página de edición de artículos ahora pasa por Inertia SSR) tira
+ * `window is not defined` y se cae toda la respuesta. Este wrapper no
+ * monta nada de BlockNote hasta después del primer render en cliente, así
+ * el server nunca intenta ejecutar ese código.
+ */
+export default function RichTextEditor(props: Props) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return <div className="border-input h-48 animate-pulse border bg-muted/40" />;
+    }
+
+    return <RichTextEditorClient {...props} />;
+}
+
+function RichTextEditorClient({ value, onChange }: Props) {
     const editor = useCreateBlockNote();
     const isLoadingInitialContent = useRef(true);
     const { resolvedAppearance } = useAppearance();

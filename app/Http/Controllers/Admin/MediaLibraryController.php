@@ -85,7 +85,7 @@ class MediaLibraryController extends Controller
         // encolamos otra: devolvemos el run_id que ya está corriendo para
         // que el frontend se enganche a esa misma operación.
         if ($articleId) {
-            $existingRunId = $this->mediaLibraryService->activeGenerationRunId($articleId);
+            $existingRunId = $this->mediaLibraryService->activeGenerationRunId($articleId, 'image');
 
             if ($existingRunId) {
                 return response()->json(['run_id' => $existingRunId, 'already_running' => true]);
@@ -95,7 +95,7 @@ class MediaLibraryController extends Controller
         $runId = JobRunStatus::start();
 
         if ($articleId) {
-            $this->mediaLibraryService->lockGeneration($articleId, $runId);
+            $this->mediaLibraryService->lockGeneration($articleId, $runId, 'image');
         }
 
         GenerateMediaJob::dispatch($runId, $request->validated('prompt'), $articleId);
@@ -106,17 +106,28 @@ class MediaLibraryController extends Controller
     public function generationStatus(NewsArticle $newsArticle): JsonResponse
     {
         return response()->json([
-            'run_id' => $this->mediaLibraryService->activeGenerationRunId($newsArticle->id),
+            'run_id' => $this->mediaLibraryService->activeGenerationRunId($newsArticle->id, 'image'),
         ]);
     }
 
     public function generateAudio(NewsArticle $newsArticle): JsonResponse
     {
+        // Mismo criterio que generar imagen: si ya hay una narración en
+        // curso para este artículo, no se encola otra — se engancha al
+        // mismo run_id que ya está corriendo.
+        $existingRunId = $this->mediaLibraryService->activeGenerationRunId($newsArticle->id, 'audio');
+
+        if ($existingRunId) {
+            return response()->json(['run_id' => $existingRunId, 'already_running' => true]);
+        }
+
         $runId = JobRunStatus::start();
+
+        $this->mediaLibraryService->lockGeneration($newsArticle->id, $runId, 'audio');
 
         GenerateAudioJob::dispatch($runId, $newsArticle);
 
-        return response()->json(['run_id' => $runId]);
+        return response()->json(['run_id' => $runId, 'already_running' => false]);
     }
 
     public function download(Media $media): BinaryFileResponse|StreamedResponse

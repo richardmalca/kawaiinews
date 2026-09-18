@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\GenerateAudioJob;
 use App\Jobs\GenerateMediaJob;
 use App\Jobs\MigrateMediaStorageJob;
 use App\Jobs\RenameMediaFilesJob;
@@ -311,6 +312,53 @@ test('the job releases the article lock when it finishes, on success or failure 
     (new GenerateMediaJob('a-run-id', 'un prompt', $article->id))->handle($mediaLibraryService);
 
     expect($mediaLibraryService->activeGenerationRunId($article->id))->toBeNull();
+});
+
+test('generating audio queues a job and locks the article, independently from the image lock (regression: could be triggered twice while generating)', function () {
+    Queue::fake();
+
+    $article = NewsArticle::factory()->create();
+
+    $first = $this->postJson(route('admin.news-articles.audio.generate', $article))
+        ->assertOk()->json();
+
+    expect($first['already_running'])->toBeFalse();
+    Queue::assertPushed(GenerateAudioJob::class, 1);
+
+    // Segundo intento mientras el primero "sigue corriendo": no debe
+    // encolar otro job, tiene que devolver el mismo run_id ya activo.
+    $second = $this->postJson(route('admin.news-articles.audio.generate', $article))
+        ->assertOk()->json();
+
+    expect($second['already_running'])->toBeTrue()
+        ->and($second['run_id'])->toBe($first['run_id']);
+    Queue::assertPushed(GenerateAudioJob::class, 1);
+
+    // Generar audio no debe quedar bloqueado por un lock de imagen (ni al
+    // revés) — son operaciones independientes.
+    app(MediaLibraryService::class)->lockGeneration($article->id, 'otro-run', 'image');
+
+    $this->postJson(route('admin.media.generate'), [
+        'prompt' => 'algo',
+        'news_article_id' => $article->id,
+    ])->assertOk()->assertJson(['already_running' => true]);
+
+    Queue::assertPushed(GenerateAudioJob::class, 1);
+});
+
+test('the audio job releases the article lock when it finishes, on success or failure', function () {
+    $article = NewsArticle::factory()->create();
+    $mediaLibraryService = app(MediaLibraryService::class);
+
+    $mediaLibraryService->lockGeneration($article->id, 'a-run-id', 'audio');
+    expect($mediaLibraryService->activeGenerationRunId($article->id, 'audio'))->toBe('a-run-id');
+
+    // Sin proveedor de IA configurado, generateNarration() tira una
+    // excepción antes de pegarle a ninguna API real — igual pasa por el
+    // finally del job, que es lo que queremos probar acá.
+    (new GenerateAudioJob('a-run-id', $article))->handle($mediaLibraryService);
+
+    expect($mediaLibraryService->activeGenerationRunId($article->id, 'audio'))->toBeNull();
 });
 
 test('the generation status endpoint reports whether an article has an image being generated', function () {

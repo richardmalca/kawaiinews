@@ -680,34 +680,36 @@ class MediaLibraryService
     }
 
     /**
-     * La generación de imagen con IA tarda hasta ~2.5 minutos (timeout del
-     * job). Sin esto, si el admin cierra el diálogo o recarga la página
-     * mientras se genera, no hay forma de saber que ya hay una en curso y
-     * puede terminar disparando otra generación duplicada (gasto de API
-     * doble por las dudas). Este lock por artículo evita eso: el
-     * controller lo consulta antes de encolar un nuevo job, y el propio
-     * job lo libera al terminar (ok o error).
+     * La generación de imagen o audio con IA tarda hasta ~2.5 minutos
+     * (timeout del job). Sin esto, si el admin cierra el diálogo, recarga
+     * la página o le da varias veces al botón mientras se genera, no hay
+     * forma de saber que ya hay una en curso y puede terminar disparando
+     * otra generación duplicada (gasto de API doble por las dudas). Este
+     * lock por artículo y tipo de medio evita eso: el controller lo
+     * consulta antes de encolar un nuevo job, y el propio job lo libera al
+     * terminar (ok o error). Imagen y audio usan locks separados porque
+     * son independientes entre sí — no hace falta que uno bloquee al otro.
      */
-    public function activeGenerationRunId(int $newsArticleId): ?string
+    public function activeGenerationRunId(int $newsArticleId, string $kind = 'image'): ?string
     {
-        return Cache::get($this->generationLockKey($newsArticleId));
+        return Cache::get($this->generationLockKey($newsArticleId, $kind));
     }
 
-    public function lockGeneration(int $newsArticleId, string $runId): void
+    public function lockGeneration(int $newsArticleId, string $runId, string $kind = 'image'): void
     {
         // TTL bien por encima del timeout del job (150s) como red de
         // seguridad: si algo mata el worker a mitad de camino y el job
         // nunca libera el lock, no queda trabado para siempre.
-        Cache::put($this->generationLockKey($newsArticleId), $runId, now()->addMinutes(5));
+        Cache::put($this->generationLockKey($newsArticleId, $kind), $runId, now()->addMinutes(5));
     }
 
-    public function unlockGeneration(int $newsArticleId): void
+    public function unlockGeneration(int $newsArticleId, string $kind = 'image'): void
     {
-        Cache::forget($this->generationLockKey($newsArticleId));
+        Cache::forget($this->generationLockKey($newsArticleId, $kind));
     }
 
-    private function generationLockKey(int $newsArticleId): string
+    private function generationLockKey(int $newsArticleId, string $kind): string
     {
-        return "media-generation:article:{$newsArticleId}";
+        return "media-generation:{$kind}:article:{$newsArticleId}";
     }
 }
