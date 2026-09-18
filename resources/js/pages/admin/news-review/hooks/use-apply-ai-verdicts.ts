@@ -21,7 +21,12 @@ export function useApplyAiVerdicts() {
         const promise = (
             submit(applyAiVerdicts()) as Promise<ApplyQueuedResponse>
         )
-            .then((queued) => waitForJobRun<ApplyResult>(queued.run_id))
+            // ApplyAiVerdictsJob tiene 600s de timeout en el servidor
+            // (puede redactar varios artículos), por encima de los 3
+            // minutos por defecto de waitForJobRun.
+            .then((queued) =>
+                waitForJobRun<ApplyResult>(queued.run_id, 11 * 60 * 1000),
+            )
             .finally(() => {
                 setProcessing(false);
                 router.reload({ only: ['clusters', 'hasPublishVerdicts'] });

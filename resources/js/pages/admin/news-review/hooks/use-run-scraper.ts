@@ -35,7 +35,9 @@ export function useRunScraper() {
                     );
                 }
 
-                return waitForJobRun<ScrapeResult>(queued.run_id);
+                // ScrapeNewsSourcesJob tiene 300s de timeout en el servidor,
+                // por encima de los 3 minutos por defecto de waitForJobRun.
+                return waitForJobRun<ScrapeResult>(queued.run_id, 6 * 60 * 1000);
             })
             .finally(() => {
                 setProcessing(false);

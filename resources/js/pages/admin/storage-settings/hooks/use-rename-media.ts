@@ -60,7 +60,13 @@ export function useRenameMedia() {
                     throw new Error('No se pudo empezar a unificar los nombres');
                 }
 
-                return waitForJobRun<RenameResult>(queued.run_id);
+                // RenameMediaFilesJob tiene 900s de timeout en el servidor
+                // (puede tocar muchos archivos), por encima de los 3
+                // minutos por defecto de waitForJobRun.
+                return waitForJobRun<RenameResult>(
+                    queued.run_id,
+                    16 * 60 * 1000,
+                );
             })
             .then((result) => {
                 router.reload({ only: ['mediaLocation'] });

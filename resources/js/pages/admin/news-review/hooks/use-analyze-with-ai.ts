@@ -19,7 +19,11 @@ export function useAnalyzeWithAi() {
         setProcessing(true);
 
         const promise = (submit(analyze()) as Promise<AnalyzeQueuedResponse>)
-            .then((queued) => waitForJobRun<AnalyzeResult>(queued.run_id))
+            // AnalyzeNewsClustersJob tiene 300s de timeout en el servidor,
+            // por encima de los 3 minutos por defecto de waitForJobRun.
+            .then((queued) =>
+                waitForJobRun<AnalyzeResult>(queued.run_id, 6 * 60 * 1000),
+            )
             .then((result) => {
                 if (result.error) {
                     throw new Error(result.error);
