@@ -358,6 +358,7 @@ export default function ShowArticle({
                 fontSize={fontSize}
                 copiedText={copiedText}
                 commentsCount={item.comments_count}
+                visible={isScrolled}
                 onToggleLike={toggleLike}
                 onToggleFavorite={toggleFavorite}
                 onCopyPlainText={handleCopyPlainText}

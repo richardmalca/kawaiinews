@@ -11,6 +11,7 @@ interface ArticleMobileDockProps {
     fontSize: 'sm' | 'base' | 'lg';
     copiedText: boolean;
     commentsCount?: number;
+    visible?: boolean;
     onToggleLike: () => void;
     onToggleFavorite: () => void;
     onCopyPlainText: () => void;
@@ -26,6 +27,7 @@ export function ArticleMobileDock({
     fontSize,
     copiedText,
     commentsCount = 0,
+    visible = true,
     onToggleLike,
     onToggleFavorite,
     onCopyPlainText,
@@ -66,6 +68,10 @@ export function ArticleMobileDock({
     return (
         <div
             className={`fixed left-4 right-4 z-[55] transition-all duration-300 lg:hidden ${
+                visible
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-24 opacity-0 pointer-events-none'
+            } ${
                 isAudioActive
                     ? 'bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'
                     : 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'

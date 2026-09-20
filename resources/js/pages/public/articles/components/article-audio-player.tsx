@@ -48,6 +48,7 @@ export function ArticleAudioPlayer({
     const [speedIndex, setSpeedIndex] = useState(0);
     const [hasError, setHasError] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
+    const isDismissedRef = useRef(false);
 
     const isAiAudio = Boolean(audioUrl && !hasError);
 
@@ -55,6 +56,7 @@ export function ArticleAudioPlayer({
         setIsPlaying(false);
         setIsPaused(false);
         setIsDismissed(false);
+        isDismissedRef.current = false;
         setCurrentTime(0);
         setDuration(0);
         setHasError(false);
@@ -63,6 +65,7 @@ export function ArticleAudioPlayer({
 
     const handlePlayPause = () => {
         setIsDismissed(false);
+        isDismissedRef.current = false;
         if (isAiAudio && audioRef.current) {
             if (isPlaying) {
                 audioRef.current.pause();
@@ -96,6 +99,7 @@ export function ArticleAudioPlayer({
 
     const handleRestart = () => {
         setIsDismissed(false);
+        isDismissedRef.current = false;
         if (isAiAudio && audioRef.current) {
             audioRef.current.currentTime = 0;
             audioRef.current.play().catch(() => {});
@@ -151,6 +155,7 @@ export function ArticleAudioPlayer({
     };
 
     const handleClosePlayer = () => {
+        isDismissedRef.current = true;
         setIsDismissed(true);
         if (isAiAudio && audioRef.current) {
             audioRef.current.pause();
@@ -160,6 +165,16 @@ export function ArticleAudioPlayer({
         }
         speech.stop();
         notifyArticleAudioStopped();
+        window.dispatchEvent(
+            new CustomEvent('kawaii:audio-status-change', {
+                detail: {
+                    isPlaying: false,
+                    isPaused: false,
+                    isInteracting: false,
+                    totalSeconds: isAiAudio ? duration : speech.estimatedTotalSeconds,
+                },
+            }),
+        );
     };
 
     const handleCycleSpeed = () => {
@@ -257,7 +272,9 @@ export function ArticleAudioPlayer({
                     }}
                     onPause={() => {
                         setIsPlaying(false);
-                        setIsPaused(true);
+                        if (!isDismissedRef.current) {
+                            setIsPaused(true);
+                        }
                         setIsLoading(false);
                     }}
                     onEnded={() => {

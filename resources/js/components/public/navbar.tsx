@@ -323,7 +323,38 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
                         <NotificationBell />
 
-                        {/* Menú hamburguesa solo en pantallas móviles (md:hidden) */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setRadioDockVisible(true);
+                                setRadioMinimized(false);
+                                toggleRadioPlay();
+                            }}
+                            className={`flex h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-all md:hidden ${
+                                isRadioPlaying
+                                    ? 'border-rose-500/30 bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400'
+                                    : 'border-neutral-200 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                            }`}
+                            aria-label="KawaiiRadio"
+                            title="Sintonizar KawaiiRadio"
+                        >
+                            <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                                <Radio className={`h-3.5 w-3.5 ${isRadioPlaying ? 'text-rose-600 dark:text-rose-400' : 'text-rose-500'}`} />
+                                {isRadioPlaying && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                                        <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+                                    </span>
+                                )}
+                            </span>
+                            <span>Radio</span>
+                            {isRadioPlaying && (
+                                <span className="rounded bg-rose-500 px-1 py-0.2 text-[8px] font-extrabold text-white uppercase">
+                                    VIVO
+                                </span>
+                            )}
+                        </button>
+
                         <button
                             type="button"
                             onClick={() => setIsMobileMenuOpen(true)}
