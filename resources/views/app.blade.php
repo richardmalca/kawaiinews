@@ -69,6 +69,35 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="apple-mobile-web-app-title" content="{{ $siteSettings->name ?? 'KawaiiNews' }}">
 
+        {{-- iOS Dynamic Splash Screens (Light & Dark) --}}
+        @php
+            $iosDevices = [
+                ['w' => 440, 'h' => 956, 'r' => 3, 'pw' => 1320, 'ph' => 2868], // iPhone 16 Pro Max
+                ['w' => 402, 'h' => 874, 'r' => 3, 'pw' => 1206, 'ph' => 2622], // iPhone 16 Pro
+                ['w' => 430, 'h' => 932, 'r' => 3, 'pw' => 1290, 'ph' => 2796], // iPhone 15/16 Plus, 15/16 Pro Max
+                ['w' => 393, 'h' => 852, 'r' => 3, 'pw' => 1179, 'ph' => 2556], // iPhone 15/16, 15 Pro, 14 Pro
+                ['w' => 428, 'h' => 926, 'r' => 3, 'pw' => 1284, 'ph' => 2778], // iPhone 14 Plus, 13 Pro Max, 12 Pro Max
+                ['w' => 390, 'h' => 844, 'r' => 3, 'pw' => 1170, 'ph' => 2532], // iPhone 14, 13, 13 Pro, 12, 12 Pro
+                ['w' => 375, 'h' => 812, 'r' => 3, 'pw' => 1125, 'ph' => 2436], // iPhone 13 mini, 12 mini, 11 Pro, XS, X
+                ['w' => 414, 'h' => 896, 'r' => 3, 'pw' => 1242, 'ph' => 2688], // iPhone 11 Pro Max, XS Max
+                ['w' => 414, 'h' => 896, 'r' => 2, 'pw' => 828, 'ph' => 1792],  // iPhone 11, XR
+                ['w' => 375, 'h' => 667, 'r' => 2, 'pw' => 750, 'ph' => 1334],  // iPhone SE (2nd/3rd gen), 8, 7, 6s
+                ['w' => 1024, 'h' => 1366, 'r' => 2, 'pw' => 2048, 'ph' => 2732], // iPad Pro 12.9"
+                ['w' => 834, 'h' => 1194, 'r' => 2, 'pw' => 1668, 'ph' => 2388],  // iPad Pro 11"
+                ['w' => 820, 'h' => 1180, 'r' => 2, 'pw' => 1640, 'ph' => 2360],  // iPad Air 10.9"
+                ['w' => 810, 'h' => 1080, 'r' => 2, 'pw' => 1620, 'ph' => 2160],  // iPad 10.2"
+                ['w' => 744, 'h' => 1133, 'r' => 2, 'pw' => 1488, 'ph' => 2266],  // iPad mini 8.3"
+            ];
+        @endphp
+        @foreach ($iosDevices as $device)
+            <link rel="apple-touch-startup-image"
+                  media="(device-width: {{ $device['w'] }}px) and (device-height: {{ $device['h'] }}px) and (-webkit-device-pixel-ratio: {{ $device['r'] }}) and (prefers-color-scheme: light)"
+                  href="{{ route('apple.splash', ['width' => $device['pw'], 'height' => $device['ph'], 'theme' => 'light']) }}">
+            <link rel="apple-touch-startup-image"
+                  media="(device-width: {{ $device['w'] }}px) and (device-height: {{ $device['h'] }}px) and (-webkit-device-pixel-ratio: {{ $device['r'] }}) and (prefers-color-scheme: dark)"
+                  href="{{ route('apple.splash', ['width' => $device['pw'], 'height' => $device['ph'], 'theme' => 'dark']) }}">
+        @endforeach
+
         <script>
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {

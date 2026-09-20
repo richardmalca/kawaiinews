@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\StorageSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Public\AppleSplashController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ArticleInteractionController;
 use App\Http\Controllers\Public\CommentController;
@@ -46,6 +47,9 @@ Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.sh
 Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('manifest.json', ManifestController::class)->name('manifest');
+Route::get('apple-splash/{width}x{height}.png', AppleSplashController::class)
+    ->whereNumber(['width', 'height'])
+    ->name('apple.splash');
 Route::get('radio/queue.json', PublicRadioController::class)->name('public.radio.queue');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
