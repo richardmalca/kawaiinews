@@ -228,6 +228,70 @@ class MediaLibraryService
     }
 
     /**
+     * Vuelve a comprimir TODAS las imágenes ya guardadas (a diferencia de
+     * renameAll(), que solo optimiza las que todavía no son WebP) — para
+     * cuando cambia el nivel de calidad de ImageOptimizerService y hace
+     * falta que lo ya subido también baje de peso, no solo lo nuevo. Cada
+     * imagen queda con un archivo y una URL nuevos (MediaNaming no permite
+     * sobrescribir en el mismo nombre), así que hay que actualizar el link
+     * guardado — el llamador es responsable de correr
+     * app:sync-article-featured-media-urls después para propagarlo a los
+     * artículos.
+     *
+     * @return array{reoptimized: int, failed: int, skipped: int, bytes_before: int, bytes_after: int}
+     */
+    public function reoptimizeAllImages(): array
+    {
+        $reoptimized = 0;
+        $failed = 0;
+        $skipped = 0;
+        $bytesBefore = 0;
+        $bytesAfter = 0;
+
+        foreach (Media::where('type', 'image')->cursor() as $media) {
+            $resolved = $this->diskForUrl($media->url);
+
+            if (! $resolved) {
+                continue;
+            }
+
+            [$disk, $originalPath] = $resolved;
+
+            try {
+                $contents = $disk->get($originalPath);
+                $optimized = $this->imageOptimizer->optimize($contents, $disk->mimeType($originalPath) ?: 'image/webp');
+
+                if ($optimized === null) {
+                    // GIF u otro formato que el optimizador deja pasar tal
+                    // cual (ver ImageOptimizerService::optimize()).
+                    $skipped++;
+
+                    continue;
+                }
+
+                $newPath = MediaNaming::path('image', 'webp');
+                $disk->put($newPath, $optimized, 'public');
+                $disk->delete($originalPath);
+                $media->update(['url' => $disk->url($newPath)]);
+
+                $bytesBefore += strlen($contents);
+                $bytesAfter += strlen($optimized);
+                $reoptimized++;
+            } catch (Throwable) {
+                $failed++;
+            }
+        }
+
+        return [
+            'reoptimized' => $reoptimized,
+            'failed' => $failed,
+            'skipped' => $skipped,
+            'bytes_before' => $bytesBefore,
+            'bytes_after' => $bytesAfter,
+        ];
+    }
+
+    /**
      * Lee un archivo existente, lo optimiza si hace falta (imagen no
      * webp) y calcula su nombre con la estructura unificada, sin
      * importar en qué disco vaya a quedar guardado.

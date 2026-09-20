@@ -14,9 +14,9 @@ class ImageOptimizerService
     // o un modelo de IA.
     private const MAX_DIMENSION = 1920;
 
-    // 82 es el punto donde WebP deja de perder calidad visible pero ya
-    // pesa bastante menos que un JPEG/PNG sin comprimir.
-    private const QUALITY = 82;
+    // 75 es lo que Google recomienda (Lighthouse/PageSpeed) como el mejor
+    // punto entre peso y calidad visible para WebP.
+    private const QUALITY = 75;
 
     /**
      * Devuelve el contenido en WebP, o null si no conviene optimizar (por
