@@ -14,11 +14,11 @@ import {
     Loader2,
     RadioTower,
 } from 'lucide-react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 
 export function PersistentRadioPlayer() {
-    const { url } = usePage();
-    const isAdmin = url.startsWith('/admin');
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const isAdmin = currentPath.startsWith('/admin');
 
     const {
         isPlaying,

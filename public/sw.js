@@ -47,19 +47,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For navigation requests (HTML pages)
     if (event.request.mode === 'navigate') {
         event.respondWith(
-            fetch(event.request).catch(() => {
-                return caches.match(event.request).then((cachedResponse) => {
-                    return cachedResponse || caches.match('/');
-                });
+            fetch(event.request).catch(async () => {
+                const cached = await caches.match(event.request);
+                if (cached) return cached;
+                const rootCached = await caches.match('/');
+                if (rootCached) return rootCached;
+                return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
             })
         );
         return;
     }
 
-    // For static images, fonts, styles: Stale-while-revalidate or Network fallback
     if (
         event.request.destination === 'image' ||
         event.request.destination === 'style' ||
@@ -77,7 +77,7 @@ self.addEventListener('fetch', (event) => {
                     return networkResponse;
                 }).catch(() => cachedResponse);
 
-                return cachedResponse || fetchPromise;
+                return cachedResponse || fetchPromise.then((res) => res || new Response(null, { status: 404 }));
             })
         );
     }
