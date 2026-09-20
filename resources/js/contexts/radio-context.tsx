@@ -151,6 +151,10 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
         };
 
+        const onCanPlay = () => {
+            setIsLoading(false);
+        };
+
         const onWaiting = () => {
             setIsLoading(true);
         };
@@ -161,6 +165,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         };
 
         const onPause = () => {
+            setIsLoading(false);
             setIsPlaying(false);
         };
 
@@ -186,6 +191,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
         audio.addEventListener('timeupdate', onTimeUpdate);
         audio.addEventListener('loadedmetadata', onLoadedMetadata);
+        audio.addEventListener('canplay', onCanPlay);
         audio.addEventListener('waiting', onWaiting);
         audio.addEventListener('playing', onPlaying);
         audio.addEventListener('pause', onPause);
@@ -195,6 +201,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         return () => {
             audio.removeEventListener('timeupdate', onTimeUpdate);
             audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+            audio.removeEventListener('canplay', onCanPlay);
             audio.removeEventListener('waiting', onWaiting);
             audio.removeEventListener('playing', onPlaying);
             audio.removeEventListener('pause', onPause);
@@ -266,9 +273,12 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             if (audioRef.current.src !== track.audio_url) {
                 audioRef.current.src = track.audio_url;
             }
+            setIsLoading(true);
             audioRef.current.play().then(() => {
+                setIsLoading(false);
                 setIsPlaying(true);
             }).catch(() => {
+                setIsLoading(false);
                 setIsPlaying(false);
             });
         }
