@@ -27,6 +27,9 @@ export function PersistentRadioPlayer() {
         isMuted,
         isLoading,
         isPausedByArticle,
+        showAutoplayPrompt,
+        setAutoplayPref,
+        dismissAutoplayPrompt,
         togglePlay,
         nextTrack,
         toggleMute,
@@ -217,6 +220,33 @@ export function PersistentRadioPlayer() {
                     </button>
                 </div>
             </div>
+
+            {showAutoplayPrompt && (
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-500/20 bg-rose-500/5 px-3 py-2 text-xs dark:bg-rose-950/20">
+                    <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-rose-500"></span>
+                        <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                            ¿Quieres que KawaiiRadio se reproduzca automáticamente cada vez que visites la web?
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setAutoplayPref(true)}
+                            className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-bold text-white shadow-xs hover:bg-rose-700 transition-colors"
+                        >
+                            Sí, reproducir siempre
+                        </button>
+                        <button
+                            type="button"
+                            onClick={dismissAutoplayPrompt}
+                            className="rounded-lg border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
+                        >
+                            No, solo cuando yo le dé Play
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

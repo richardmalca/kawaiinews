@@ -22,6 +22,10 @@ interface RadioContextType {
     isLoading: boolean;
     hasError: boolean;
     isPausedByArticle: boolean;
+    autoplayPref: boolean | null;
+    showAutoplayPrompt: boolean;
+    setAutoplayPref: (pref: boolean) => void;
+    dismissAutoplayPrompt: () => void;
     play: () => void;
     pause: () => void;
     togglePlay: () => void;
@@ -54,6 +58,12 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [isPausedByArticle, setIsPausedByArticle] = useState(false);
     const [isLive, setIsLive] = useState(true);
+    const [autoplayPref, setAutoplayPrefState] = useState<boolean | null>(() => {
+        if (typeof window === 'undefined') return null;
+        const stored = localStorage.getItem('kawaii_radio_autoplay');
+        return stored === null ? null : stored === 'true';
+    });
+    const [showAutoplayPrompt, setShowAutoplayPrompt] = useState(false);
 
     const queueRef = useRef<RadioQueueItem[]>([]);
     const currentIndexRef = useRef(0);
@@ -64,6 +74,22 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     isPlayingRef.current = isPlaying;
 
     const currentTrack = queue[currentIndex] ?? null;
+
+    const setAutoplayPref = useCallback((pref: boolean) => {
+        setAutoplayPrefState(pref);
+        setShowAutoplayPrompt(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('kawaii_radio_autoplay', String(pref));
+        }
+    }, []);
+
+    const dismissAutoplayPrompt = useCallback(() => {
+        setShowAutoplayPrompt(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('kawaii_radio_autoplay', 'false');
+        }
+        setAutoplayPrefState(false);
+    }, []);
 
     const fetchQueueAndSync = useCallback(async (autoPlay = false) => {
         try {
@@ -207,11 +233,21 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         }
     }, [currentTrack]);
 
+    useEffect(() => {
+        if (autoplayPref === true) {
+            fetchQueueAndSync(true);
+        }
+    }, [autoplayPref, fetchQueueAndSync]);
+
     const play = useCallback(() => {
         if (!audioRef.current) return;
 
         setIsPausedByArticle(false);
         setDockVisible(true);
+
+        if (autoplayPref === null) {
+            setShowAutoplayPrompt(true);
+        }
 
         if (queue.length === 0) {
             fetchQueueAndSync(true);
@@ -229,7 +265,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 setIsPlaying(false);
             });
         }
-    }, [queue, currentIndex, fetchQueueAndSync]);
+    }, [queue, currentIndex, fetchQueueAndSync, autoplayPref]);
 
     const pause = useCallback(() => {
         if (!audioRef.current) return;
@@ -327,6 +363,10 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 isLoading,
                 hasError,
                 isPausedByArticle,
+                autoplayPref,
+                showAutoplayPrompt,
+                setAutoplayPref,
+                dismissAutoplayPrompt,
                 play,
                 pause,
                 togglePlay,
