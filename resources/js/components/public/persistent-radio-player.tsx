@@ -54,7 +54,7 @@ export function PersistentRadioPlayer() {
 
     if (isMinimized || isPausedByArticle) {
         return (
-            <div className="fixed bottom-20 right-4 z-40 sm:bottom-24 sm:right-6">
+            <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-4 z-40 sm:left-6 lg:bottom-6">
                 <button
                     onClick={() => {
                         if (isPausedByArticle) {
