@@ -167,12 +167,12 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
     return (
         <header className="sticky top-0 z-50 border-b border-neutral-200/80 bg-white/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-950/90">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center gap-6">
+            <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+                <div className="flex h-16 items-center justify-between gap-2">
+                    <div className="flex min-w-0 shrink items-center gap-6">
                         <Link
                             href="/"
-                            className="group flex shrink-0 items-center gap-2.5"
+                            className="group flex min-w-0 shrink items-center gap-2 sm:gap-2.5"
                         >
                             {siteLogoUrl ? (
                                 <img
@@ -180,14 +180,14 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                     alt={name || 'KawaiiNews'}
                                     width={36}
                                     height={36}
-                                    className="h-8 w-8 md:h-9 md:w-9 rounded-md object-contain transition-transform group-hover:scale-105"
+                                    className="h-8 w-8 shrink-0 md:h-9 md:w-9 rounded-md object-contain transition-transform group-hover:scale-105"
                                 />
                             ) : (
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
-                                    <Sparkles className="h-5 w-5 text-white" />
+                                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 shadow-lg shadow-rose-500/20 transition-transform group-hover:scale-105">
+                                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                                 </div>
                             )}
-                            <span className="bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-xl font-black tracking-tight text-transparent dark:from-white dark:via-neutral-200 dark:to-neutral-400">
+                            <span className="truncate bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-lg sm:text-xl font-black tracking-tight text-transparent dark:from-white dark:via-neutral-200 dark:to-neutral-400">
                                 {name ? (
                                     name
                                 ) : (
@@ -266,7 +266,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
                         <div ref={searchContainerRef} className="relative hidden items-center sm:flex">
                             <form
                                 onSubmit={handleSearchSubmit}
@@ -309,7 +309,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         <button
                             type="button"
                             onClick={() => setIsSearchOpen(!isSearchOpen)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 sm:hidden dark:border-neutral-800 dark:text-neutral-400"
+                            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 sm:hidden dark:border-neutral-800 dark:text-neutral-400"
                             aria-label="Buscar"
                         >
                             {isSearchOpen ? (
@@ -330,7 +330,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 setRadioMinimized(false);
                                 toggleRadioPlay();
                             }}
-                            className={`flex h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-all md:hidden ${
+                            className={`flex h-8 sm:h-9 items-center justify-center gap-1 sm:gap-1.5 rounded-xl border px-2 sm:px-2.5 text-xs font-bold transition-all md:hidden ${
                                 isRadioPlaying
                                     ? 'border-rose-500/30 bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400'
                                     : 'border-neutral-200 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800'
@@ -347,7 +347,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                     </span>
                                 )}
                             </span>
-                            <span>Radio</span>
+                            <span className="hidden xs:inline">Radio</span>
                             {isRadioPlaying && (
                                 <span className="rounded bg-rose-500 px-1 py-0.2 text-[8px] font-extrabold text-white uppercase">
                                     VIVO
@@ -358,7 +358,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                         <button
                             type="button"
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-950 md:hidden dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:text-white"
+                            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-950 md:hidden dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:text-white"
                             aria-label="Abrir menú"
                         >
                             <Menu className="h-4 w-4" />
