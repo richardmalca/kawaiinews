@@ -43,13 +43,19 @@ export function PersistentRadioPlayer() {
         return null;
     }
 
-    if (isMinimized) {
+    if (isMinimized || isPausedByArticle) {
         return (
-            <div className="fixed bottom-20 right-4 z-40 sm:bottom-6 sm:right-6">
+            <div className="fixed bottom-20 right-4 z-40 sm:bottom-24 sm:right-6">
                 <button
-                    onClick={() => setIsMinimized(false)}
+                    onClick={() => {
+                        if (isPausedByArticle) {
+                            togglePlay();
+                        } else {
+                            setIsMinimized(false);
+                        }
+                    }}
                     className="relative flex items-center gap-2 rounded-full border border-rose-500/30 bg-neutral-900/90 px-3 py-2 text-white shadow-xl backdrop-blur-md transition-all hover:scale-105 dark:border-rose-500/40 dark:bg-black/90"
-                    title="Abrir KawaiiRadio"
+                    title={isPausedByArticle ? 'Reanudar KawaiiRadio' : 'Abrir KawaiiRadio'}
                 >
                     <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 text-white">
                         <Radio className="h-4 w-4" />
@@ -61,9 +67,9 @@ export function PersistentRadioPlayer() {
                         )}
                     </div>
                     <span className="max-w-[120px] truncate text-xs font-semibold">
-                        {isPausedByArticle ? 'Pausa (Artículo)' : currentTrack?.title || 'KawaiiRadio'}
+                        {isPausedByArticle ? 'Reanudar Radio' : currentTrack?.title || 'KawaiiRadio'}
                     </span>
-                    <ChevronUp className="h-4 w-4 text-neutral-400" />
+                    {!isPausedByArticle && <ChevronUp className="h-4 w-4 text-neutral-400" />}
                 </button>
             </div>
         );
