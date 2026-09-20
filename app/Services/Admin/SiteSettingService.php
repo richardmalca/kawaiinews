@@ -51,8 +51,23 @@ class SiteSettingService
     {
         $this->deleteIfExists($settings->logo_path);
 
-        $path = 'site/'.$file->hashName();
-        $this->disk()->put($path, $file->get());
+        $source = $this->loadImage($file);
+        $width = imagesx($source);
+        $height = imagesy($source);
+        $maxDimension = 256;
+
+        if ($width > $maxDimension || $height > $maxDimension) {
+            $ratio = min($maxDimension / $width, $maxDimension / $height);
+            $targetWidth = (int) round($width * $ratio);
+            $targetHeight = (int) round($height * $ratio);
+        } else {
+            $targetWidth = $width;
+            $targetHeight = $height;
+        }
+
+        $path = 'site/logo-'.$file->hashName().'.png';
+        $path = $this->resizeAndStore($source, 0, 0, $width, $height, $targetWidth, $targetHeight, $path);
+        imagedestroy($source);
 
         $settings->update(['logo_path' => $path]);
 

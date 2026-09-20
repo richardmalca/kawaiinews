@@ -169,6 +169,8 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 <img
                                     src={siteLogoUrl}
                                     alt={name || 'KawaiiNews'}
+                                    width={36}
+                                    height={36}
                                     className="h-8 w-8 md:h-9 md:w-9 rounded-md object-contain transition-transform group-hover:scale-105"
                                 />
                             ) : (

@@ -262,6 +262,9 @@ export default function ShowArticle({
                                     <img
                                         src={item.featured_image}
                                         alt={`Ilustración conceptual referencial de ${item.title}`}
+                                        width={1008}
+                                        height={768}
+                                        sizes="(max-width: 1024px) 100vw, 903px"
                                         className="relative h-full w-full object-cover object-center transition-transform duration-700 hover:scale-102"
                                         loading="eager"
                                         fetchPriority="high"
