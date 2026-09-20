@@ -58,10 +58,13 @@ Schedule::command('news:send-recommendations')
     ->withoutOverlapping()
     ->onOneServer();
 
-// Cada 2 horas alcanza de sobra: la cola siempre toma las últimas noticias
+// Cada 4 horas alcanza de sobra: la cola siempre toma las últimas noticias
 // narradas, así que se va renovando sola a medida que se publica contenido
-// nuevo, sin necesidad de correr esto más seguido.
+// nuevo. Antes era cada 2h — las frases sueltas del DJ se generan de
+// nuevo en cada corrida (no se cachean, a diferencia de la presentación
+// de cada noticia), así que espaciar el rearmado a la mitad de frecuencia
+// baja el gasto en voz de IA a la mitad sin perder frescura real.
 Schedule::command('radio:build-queue')
-    ->everyTwoHours()
+    ->everyFourHours()
     ->withoutOverlapping()
     ->onOneServer();
