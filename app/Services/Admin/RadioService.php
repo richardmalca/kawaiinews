@@ -12,6 +12,7 @@ use App\Support\MediaNaming;
 use App\Support\RemoteStorage;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -35,6 +36,20 @@ class RadioService
      * (música + noticia, música + noticia...).
      */
     private const ARTICLES_PER_QUEUE = 8;
+
+    /**
+     * Cada cuántos pares música+noticia se intercala una frase suelta del
+     * DJ (saludo, dato random, invitación a seguir el sitio) — le da vida
+     * a la radio sin que sea siempre "una noticia atrás de otra".
+     */
+    private const FILLER_EVERY_N_PAIRS = 2;
+
+    private const FILLER_PROMPTS = [
+        'Saludá a los oyentes de KawaiiRadio con una frase corta y copada, como arrancando un segmento — sin mencionar ninguna noticia en particular.',
+        'Contá un dato curioso breve (una sola oración) sobre anime, manga o videojuegos, con tono de locutor de radio.',
+        'Invitá a los oyentes, en una sola oración con onda, a seguir explorando KawaiiNews para más noticias de anime y manga.',
+        'Hacé una transición corta y divertida entre canciones, como diría un DJ de radio real, sin mencionar ninguna canción específica.',
+    ];
 
     private function disk(): Filesystem
     {
@@ -94,14 +109,20 @@ class RadioService
             ->count();
 
         $items = [];
-        $position = 1;
         $shuffledTracks = $tracks->shuffle();
 
         foreach ($articles as $index => $article) {
+            if ($index > 0 && $index % self::FILLER_EVERY_N_PAIRS === 0) {
+                $filler = $this->generateFillerItem();
+
+                if ($filler) {
+                    $items[] = $filler;
+                }
+            }
+
             $track = $shuffledTracks[$index % $shuffledTracks->count()];
 
             $items[] = [
-                'position' => $position++,
                 'type' => 'music',
                 'radio_track_id' => $track->id,
                 'news_article_id' => null,
@@ -115,7 +136,6 @@ class RadioService
             $this->ensureDjIntro($article);
 
             $items[] = [
-                'position' => $position++,
                 'type' => 'article',
                 'radio_track_id' => null,
                 'news_article_id' => $article->id,
@@ -129,6 +149,11 @@ class RadioService
                 'updated_at' => now(),
             ];
         }
+
+        $items = collect($items)
+            ->values()
+            ->map(fn (array $item, int $i) => [...$item, 'position' => $i + 1])
+            ->all();
 
         DB::transaction(function () use ($items) {
             RadioQueueItem::query()->delete();
@@ -169,6 +194,77 @@ class RadioService
         $this->disk()->put($path, base64_decode($audioBase64), 'public');
 
         $article->update(['dj_intro_url' => $this->disk()->url($path)]);
+    }
+
+    /**
+     * A diferencia de la presentación de una noticia (ensureDjIntro), esto
+     * no se cachea en ningún lado — se genera de nuevo en cada rearmado de
+     * cola (cada 2h), así que el costo sigue siendo chico y acotado, nunca
+     * por oyente.
+     *
+     * @return array{type: string, radio_track_id: null, news_article_id: null, title: string, audio_url: string, duration_seconds: null, created_at: Carbon, updated_at: Carbon}|null
+     */
+    private function generateFillerItem(): ?array
+    {
+        $script = $this->generateFillerScript();
+
+        if (! $script) {
+            return null;
+        }
+
+        $audioBase64 = $this->generateDjAudio($script);
+
+        if (! $audioBase64) {
+            return null;
+        }
+
+        $path = MediaNaming::path('audio', 'mp3');
+        $this->disk()->put($path, base64_decode($audioBase64), 'public');
+
+        return [
+            'type' => 'filler',
+            'radio_track_id' => null,
+            'news_article_id' => null,
+            'title' => 'El DJ de KawaiiRadio',
+            'audio_url' => $this->disk()->url($path),
+            'duration_seconds' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+
+    private function generateFillerScript(): ?string
+    {
+        $provider = AiProvider::where('is_active', true)->first();
+
+        if (! $provider || ! $provider->hasApiKey()) {
+            return null;
+        }
+
+        $instruction = self::FILLER_PROMPTS[array_rand(self::FILLER_PROMPTS)];
+
+        $prompt = <<<PROMPT
+            Sos el DJ de KawaiiRadio, una radio online de anime, manga y videojuegos.
+
+            {$instruction}
+
+            Devolvé solo la frase del DJ, sin comillas ni texto adicional.
+            PROMPT;
+
+        try {
+            $response = Prism::text()
+                ->using($provider->provider, $provider->default_model, [
+                    'api_key' => $provider->api_key,
+                ])
+                ->withPrompt($prompt)
+                ->asText();
+
+            AiUsageLogger::record('radio_dj', $provider->provider, $provider->default_model, $response->usage);
+
+            return trim($response->text) ?: null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function generateDjScript(NewsArticle $article): ?string

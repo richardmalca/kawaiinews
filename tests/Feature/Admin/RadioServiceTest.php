@@ -97,6 +97,40 @@ test('rebuilding the queue reuses an already generated dj intro instead of calli
     Http::assertSentCount(1);
 });
 
+test('a filler dj phrase is intercalated every couple of music+article pairs', function () {
+    RadioTrack::factory()->create(['active' => true]);
+    AiProvider::factory()->create(['provider' => 'openai', 'is_active' => true, 'api_key' => 'test-key']);
+    AiProvider::factory()->create(['provider' => 'google-tts', 'is_active_for_audio' => true, 'api_key' => 'test-key']);
+
+    // 2 intros de noticia + 1 frase suelta + 1 intro más de noticia — una
+    // por cada llamada de texto que dispara buildQueue() con 3 noticias.
+    Prism::fake([
+        TextResponseFake::make()->withText('Frase del DJ 1'),
+        TextResponseFake::make()->withText('Frase del DJ 2'),
+        TextResponseFake::make()->withText('Frase suelta del DJ'),
+        TextResponseFake::make()->withText('Frase del DJ 3'),
+    ]);
+    Http::fake([
+        'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+    ]);
+
+    NewsArticle::factory()->count(3)->create(['status' => 'published', 'audio_url' => 'https://cdn.test/narration.mp3']);
+
+    $result = app(RadioService::class)->buildQueue();
+
+    // 3 pares música+noticia (6 items) + 1 frase suelta del DJ intercalada
+    // después del segundo par (FILLER_EVERY_N_PAIRS = 2).
+    expect($result['queued'])->toBe(7);
+
+    $items = RadioQueueItem::orderBy('position')->get();
+    $fillers = $items->where('type', 'filler');
+
+    expect($fillers)->toHaveCount(1)
+        ->and($fillers->first()->news_article_id)->toBeNull()
+        ->and($fillers->first()->radio_track_id)->toBeNull()
+        ->and($fillers->first()->audio_url)->not->toBeEmpty();
+});
+
 test('articles without narration are left out of the queue', function () {
     RadioTrack::factory()->create(['active' => true]);
     NewsArticle::factory()->create(['status' => 'published', 'audio_url' => null]);

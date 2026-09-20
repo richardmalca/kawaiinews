@@ -212,10 +212,14 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                                 <span className="text-muted-foreground w-5 shrink-0 text-right text-xs">
                                                     {index + 1}
                                                 </span>
-                                                {item.type === 'music' ? (
+                                                {item.type === 'music' && (
                                                     <Music className="text-muted-foreground h-4 w-4 shrink-0" />
-                                                ) : (
+                                                )}
+                                                {item.type === 'article' && (
                                                     <Newspaper className="h-4 w-4 shrink-0 text-primary" />
+                                                )}
+                                                {item.type === 'filler' && (
+                                                    <Mic2 className="h-4 w-4 shrink-0 text-amber-500" />
                                                 )}
                                                 <span className="min-w-0 flex-1 truncate">
                                                     {item.title}
