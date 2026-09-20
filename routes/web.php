@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NewsArticleController;
 use App\Http\Controllers\Admin\NewsReviewController;
 use App\Http\Controllers\Admin\NewsSourceController;
+use App\Http\Controllers\Admin\RadioController as AdminRadioController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\StorageSettingController;
 use App\Http\Controllers\Admin\UserController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Public\ManifestController;
 use App\Http\Controllers\Public\NotificationController;
 use App\Http\Controllers\Public\ProfileController;
 use App\Http\Controllers\Public\ProfileSettingsController;
+use App\Http\Controllers\Public\RadioController as PublicRadioController;
 use App\Http\Controllers\Public\SearchSuggestionController;
 use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\TagController;
@@ -44,6 +46,7 @@ Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.sh
 Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('manifest.json', ManifestController::class)->name('manifest');
+Route::get('radio/queue.json', PublicRadioController::class)->name('public.radio.queue');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
 
 Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
@@ -259,6 +262,13 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
             Route::post('site-settings/seo-audit/fix', [SiteSettingController::class, 'seoAuditFix'])
                 ->middleware('throttle:ai-costly')
                 ->name('site-settings.seo-audit.fix');
+
+            Route::get('radio', [AdminRadioController::class, 'index'])->name('radio.index');
+            Route::post('radio/tracks', [AdminRadioController::class, 'store'])->name('radio.tracks.store');
+            Route::delete('radio/tracks/{radioTrack}', [AdminRadioController::class, 'destroy'])->name('radio.tracks.destroy');
+            Route::post('radio/rebuild-queue', [AdminRadioController::class, 'rebuildQueue'])
+                ->middleware('throttle:ai-costly')
+                ->name('radio.rebuild-queue');
         });
     });
 

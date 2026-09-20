@@ -1,0 +1,248 @@
+<?php
+
+namespace App\Services\Admin;
+
+use App\Models\AiProvider;
+use App\Models\NewsArticle;
+use App\Models\RadioQueueItem;
+use App\Models\RadioTrack;
+use App\Models\StorageSetting;
+use App\Support\AiUsageLogger;
+use App\Support\MediaNaming;
+use App\Support\RemoteStorage;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Prism\Prism\Facades\Prism;
+use Throwable;
+
+/**
+ * Arma la cola de "KawaiiRadio": música libre de derechos (subida a mano
+ * por el admin) intercalada con noticias ya narradas, presentadas por un
+ * DJ con voz de IA. La cola se reconstruye entera cada tanto (ver
+ * BuildRadioQueueCommand) y se sirve tal cual al reproductor público — la
+ * IA nunca se llama por oyente, solo al armar la cola, así el costo no
+ * escala con la cantidad de gente escuchando.
+ */
+class RadioService
+{
+    /**
+     * Cuántas noticias entran en cada vuelta de la cola. Cada una suma un
+     * segmento de música antes, así que el total de items es el doble
+     * (música + noticia, música + noticia...).
+     */
+    private const ARTICLES_PER_QUEUE = 8;
+
+    private function disk(): Filesystem
+    {
+        $storageSettings = StorageSetting::current();
+
+        if ($storageSettings->active_for_media && $storageSettings->isConfigured()) {
+            return RemoteStorage::disk($storageSettings);
+        }
+
+        return Storage::disk('public');
+    }
+
+    public function addTrack(UploadedFile $file, string $title, ?string $artist): RadioTrack
+    {
+        $path = MediaNaming::path('audio', $file->getClientOriginalExtension() ?: $file->extension() ?: 'mp3');
+        $this->disk()->putFileAs(dirname($path), $file, basename($path), 'public');
+
+        return RadioTrack::create([
+            'title' => $title,
+            'artist' => $artist,
+            'url' => $this->disk()->url($path),
+        ]);
+    }
+
+    public function removeTrack(RadioTrack $track): void
+    {
+        $track->delete();
+    }
+
+    /**
+     * Reconstruye la cola completa: borra la anterior y arma una nueva,
+     * alternando música activa (en orden aleatorio) con las últimas
+     * noticias publicadas que ya tengan narración lista. A cada noticia
+     * le genera (o reutiliza, si ya la tenía) una frase corta del DJ que
+     * la presenta antes de reproducirla.
+     *
+     * @return array{queued: int, skipped_no_audio: int, skipped_no_music: bool}
+     */
+    public function buildQueue(): array
+    {
+        $tracks = RadioTrack::where('active', true)->get();
+
+        if ($tracks->isEmpty()) {
+            return ['queued' => 0, 'skipped_no_audio' => 0, 'skipped_no_music' => true];
+        }
+
+        $articles = NewsArticle::where('status', 'published')
+            ->whereNotNull('audio_url')
+            ->orderByDesc('published_at')
+            ->limit(self::ARTICLES_PER_QUEUE)
+            ->get();
+
+        $skippedNoAudio = NewsArticle::where('status', 'published')
+            ->whereNull('audio_url')
+            ->orderByDesc('published_at')
+            ->limit(self::ARTICLES_PER_QUEUE)
+            ->count();
+
+        $items = [];
+        $position = 1;
+        $shuffledTracks = $tracks->shuffle();
+
+        foreach ($articles as $index => $article) {
+            $track = $shuffledTracks[$index % $shuffledTracks->count()];
+
+            $items[] = [
+                'position' => $position++,
+                'type' => 'music',
+                'radio_track_id' => $track->id,
+                'news_article_id' => null,
+                'title' => $track->artist ? "{$track->title} - {$track->artist}" : $track->title,
+                'audio_url' => $track->url,
+                'duration_seconds' => $track->duration_seconds,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $this->ensureDjIntro($article);
+
+            $items[] = [
+                'position' => $position++,
+                'type' => 'article',
+                'radio_track_id' => null,
+                'news_article_id' => $article->id,
+                'title' => $article->title,
+                // El intro del DJ y la narración se reproducen como dos
+                // pistas seguidas del mismo segmento — el reproductor las
+                // encadena, así no hace falta mezclar audio server-side.
+                'audio_url' => $article->fresh()->dj_intro_url ?? $article->audio_url,
+                'duration_seconds' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::transaction(function () use ($items) {
+            RadioQueueItem::query()->delete();
+
+            if ($items !== []) {
+                RadioQueueItem::insert($items);
+            }
+        });
+
+        return ['queued' => count($items), 'skipped_no_audio' => $skippedNoAudio, 'skipped_no_music' => false];
+    }
+
+    /**
+     * Genera una vez (y cachea para siempre en el propio artículo, igual
+     * que featured_image/audio_url) una frase corta del DJ presentando la
+     * noticia — no se regenera en cada rearmado de cola, solo la primera
+     * vez que ese artículo entra en rotación.
+     */
+    private function ensureDjIntro(NewsArticle $article): void
+    {
+        if (filled($article->dj_intro_url)) {
+            return;
+        }
+
+        $script = $this->generateDjScript($article);
+
+        if (! $script) {
+            return;
+        }
+
+        $audioBase64 = $this->generateDjAudio($script);
+
+        if (! $audioBase64) {
+            return;
+        }
+
+        $path = MediaNaming::path('audio', 'mp3');
+        $this->disk()->put($path, base64_decode($audioBase64), 'public');
+
+        $article->update(['dj_intro_url' => $this->disk()->url($path)]);
+    }
+
+    private function generateDjScript(NewsArticle $article): ?string
+    {
+        $provider = AiProvider::where('is_active', true)->first();
+
+        if (! $provider || ! $provider->hasApiKey()) {
+            return null;
+        }
+
+        $prompt = <<<PROMPT
+            Sos el DJ de KawaiiRadio, una radio online de anime, manga y videojuegos. Presentá esta noticia en UNA sola oración corta, tono cercano y entusiasta, como lo haría un locutor de radio antes de pasar una nota (no la leas completa, es solo la presentación).
+
+            Título: {$article->title}
+            Resumen: {$article->excerpt}
+
+            Devolvé solo la frase del DJ, sin comillas ni texto adicional.
+            PROMPT;
+
+        try {
+            $response = Prism::text()
+                ->using($provider->provider, $provider->default_model, [
+                    'api_key' => $provider->api_key,
+                ])
+                ->withPrompt($prompt)
+                ->asText();
+
+            AiUsageLogger::record('radio_dj', $provider->provider, $provider->default_model, $response->usage, $article);
+
+            return trim($response->text) ?: null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function generateDjAudio(string $script): ?string
+    {
+        $provider = AiProvider::where('is_active_for_audio', true)->whereNotNull('api_key')->first();
+
+        if (! $provider) {
+            return null;
+        }
+
+        try {
+            if ($provider->provider === 'google-tts') {
+                $response = Http::timeout(30)->post(
+                    "https://texttospeech.googleapis.com/v1/text:synthesize?key={$provider->api_key}",
+                    [
+                        'input' => ['text' => $script],
+                        'voice' => ['languageCode' => 'es-US', 'name' => 'es-US-Wavenet-B'],
+                        'audioConfig' => ['audioEncoding' => 'MP3'],
+                    ]
+                );
+
+                return $response->successful() ? $response->json('audioContent') : null;
+            }
+
+            $response = Prism::audio()
+                ->using($provider->provider, config("ai_catalog.{$provider->provider}.audio_model"), ['api_key' => $provider->api_key])
+                ->withInput($script)
+                ->withVoice($provider->provider === 'elevenlabs' ? 'jBlmi27XRORxjPquUeCh' : 'shimmer')
+                ->asAudio();
+
+            return $response->audio->base64;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return Collection<int, RadioQueueItem>
+     */
+    public function currentQueue(): Collection
+    {
+        return RadioQueueItem::orderBy('position')->get();
+    }
+}

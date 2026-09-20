@@ -57,3 +57,11 @@ Schedule::command('news:send-recommendations')
     ->weeklyOn(1, '09:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Cada 2 horas alcanza de sobra: la cola siempre toma las últimas noticias
+// narradas, así que se va renovando sola a medida que se publica contenido
+// nuevo, sin necesidad de correr esto más seguido.
+Schedule::command('radio:build-queue')
+    ->everyTwoHours()
+    ->withoutOverlapping()
+    ->onOneServer();

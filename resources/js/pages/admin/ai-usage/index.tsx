@@ -55,6 +55,7 @@ const kindLabel: Record<string, string> = {
     audio: 'Narración de audio',
     moderation: 'Moderación de comentarios (IA)',
     seo_audit: 'Auditoría SEO',
+    radio_dj: 'DJ de KawaiiRadio',
 };
 
 // Un color propio por función, no la escala de grises del tema — así se
@@ -67,6 +68,7 @@ const kindColor: Record<string, string> = {
     audio: '#22c55e',
     moderation: '#f59e0b',
     seo_audit: '#ec4899',
+    radio_dj: '#14b8a6',
 };
 const fallbackColor = '#64748b';
 

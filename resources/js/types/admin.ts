@@ -204,6 +204,26 @@ export type MediaItem = {
     created_at_formatted?: string | null;
 };
 
+export type RadioTrack = {
+    id: number;
+    title: string;
+    artist: string | null;
+    url: string;
+    duration_seconds: number | null;
+    active: boolean;
+    created_at_formatted?: string | null;
+};
+
+export type RadioQueueItem = {
+    id: number;
+    position: number;
+    type: 'music' | 'article';
+    title: string;
+    audio_url: string;
+    duration_seconds: number | null;
+    news_article_id: number | null;
+};
+
 export type DashboardSummary = {
     users: {
         total: number;
