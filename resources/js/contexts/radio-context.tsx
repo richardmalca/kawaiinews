@@ -235,6 +235,9 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (autoplayPref === true) {
+            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+                return;
+            }
             fetchQueueAndSync(true);
         }
     }, [autoplayPref, fetchQueueAndSync]);

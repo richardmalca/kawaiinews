@@ -105,7 +105,7 @@ class RadioService
                 'type' => 'music',
                 'radio_track_id' => $track->id,
                 'news_article_id' => null,
-                'title' => $track->artist ? "{$track->title} - {$track->artist}" : $track->title,
+                'title' => $track->title,
                 'audio_url' => $track->url,
                 'duration_seconds' => $track->duration_seconds,
                 'created_at' => now(),

@@ -14,9 +14,12 @@ import {
     Loader2,
     RadioTower,
 } from 'lucide-react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 export function PersistentRadioPlayer() {
+    const { url } = usePage();
+    const isAdmin = url.startsWith('/admin');
+
     const {
         isPlaying,
         currentTrack,
@@ -39,9 +42,15 @@ export function PersistentRadioPlayer() {
         setIsMinimized,
     } = useRadioPlayer();
 
-    if (!isDockVisible) {
+    if (isAdmin || !isDockVisible) {
         return null;
     }
+
+    const rawTitle = currentTrack?.title || '';
+    const artist = currentTrack?.artist || '';
+    const displayTitle = (artist && rawTitle.endsWith(` - ${artist}`))
+        ? rawTitle.slice(0, -(` - ${artist}`).length)
+        : rawTitle;
 
     if (isMinimized || isPausedByArticle) {
         return (
@@ -141,11 +150,11 @@ export function PersistentRadioPlayer() {
                                 href={`/noticias/${currentTrack.article_slug}`}
                                 className="block truncate text-xs font-semibold text-neutral-900 hover:text-rose-500 dark:text-white dark:hover:text-rose-400 sm:text-sm"
                             >
-                                {currentTrack.title}
+                                {displayTitle}
                             </Link>
                         ) : (
                             <p className="truncate text-xs font-semibold text-neutral-900 dark:text-white sm:text-sm">
-                                {currentTrack?.title || 'KawaiiRadio - Conectando...'}
+                                {displayTitle || 'KawaiiRadio - Conectando...'}
                             </p>
                         )}
 
