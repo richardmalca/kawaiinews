@@ -214,9 +214,15 @@ export function ArticleAudioPlayer({
             handlePlayPause();
         };
 
+        const handleForceStop = () => {
+            handleClosePlayer();
+        };
+
         window.addEventListener('kawaii:toggle-audio', handleCustomToggle);
+        window.addEventListener('kawaii:stop-article-audio', handleForceStop);
         return () => {
             window.removeEventListener('kawaii:toggle-audio', handleCustomToggle);
+            window.removeEventListener('kawaii:stop-article-audio', handleForceStop);
             notifyArticleAudioStopped();
         };
     }, [handlePlayPause, notifyArticleAudioStopped]);

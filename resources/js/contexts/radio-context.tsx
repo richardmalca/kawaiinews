@@ -242,6 +242,10 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const play = useCallback(() => {
         if (!audioRef.current) return;
 
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('kawaii:stop-article-audio'));
+        }
+
         setIsPausedByArticle(false);
         setDockVisible(true);
 
