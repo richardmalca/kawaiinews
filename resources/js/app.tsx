@@ -5,6 +5,8 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { RadioProvider } from '@/contexts/radio-context';
+import { PersistentRadioPlayer } from '@/components/public/persistent-radio-player';
 
 declare global {
     interface Window {
@@ -42,10 +44,13 @@ void createInertiaApp({
     strictMode: true,
     withApp(app) {
         return (
-            <TooltipProvider delayDuration={0}>
-                {app}
-                <AppToaster />
-            </TooltipProvider>
+            <RadioProvider>
+                <TooltipProvider delayDuration={0}>
+                    {app}
+                    <PersistentRadioPlayer />
+                    <AppToaster />
+                </TooltipProvider>
+            </RadioProvider>
         );
     },
     progress: {

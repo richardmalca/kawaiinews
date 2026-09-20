@@ -23,6 +23,7 @@ import {
     LogOut,
     Menu,
     Newspaper,
+    Radio,
     Search,
     Settings,
     Shield,
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { usePwa } from '@/hooks/use-pwa';
+import { useRadioPlayer } from '@/contexts/radio-context';
 import { ThemeToggle } from './theme-toggle';
 import { NotificationBell } from './notification-bell';
 import {
@@ -56,6 +58,13 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
     const isPrivileged = auth.user?.roles.some((role) =>
         privilegedRoles.includes(role),
     );
+
+    const {
+        isPlaying: isRadioPlaying,
+        togglePlay: toggleRadioPlay,
+        setDockVisible: setRadioDockVisible,
+        setIsMinimized: setRadioMinimized,
+    } = useRadioPlayer();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -223,6 +232,37 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 <Headphones className="h-3.5 w-3.5 text-rose-500" />
                                 <span>Canal RSS</span>
                             </Link>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setRadioDockVisible(true);
+                                    setRadioMinimized(false);
+                                    toggleRadioPlay();
+                                }}
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                                    isRadioPlaying
+                                        ? 'bg-rose-500/15 text-rose-600 shadow-xs dark:bg-rose-500/25 dark:text-rose-400'
+                                        : 'text-neutral-700 hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-950/30 dark:hover:text-rose-400'
+                                }`}
+                                title="Sintonizar KawaiiRadio en vivo"
+                            >
+                                <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                                    <Radio className={`h-3.5 w-3.5 ${isRadioPlaying ? 'text-rose-600 dark:text-rose-400' : 'text-rose-500'}`} />
+                                    {isRadioPlaying && (
+                                        <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                                            <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+                                        </span>
+                                    )}
+                                </span>
+                                <span>KawaiiRadio</span>
+                                {isRadioPlaying && (
+                                    <span className="rounded bg-rose-500 px-1 py-0.2 text-[9px] font-extrabold text-white uppercase">
+                                        VIVO
+                                    </span>
+                                )}
+                            </button>
                         </nav>
                     </div>
 
@@ -472,6 +512,35 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                             <Headphones className="h-4 w-4 text-rose-500" />
                                             <span>Canal RSS</span>
                                         </Link>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsMobileMenuOpen(false);
+                                                setRadioDockVisible(true);
+                                                setRadioMinimized(false);
+                                                toggleRadioPlay();
+                                            }}
+                                            className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-bold transition-all ${
+                                                isRadioPlaying
+                                                    ? 'bg-rose-500/15 text-rose-600 dark:bg-rose-500/25 dark:text-rose-400'
+                                                    : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Radio className="h-4 w-4 text-rose-500" />
+                                                <span>KawaiiRadio</span>
+                                            </div>
+                                            {isRadioPlaying ? (
+                                                <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-extrabold text-white uppercase">
+                                                    EN VIVO
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-medium text-neutral-400">
+                                                    Sintonizar
+                                                </span>
+                                            )}
+                                        </button>
 
                                         {!isInstalled && isInstallable && (
                                             <button

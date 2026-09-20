@@ -1,4 +1,5 @@
 import { useSpeechNarrator } from '@/hooks/use-speech-narrator';
+import { useRadioPlayer } from '@/contexts/radio-context';
 import {
     AlertCircle,
     ArrowUp,
@@ -30,6 +31,7 @@ export function ArticleAudioPlayer({
     audioUrl,
     onProgressChange,
 }: ArticleAudioPlayerProps) {
+    const { notifyArticleAudioPlaying, notifyArticleAudioStopped } = useRadioPlayer();
     const textToRead = `${title}. ${body ?? ''}`;
     const speech = useSpeechNarrator(textToRead);
 
@@ -157,6 +159,7 @@ export function ArticleAudioPlayer({
             setIsPaused(false);
         }
         speech.stop();
+        notifyArticleAudioStopped();
     };
 
     const handleCycleSpeed = () => {
@@ -212,8 +215,11 @@ export function ArticleAudioPlayer({
         };
 
         window.addEventListener('kawaii:toggle-audio', handleCustomToggle);
-        return () => window.removeEventListener('kawaii:toggle-audio', handleCustomToggle);
-    }, [handlePlayPause]);
+        return () => {
+            window.removeEventListener('kawaii:toggle-audio', handleCustomToggle);
+            notifyArticleAudioStopped();
+        };
+    }, [handlePlayPause, notifyArticleAudioStopped]);
 
     if (!audioUrl && !speech.isSupported) {
         return null;
@@ -241,6 +247,7 @@ export function ArticleAudioPlayer({
                         setIsPlaying(true);
                         setIsPaused(false);
                         setIsLoading(false);
+                        notifyArticleAudioPlaying();
                     }}
                     onPause={() => {
                         setIsPlaying(false);
@@ -251,12 +258,14 @@ export function ArticleAudioPlayer({
                         setIsPlaying(false);
                         setIsPaused(false);
                         setCurrentTime(0);
+                        notifyArticleAudioStopped();
                     }}
                     onError={() => {
                         setHasError(true);
                         setIsPlaying(false);
                         setIsPaused(false);
                         setIsLoading(false);
+                        notifyArticleAudioStopped();
                     }}
                     onWaiting={() => setIsLoading(true)}
                     onCanPlay={() => setIsLoading(false)}

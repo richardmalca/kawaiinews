@@ -20,6 +20,9 @@ class RadioQueueItemResource extends JsonResource
             'audio_url' => $this->audio_url,
             'duration_seconds' => $this->duration_seconds,
             'news_article_id' => $this->news_article_id,
+            'article_slug' => $this->newsArticle?->slug,
+            'image_url' => $this->newsArticle?->featured_image,
+            'artist' => $this->radioTrack?->artist,
         ];
     }
 }

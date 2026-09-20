@@ -222,6 +222,9 @@ export type RadioQueueItem = {
     audio_url: string;
     duration_seconds: number | null;
     news_article_id: number | null;
+    article_slug?: string | null;
+    image_url?: string | null;
+    artist?: string | null;
 };
 
 export type DashboardSummary = {

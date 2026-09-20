@@ -243,6 +243,6 @@ class RadioService
      */
     public function currentQueue(): Collection
     {
-        return RadioQueueItem::orderBy('position')->get();
+        return RadioQueueItem::with(['newsArticle', 'radioTrack'])->orderBy('position')->get();
     }
 }
