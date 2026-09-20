@@ -1,9 +1,15 @@
 import { Head } from '@inertiajs/react';
-import { Music, Radio as RadioIcon, RefreshCw, Trash2, Upload } from 'lucide-react';
+import {
+    Mic2,
+    Music,
+    Newspaper,
+    RefreshCw,
+    Sparkles,
+    Trash2,
+    Upload,
+} from 'lucide-react';
 import { FormEvent, useRef, useState } from 'react';
 import Heading from '@/components/heading';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,14 +21,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { useRadio } from '@/pages/admin/radio/hooks/use-radio';
 import type { RadioQueueItem, RadioTrack } from '@/types/admin';
 
@@ -30,6 +28,17 @@ type Props = {
     tracks: RadioTrack[];
     queue: RadioQueueItem[];
 };
+
+function formatDuration(seconds: number | null): string | null {
+    if (!seconds) {
+        return null;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+
+    return `${minutes}:${rest.toString().padStart(2, '0')}`;
+}
 
 export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
     const {
@@ -73,29 +82,20 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
             <div className="space-y-6 p-4">
                 <Heading
                     title="KawaiiRadio"
-                    description="Música libre de derechos intercalada con las últimas noticias, presentadas por un DJ con voz de IA — la cola se arma de antemano, no en vivo por oyente."
+                    description="Música de fondo mezclada con las últimas noticias, contadas por un locutor con voz de IA. La programación se arma sola cada dos horas."
                 />
 
-                <Alert>
-                    <RadioIcon className="h-4 w-4" />
-                    <AlertTitle>El reproductor todavía no está en la web pública</AlertTitle>
-                    <AlertDescription>
-                        Esta pantalla arma la música y la cola. El
-                        endpoint público que la sirve es{' '}
-                        <code>/radio/queue.json</code>.
-                    </AlertDescription>
-                </Alert>
-
-                <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-sm font-medium">
-                                Subir música
+                            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                                <Music className="h-4 w-4" />
+                                Agregar música
                             </CardTitle>
                             <CardDescription>
-                                Solo música libre de derechos (CC0 /
-                                royalty-free) — Pixabay Music, YouTube Audio
-                                Library, Free Music Archive, Chosic.
+                                Solo música libre de derechos. Buscá en
+                                Pixabay Music, YouTube Audio Library, Free
+                                Music Archive o Chosic, y subila acá.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -105,7 +105,7 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                             >
                                 <div className="grid gap-2">
                                     <Label htmlFor="radio-track-title">
-                                        Título
+                                        Nombre de la canción
                                     </Label>
                                     <Input
                                         id="radio-track-title"
@@ -130,7 +130,7 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="radio-track-file">
-                                        Archivo (mp3, wav, ogg, m4a)
+                                        Archivo de audio
                                     </Label>
                                     <Input
                                         id="radio-track-file"
@@ -155,7 +155,7 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                     ) : (
                                         <Upload className="h-4 w-4" />
                                     )}
-                                    Subir pista
+                                    Agregar canción
                                 </Button>
                             </form>
                         </CardContent>
@@ -163,13 +163,13 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-sm font-medium">
-                                Cola actual
+                            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                                <Sparkles className="h-4 w-4" />
+                                Programación de ahora
                             </CardTitle>
                             <CardDescription>
-                                Se reconstruye sola cada 2 horas con las
-                                últimas noticias narradas — o de una, con
-                                el botón.
+                                Se renueva sola con las últimas noticias, o
+                                le das al botón para armarla de una.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -184,97 +184,106 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                 ) : (
                                     <RefreshCw className="h-4 w-4" />
                                 )}
-                                Reconstruir cola ahora
+                                Actualizar ahora
                             </Button>
 
-                            {tracks.length === 0 && (
+                            {tracks.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
-                                    Subí al menos una pista de música para
-                                    poder armar la cola.
+                                    Agregá al menos una canción para poder
+                                    armar la programación.
                                 </p>
-                            )}
+                            ) : queue.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                    Todavía no se armó ninguna programación
+                                    — probá "Actualizar ahora".
+                                </p>
+                            ) : (
+                                <ol className="max-h-96 space-y-1 overflow-y-auto text-sm">
+                                    {queue.map((item, index) => {
+                                        const duration = formatDuration(
+                                            item.duration_seconds,
+                                        );
 
-                            <ul className="max-h-80 space-y-1 overflow-y-auto text-sm">
-                                {queue.map((item) => (
-                                    <li
-                                        key={item.id}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Badge
-                                            variant="outline"
-                                            className="w-16 shrink-0 justify-center"
-                                        >
-                                            {item.type === 'music'
-                                                ? 'Música'
-                                                : 'Noticia'}
-                                        </Badge>
-                                        <span className="truncate">
-                                            {item.title}
-                                        </span>
-                                    </li>
-                                ))}
-                                {queue.length === 0 && (
-                                    <p className="text-muted-foreground text-sm">
-                                        Todavía no se armó ninguna cola.
-                                    </p>
-                                )}
-                            </ul>
+                                        return (
+                                            <li
+                                                key={item.id}
+                                                className="flex items-center gap-3 rounded-md px-2 py-1.5 odd:bg-muted/40"
+                                            >
+                                                <span className="text-muted-foreground w-5 shrink-0 text-right text-xs">
+                                                    {index + 1}
+                                                </span>
+                                                {item.type === 'music' ? (
+                                                    <Music className="text-muted-foreground h-4 w-4 shrink-0" />
+                                                ) : (
+                                                    <Newspaper className="h-4 w-4 shrink-0 text-primary" />
+                                                )}
+                                                <span className="min-w-0 flex-1 truncate">
+                                                    {item.title}
+                                                </span>
+                                                {duration && (
+                                                    <span className="text-muted-foreground shrink-0 text-xs">
+                                                        {duration}
+                                                    </span>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">
-                            Música cargada ({tracks.length})
+                        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+                            <Mic2 className="h-4 w-4" />
+                            Tu música ({tracks.length})
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {tracks.length === 0 ? (
                             <p className="text-muted-foreground text-sm">
-                                Todavía no subiste ninguna pista.
+                                Todavía no agregaste ninguna canción.
                             </p>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Título</TableHead>
-                                        <TableHead>Artista</TableHead>
-                                        <TableHead>Subida</TableHead>
-                                        <TableHead className="text-right">
-                                            Acciones
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {tracks.map((track) => (
-                                        <TableRow key={track.id}>
-                                            <TableCell className="flex items-center gap-2 font-medium">
+                            <ul className="divide-y">
+                                {tracks.map((track) => (
+                                    <li
+                                        key={track.id}
+                                        className="flex items-center justify-between gap-4 py-3"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className="bg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
                                                 <Music className="text-muted-foreground h-4 w-4" />
-                                                {track.title}
-                                            </TableCell>
-                                            <TableCell>
-                                                {track.artist ?? '—'}
-                                            </TableCell>
-                                            <TableCell>
-                                                {track.created_at_formatted}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        deleteTrack(track)
-                                                    }
-                                                >
-                                                    <Trash2 className="text-destructive h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="truncate font-medium">
+                                                    {track.title}
+                                                </p>
+                                                <p className="text-muted-foreground truncate text-xs">
+                                                    {track.artist ??
+                                                        'Sin artista'}
+                                                    {track.created_at_formatted
+                                                        ? ` · agregada el ${track.created_at_formatted}`
+                                                        : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="shrink-0"
+                                            onClick={() =>
+                                                deleteTrack(track)
+                                            }
+                                        >
+                                            <Trash2 className="text-destructive h-4 w-4" />
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
                         )}
                     </CardContent>
                 </Card>
