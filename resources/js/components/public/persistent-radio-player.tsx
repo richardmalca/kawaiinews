@@ -33,6 +33,7 @@ export function PersistentRadioPlayer() {
         showAutoplayPrompt,
         setAutoplayPref,
         dismissAutoplayPrompt,
+        play,
         togglePlay,
         nextTrack,
         toggleMute,
@@ -58,7 +59,7 @@ export function PersistentRadioPlayer() {
                 <button
                     onClick={() => {
                         if (isPausedByArticle) {
-                            togglePlay();
+                            play();
                         } else {
                             setIsMinimized(false);
                         }

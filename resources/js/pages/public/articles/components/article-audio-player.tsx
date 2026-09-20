@@ -238,9 +238,8 @@ export function ArticleAudioPlayer({
         return () => {
             window.removeEventListener('kawaii:toggle-audio', handleCustomToggle);
             window.removeEventListener('kawaii:stop-article-audio', handleForceStop);
-            notifyArticleAudioStopped();
         };
-    }, [handlePlayPause, notifyArticleAudioStopped]);
+    }, [handlePlayPause, handleClosePlayer]);
 
     if (!audioUrl && !speech.isSupported) {
         return null;

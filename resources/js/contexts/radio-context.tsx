@@ -68,10 +68,12 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const queueRef = useRef<RadioQueueItem[]>([]);
     const currentIndexRef = useRef(0);
     const isPlayingRef = useRef(false);
+    const isPausedByArticleRef = useRef(false);
 
     queueRef.current = queue;
     currentIndexRef.current = currentIndex;
     isPlayingRef.current = isPlaying;
+    isPausedByArticleRef.current = isPausedByArticle;
 
     const currentTrack = queue[currentIndex] ?? null;
 
@@ -256,6 +258,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             window.dispatchEvent(new CustomEvent('kawaii:stop-article-audio'));
         }
 
+        isPausedByArticleRef.current = false;
         setIsPausedByArticle(false);
         setDockVisible(true);
 
@@ -358,11 +361,12 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const notifyArticleAudioStopped = useCallback(() => {
-        if (isPausedByArticle) {
+        if (isPausedByArticleRef.current) {
+            isPausedByArticleRef.current = false;
             setIsPausedByArticle(false);
             fetchQueueAndSync(true);
         }
-    }, [isPausedByArticle, fetchQueueAndSync]);
+    }, [fetchQueueAndSync]);
 
     return (
         <RadioContext.Provider
