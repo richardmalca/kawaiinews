@@ -49,7 +49,7 @@ export function BackToTop() {
     const bottomClass = isAudioActive
         ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
         : hasRadioBottomBar
-            ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
+            ? 'bottom-[calc(8.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
             : 'bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6';
 
     return (
