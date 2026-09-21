@@ -1,6 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
 import type { PublicArticle, PublicUserProfile } from '@/types';
-import { useEffect } from 'react';
 
 interface SeoHeadProps {
     title?: string;
@@ -125,31 +124,6 @@ export function SeoHead({
               },
           };
 
-    useEffect(() => {
-        if (typeof document === 'undefined') {
-            return;
-        }
-
-        const scriptId = 'kawaii-structured-data';
-        let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-
-        if (!script) {
-            script = document.createElement('script');
-            script.id = scriptId;
-            script.type = 'application/ld+json';
-            document.head.appendChild(script);
-        }
-
-        script.textContent = JSON.stringify(jsonLd);
-
-        return () => {
-            const el = document.getElementById(scriptId);
-            if (el) {
-                el.remove();
-            }
-        };
-    }, [jsonLd]);
-
     const tagsList = Array.isArray(article?.tags) ? article.tags : [];
 
     return (
@@ -163,6 +137,12 @@ export function SeoHead({
             )}
 
             {computedUrl && <link rel="canonical" href={computedUrl} />}
+
+            <script
+                id="kawaii-structured-data"
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
 
             {/* Open Graph */}
             <meta property="og:site_name" content={siteName} />
