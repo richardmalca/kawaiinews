@@ -66,17 +66,48 @@ test('building the queue alternates music and narrated articles, generating a dj
 
     $result = app(RadioService::class)->buildQueue();
 
-    expect($result['queued'])->toBe(2)
+    expect($result['queued'])->toBe(3)
         ->and($result['skipped_no_audio'])->toBe(0);
 
+    // Música, presentación del DJ y la narración real van como 3 items de
+    // cola separados — la presentación NUNCA reemplaza a la narración
+    // (regression: antes dj_intro_url pisaba a audio_url y la noticia
+    // real no llegaba a sonar).
     $items = RadioQueueItem::orderBy('position')->get();
     expect($items[0]->type)->toBe('music')
-        ->and($items[1]->type)->toBe('article')
-        ->and($items[1]->news_article_id)->toBe($article->id);
+        ->and($items[1]->type)->toBe('dj_intro')
+        ->and($items[1]->news_article_id)->toBe($article->id)
+        ->and($items[2]->type)->toBe('article')
+        ->and($items[2]->news_article_id)->toBe($article->id);
 
     $article->refresh();
     expect($article->dj_intro_url)->not->toBeNull()
-        ->and($items[1]->audio_url)->toBe($article->dj_intro_url);
+        ->and($items[1]->audio_url)->toBe($article->dj_intro_url)
+        ->and($items[2]->audio_url)->toBe($article->audio_url)
+        ->and($items[2]->audio_url)->not->toBe($items[1]->audio_url);
+});
+
+test('the dj voice request to google tts includes a trailing pause, not just plain text (regression: audio ran straight into the next track)', function () {
+    RadioTrack::factory()->create(['active' => true]);
+    AiProvider::factory()->create(['provider' => 'openai', 'is_active' => true, 'api_key' => 'test-key']);
+    AiProvider::factory()->create(['provider' => 'google-tts', 'is_active_for_audio' => true, 'api_key' => 'test-key']);
+
+    Prism::fake([TextResponseFake::make()->withText('¡Prepárense para esta noticia bomba!')]);
+    Http::fake([
+        'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+    ]);
+
+    NewsArticle::factory()->create(['status' => 'published', 'audio_url' => 'https://cdn.test/narration.mp3']);
+
+    app(RadioService::class)->buildQueue();
+
+    Http::assertSent(function ($request) {
+        $ssml = $request['input']['ssml'] ?? null;
+
+        return $ssml
+            && str_starts_with($ssml, '<speak>')
+            && str_contains($ssml, '<break time="700ms"/>');
+    });
 });
 
 test('rebuilding the queue reuses an already generated dj intro instead of calling ai again', function () {
@@ -118,9 +149,10 @@ test('a filler dj phrase is intercalated every couple of music+article pairs', f
 
     $result = app(RadioService::class)->buildQueue();
 
-    // 3 pares música+noticia (6 items) + 1 frase suelta del DJ intercalada
-    // después del segundo par (FILLER_EVERY_N_PAIRS = 2).
-    expect($result['queued'])->toBe(7);
+    // 3 grupos de música + presentación del DJ + noticia (9 items) + 1
+    // frase suelta del DJ intercalada después del segundo grupo
+    // (FILLER_EVERY_N_PAIRS = 2).
+    expect($result['queued'])->toBe(10);
 
     $items = RadioQueueItem::orderBy('position')->get();
     $fillers = $items->where('type', 'filler');

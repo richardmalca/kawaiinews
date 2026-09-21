@@ -134,16 +134,32 @@ class RadioService
             ];
 
             $this->ensureDjIntro($article);
+            $article->refresh();
+
+            // La presentación del DJ y la narración real son dos items de
+            // cola separados (no uno solo con un audio "reemplazando" al
+            // otro) — así el reproductor las encadena como cualquier otro
+            // par de items, con su pausa entre medio, y la noticia narrada
+            // siempre suena, tenga o no ya una presentación generada.
+            if (filled($article->dj_intro_url)) {
+                $items[] = [
+                    'type' => 'dj_intro',
+                    'radio_track_id' => null,
+                    'news_article_id' => $article->id,
+                    'title' => $article->title,
+                    'audio_url' => $article->dj_intro_url,
+                    'duration_seconds' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
 
             $items[] = [
                 'type' => 'article',
                 'radio_track_id' => null,
                 'news_article_id' => $article->id,
                 'title' => $article->title,
-                // El intro del DJ y la narración se reproducen como dos
-                // pistas seguidas del mismo segmento — el reproductor las
-                // encadena, así no hace falta mezclar audio server-side.
-                'audio_url' => $article->fresh()->dj_intro_url ?? $article->audio_url,
+                'audio_url' => $article->audio_url,
                 'duration_seconds' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -310,10 +326,18 @@ class RadioService
 
         try {
             if ($provider->provider === 'google-tts') {
+                // Sin esto, el audio del DJ terminaba justo al final de la
+                // frase y la siguiente pista arrancaba pegada, sin ningún
+                // respiro — igual que pasaba con la narración de artículos
+                // antes de agregarle la pausa SSML (ver
+                // MediaLibraryService::buildNarrationSsml).
+                $escaped = htmlspecialchars($script, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+                $ssml = "<speak>{$escaped} <break time=\"700ms\"/></speak>";
+
                 $response = Http::timeout(30)->post(
                     "https://texttospeech.googleapis.com/v1/text:synthesize?key={$provider->api_key}",
                     [
-                        'input' => ['text' => $script],
+                        'input' => ['ssml' => $ssml],
                         'voice' => ['languageCode' => 'es-US', 'name' => 'es-US-Wavenet-B'],
                         'audioConfig' => ['audioEncoding' => 'MP3'],
                     ]

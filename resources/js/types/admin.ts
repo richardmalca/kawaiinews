@@ -217,7 +217,7 @@ export type RadioTrack = {
 export type RadioQueueItem = {
     id: number;
     position: number;
-    type: 'music' | 'article' | 'filler';
+    type: 'music' | 'article' | 'filler' | 'dj_intro';
     title: string;
     audio_url: string;
     duration_seconds: number | null;

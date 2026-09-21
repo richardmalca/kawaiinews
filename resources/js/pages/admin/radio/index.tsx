@@ -218,7 +218,9 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                                 {item.type === 'article' && (
                                                     <Newspaper className="h-4 w-4 shrink-0 text-primary" />
                                                 )}
-                                                {item.type === 'filler' && (
+                                                {(item.type === 'filler' ||
+                                                    item.type ===
+                                                        'dj_intro') && (
                                                     <Mic2 className="h-4 w-4 shrink-0 text-amber-500" />
                                                 )}
                                                 <span className="min-w-0 flex-1 truncate">
