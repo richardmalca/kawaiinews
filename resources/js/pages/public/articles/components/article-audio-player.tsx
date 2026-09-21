@@ -20,6 +20,7 @@ interface ArticleAudioPlayerProps {
     title: string;
     body: string | null;
     audioUrl?: string | null;
+    featuredImage?: string | null;
     onProgressChange?: (progressPercent: number, isPlaying: boolean) => void;
 }
 
@@ -29,6 +30,7 @@ export function ArticleAudioPlayer({
     title,
     body,
     audioUrl,
+    featuredImage,
     onProgressChange,
 }: ArticleAudioPlayerProps) {
     const { notifyArticleAudioPlaying, notifyArticleAudioStopped } = useRadioPlayer();
@@ -240,6 +242,30 @@ export function ArticleAudioPlayer({
             window.removeEventListener('kawaii:stop-article-audio', handleForceStop);
         };
     }, [handlePlayPause, handleClosePlayer]);
+
+    useEffect(() => {
+        if ('mediaSession' in navigator && (activePlaying || activePaused)) {
+            const fallbackLogo = (typeof document !== 'undefined' ? (document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement)?.href : null) || '/apple-touch-icon.png';
+            const artworkSrc = featuredImage || fallbackLogo;
+
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: title,
+                artist: isAiAudio ? 'KawaiiNews Narración IA' : 'KawaiiNews Narrador de voz',
+                album: 'KawaiiNews',
+                artwork: [
+                    { src: artworkSrc, sizes: '512x512', type: 'image/png' },
+                    { src: artworkSrc, sizes: '192x192', type: 'image/png' },
+                ],
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => {
+                handlePlayPause();
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+                handlePlayPause();
+            });
+        }
+    }, [activePlaying, activePaused, title, featuredImage, isAiAudio]);
 
     if (!audioUrl && !speech.isSupported) {
         return null;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\RadioQueueItemResource;
+use App\Models\SiteSetting;
 use App\Services\Admin\RadioService;
 use Illuminate\Http\JsonResponse;
 
@@ -58,8 +59,11 @@ class RadioController extends Controller
             }
         }
 
+        $siteSettings = SiteSetting::current();
+
         return response()->json([
             'queue' => $queue,
+            'site_logo_url' => $siteSettings->logoUrl() ?? $siteSettings->appleTouchIconUrl(),
             'server_time' => time(),
             'queue_started_at' => $radioService->queueStartedAt()->timestamp,
             'current_track_index' => $currentTrackIndex,

@@ -58,6 +58,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [isPausedByArticle, setIsPausedByArticle] = useState(false);
     const [isLive, setIsLive] = useState(true);
+    const [siteLogoUrl, setSiteLogoUrl] = useState<string | null>(null);
     const [autoplayPref, setAutoplayPrefState] = useState<boolean | null>(() => {
         if (typeof window === 'undefined') return null;
         const stored = localStorage.getItem('kawaii_radio_autoplay');
@@ -105,6 +106,9 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             const data = await res.json();
 
             const items: RadioQueueItem[] = data.queue || [];
+            if (data.site_logo_url) {
+                setSiteLogoUrl(data.site_logo_url);
+            }
             if (items.length === 0) {
                 isLoadingRef.current = false;
                 setIsLoading(false);
@@ -233,14 +237,16 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if ('mediaSession' in navigator && currentTrack) {
+            const fallbackLogo = siteLogoUrl || (typeof document !== 'undefined' ? (document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement)?.href : null) || '/apple-touch-icon.png';
+            const artworkSrc = currentTrack.image_url || fallbackLogo;
+
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: currentTrack.title,
                 artist: currentTrack.artist || (currentTrack.type === 'article' ? 'KawaiiNews Narración IA' : 'KawaiiRadio'),
                 album: 'KawaiiRadio En Vivo',
-                artwork: currentTrack.image_url ? [
-                    { src: currentTrack.image_url, sizes: '512x512', type: 'image/webp' }
-                ] : [
-                    { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+                artwork: [
+                    { src: artworkSrc, sizes: '512x512', type: 'image/png' },
+                    { src: artworkSrc, sizes: '192x192', type: 'image/png' },
                 ],
             });
 
@@ -257,7 +263,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 prevTrack();
             });
         }
-    }, [currentTrack]);
+    }, [currentTrack, siteLogoUrl]);
 
     useEffect(() => {
         if (autoplayPref === true) {

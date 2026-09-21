@@ -21,6 +21,7 @@ export function ArticleHeader({ article }: ArticleHeaderProps) {
                     title={article.title}
                     body={article.body}
                     audioUrl={article.audio_url}
+                    featuredImage={article.featured_image}
                 />
             </div>
 
