@@ -69,11 +69,13 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const currentIndexRef = useRef(0);
     const isPlayingRef = useRef(false);
     const isPausedByArticleRef = useRef(false);
+    const isLoadingRef = useRef(false);
 
     queueRef.current = queue;
     currentIndexRef.current = currentIndex;
     isPlayingRef.current = isPlaying;
     isPausedByArticleRef.current = isPausedByArticle;
+    isLoadingRef.current = isLoading;
 
     const currentTrack = queue[currentIndex] ?? null;
 
@@ -96,6 +98,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const fetchQueueAndSync = useCallback(async (autoPlay = false) => {
         try {
             setIsLoading(true);
+            isLoadingRef.current = true;
             setHasError(false);
             const res = await fetch('/radio/queue.json');
             if (!res.ok) throw new Error('Error al cargar la radio');
@@ -103,6 +106,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
             const items: RadioQueueItem[] = data.queue || [];
             if (items.length === 0) {
+                isLoadingRef.current = false;
                 setIsLoading(false);
                 return;
             }
@@ -123,17 +127,28 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 audioRef.current.currentTime = liveOffset;
 
                 if (autoPlay) {
+                    setDockVisible(true);
+                    setIsPlaying(true);
                     audioRef.current.play().then(() => {
+                        isLoadingRef.current = false;
+                        setIsLoading(false);
                         setIsPlaying(true);
-                        setDockVisible(true);
                     }).catch(() => {
+                        isLoadingRef.current = false;
+                        setIsLoading(false);
                         setIsPlaying(false);
                     });
+                } else {
+                    isLoadingRef.current = false;
+                    setIsLoading(false);
                 }
+            } else {
+                isLoadingRef.current = false;
+                setIsLoading(false);
             }
         } catch {
+            isLoadingRef.current = false;
             setHasError(true);
-        } finally {
             setIsLoading(false);
         }
     }, []);
@@ -162,11 +177,13 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         };
 
         const onPlaying = () => {
+            isLoadingRef.current = false;
             setIsLoading(false);
             setIsPlaying(true);
         };
 
         const onPause = () => {
+            if (isLoadingRef.current) return;
             setIsLoading(false);
             setIsPlaying(false);
         };
@@ -277,10 +294,14 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 audioRef.current.src = track.audio_url;
             }
             setIsLoading(true);
+            isLoadingRef.current = true;
+            setIsPlaying(true);
             audioRef.current.play().then(() => {
+                isLoadingRef.current = false;
                 setIsLoading(false);
                 setIsPlaying(true);
             }).catch(() => {
+                isLoadingRef.current = false;
                 setIsLoading(false);
                 setIsPlaying(false);
             });
@@ -289,6 +310,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
     const pause = useCallback(() => {
         if (!audioRef.current) return;
+        isLoadingRef.current = false;
         audioRef.current.pause();
         setIsPlaying(false);
     }, []);

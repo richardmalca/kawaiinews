@@ -61,6 +61,7 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
 
     const {
         isPlaying: isRadioPlaying,
+        play: playRadio,
         togglePlay: toggleRadioPlay,
         setDockVisible: setRadioDockVisible,
         setIsMinimized: setRadioMinimized,
@@ -238,7 +239,11 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                 onClick={() => {
                                     setRadioDockVisible(true);
                                     setRadioMinimized(false);
-                                    toggleRadioPlay();
+                                    if (!isRadioPlaying) {
+                                        playRadio();
+                                    } else {
+                                        toggleRadioPlay();
+                                    }
                                 }}
                                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                                     isRadioPlaying
@@ -328,7 +333,11 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                             onClick={() => {
                                 setRadioDockVisible(true);
                                 setRadioMinimized(false);
-                                toggleRadioPlay();
+                                if (!isRadioPlaying) {
+                                    playRadio();
+                                } else {
+                                    toggleRadioPlay();
+                                }
                             }}
                             className={`flex h-8 sm:h-9 items-center justify-center gap-1 sm:gap-1.5 rounded-xl border px-2 sm:px-2.5 text-xs font-bold transition-all md:hidden ${
                                 isRadioPlaying
@@ -550,7 +559,11 @@ export function PublicNavbar({ categories, progress }: PublicNavbarProps) {
                                                 setIsMobileMenuOpen(false);
                                                 setRadioDockVisible(true);
                                                 setRadioMinimized(false);
-                                                toggleRadioPlay();
+                                                if (!isRadioPlaying) {
+                                                    playRadio();
+                                                } else {
+                                                    toggleRadioPlay();
+                                                }
                                             }}
                                             className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-bold transition-all ${
                                                 isRadioPlaying
