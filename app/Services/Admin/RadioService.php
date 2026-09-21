@@ -131,7 +131,7 @@ class RadioService
                 'news_article_id' => null,
                 'title' => $track->title,
                 'audio_url' => $track->url,
-                'duration_seconds' => $track->duration_seconds,
+                'duration_seconds' => $this->ensureTrackDuration($track),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -151,7 +151,7 @@ class RadioService
                     'news_article_id' => $article->id,
                     'title' => $article->title,
                     'audio_url' => $article->dj_intro_url,
-                    'duration_seconds' => $article->dj_intro_duration_seconds,
+                    'duration_seconds' => $this->ensureDjIntroDuration($article),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -194,27 +194,71 @@ class RadioService
      */
     private function ensureAudioDuration(NewsArticle $article): ?int
     {
-        // 0 se usa como "ya lo intenté y no se pudo calcular" para no
-        // volver a bajar el archivo en cada rearmado de cola — null sigue
-        // significando "todavía no se intentó". Al reproductor nunca se le
-        // manda 0 (lo trataría como "ya terminó"), solo null o el valor
-        // real.
-        if ($article->audio_duration_seconds !== null) {
-            return $article->audio_duration_seconds ?: null;
-        }
-
         if (! $article->audio_url) {
             return null;
         }
 
+        return $this->ensureMp3DurationCached(
+            $article->audio_url,
+            $article->audio_duration_seconds,
+            fn (int $duration) => $article->update(['audio_duration_seconds' => $duration]),
+        );
+    }
+
+    /**
+     * Backfill para presentaciones del DJ que ya existían antes de que se
+     * empezara a guardar su duración (dj_intro_duration_seconds) — sin
+     * esto, cualquier noticia con presentación generada antes de este
+     * cambio se quedaría con duration null para siempre.
+     */
+    private function ensureDjIntroDuration(NewsArticle $article): ?int
+    {
+        if (! $article->dj_intro_url) {
+            return null;
+        }
+
+        return $this->ensureMp3DurationCached(
+            $article->dj_intro_url,
+            $article->dj_intro_duration_seconds,
+            fn (int $duration) => $article->update(['dj_intro_duration_seconds' => $duration]),
+        );
+    }
+
+    /**
+     * Mismo backfill para pistas de música subidas antes de que
+     * addTrack() empezara a calcular la duración sola.
+     */
+    private function ensureTrackDuration(RadioTrack $track): ?int
+    {
+        return $this->ensureMp3DurationCached(
+            $track->url,
+            $track->duration_seconds,
+            fn (int $duration) => $track->update(['duration_seconds' => $duration]),
+        );
+    }
+
+    /**
+     * Descarga (una sola vez, después queda cacheado por quien llama) y
+     * calcula la duración de un mp3 ya subido. 0 se guarda como "ya lo
+     * intenté y no se pudo calcular", para no volver a bajar el archivo
+     * en cada rearmado de cola — null sigue significando "todavía no se
+     * intentó". Al reproductor nunca se le manda 0 (lo trataría como "ya
+     * terminó"), solo null o el valor real.
+     */
+    private function ensureMp3DurationCached(string $url, ?int $current, callable $persist): ?int
+    {
+        if ($current !== null) {
+            return $current ?: null;
+        }
+
         try {
-            $contents = Http::timeout(15)->get($article->audio_url)->body();
+            $contents = Http::timeout(15)->get($url)->body();
         } catch (Throwable) {
             return null;
         }
 
         $duration = Mp3Duration::seconds($contents);
-        $article->update(['audio_duration_seconds' => $duration ?? 0]);
+        $persist($duration ?? 0);
 
         return $duration;
     }
@@ -247,9 +291,14 @@ class RadioService
         $path = MediaNaming::path('audio', 'mp3');
         $this->disk()->put($path, $decoded, 'public');
 
+        // ?? 0 con el mismo criterio que ensureMp3DurationCached: si no se
+        // pudo leer la duración, se guarda 0 ("ya lo intenté") en vez de
+        // null ("todavía no lo intenté") — si no, el backfill de
+        // ensureDjIntroDuration la volvería a intentar bajar en cada
+        // rearmado de cola sin parar nunca.
         $article->update([
             'dj_intro_url' => $this->disk()->url($path),
-            'dj_intro_duration_seconds' => Mp3Duration::seconds($decoded),
+            'dj_intro_duration_seconds' => Mp3Duration::seconds($decoded) ?? 0,
         ]);
     }
 
