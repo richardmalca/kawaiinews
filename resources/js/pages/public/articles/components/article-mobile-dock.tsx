@@ -73,7 +73,7 @@ export function ArticleMobileDock({
                     : 'translate-y-24 opacity-0 pointer-events-none'
             } ${
                 isAudioActive
-                    ? 'bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'
+                    ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]'
                     : 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
             }`}
         >

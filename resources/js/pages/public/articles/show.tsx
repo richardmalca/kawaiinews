@@ -321,22 +321,24 @@ export default function ShowArticle({
                         id="tendencias"
                         className="scroll-mt-32 transition-all duration-300 lg:sticky lg:top-32 lg:col-span-4"
                     >
-                        <ArticleActionsPanel
-                            liked={liked}
-                            likersCount={likersCount}
-                            favorited={favorited}
-                            isLiking={isLiking}
-                            isFavoriting={isFavoriting}
-                            fontSize={fontSize}
-                            copiedText={copiedText}
-                            sharesCount={sharesCount}
-                            commentsCount={item.comments_count}
-                            visible={isScrolled}
-                            onToggleLike={toggleLike}
-                            onToggleFavorite={toggleFavorite}
-                            onCopyPlainText={handleCopyPlainText}
-                            setFontSize={setFontSize}
-                        />
+                        <div className="hidden lg:block">
+                            <ArticleActionsPanel
+                                liked={liked}
+                                likersCount={likersCount}
+                                favorited={favorited}
+                                isLiking={isLiking}
+                                isFavoriting={isFavoriting}
+                                fontSize={fontSize}
+                                copiedText={copiedText}
+                                sharesCount={sharesCount}
+                                commentsCount={item.comments_count}
+                                visible={isScrolled}
+                                onToggleLike={toggleLike}
+                                onToggleFavorite={toggleFavorite}
+                                onCopyPlainText={handleCopyPlainText}
+                                setFontSize={setFontSize}
+                            />
+                        </div>
 
                         {trending.data.length > 0 && (
                             <TrendingSidebar articles={trending.data} />

@@ -186,8 +186,8 @@ export function ArticleAudioPlayer({
         }
     };
 
-    const activePlaying = isAiAudio ? isPlaying : speech.isPlaying;
-    const activePaused = isAiAudio ? isPaused : speech.isPaused;
+    const activePlaying = !isDismissed && (isAiAudio ? isPlaying : speech.isPlaying);
+    const activePaused = !isDismissed && (isAiAudio ? isPaused : speech.isPaused);
     const isInteracting = !isDismissed && (activePlaying || activePaused);
 
     const currentSeconds = isAiAudio ? currentTime : speech.elapsedSeconds;
@@ -273,6 +273,8 @@ export function ArticleAudioPlayer({
                         setIsPlaying(false);
                         if (!isDismissedRef.current) {
                             setIsPaused(true);
+                        } else {
+                            setIsPaused(false);
                         }
                         setIsLoading(false);
                     }}
