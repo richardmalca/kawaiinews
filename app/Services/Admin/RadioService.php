@@ -46,11 +46,29 @@ class RadioService
     private const FILLER_EVERY_N_PAIRS = 2;
 
     private const FILLER_PROMPTS = [
-        'Saludá a los oyentes de KawaiiRadio con una frase corta y copada, como arrancando un segmento — sin mencionar ninguna noticia en particular.',
+        'Saludá a los oyentes de KawaiiRadio con una frase corta y cálida, como arrancando un segmento — sin mencionar ninguna noticia en particular.',
         'Contá un dato curioso breve (una sola oración) sobre anime, manga o videojuegos, con tono de locutor de radio.',
-        'Invitá a los oyentes, en una sola oración con onda, a seguir explorando KawaiiNews para más noticias de anime y manga.',
-        'Hacé una transición corta y divertida entre canciones, como diría un DJ de radio real, sin mencionar ninguna canción específica.',
+        'Invitá a los oyentes, en una sola oración cercana, a seguir explorando KawaiiNews para más noticias de anime y manga.',
+        'Hacé una transición corta entre canciones, como diría un locutor de radio real, sin mencionar ninguna canción específica.',
     ];
+
+    /**
+     * Estilo de voz compartido entre la presentación de noticias y las
+     * frases sueltas — evita que la IA se vaya a una jerga muy específica
+     * de un país o a modismos "gamer" random (tipo "otakus", "critical
+     * hit", onomatopeyas inventadas), y le pide puntuación que deje
+     * pausas naturales al leerlo en voz alta.
+     */
+    private const DJ_STYLE_GUIDE = <<<'STYLE'
+        Hablá en español latino neutro, sin modismos de un país en particular
+        (nada de "che", "wey", "parce", etc.) y sin jerga gamer forzada
+        (evitá palabras como "otakus", "critical hit" o inventar
+        onomatopeyas). Dirigite a la audiencia como "amigos" o "ustedes", de
+        forma cercana pero natural, como lo haría un locutor de radio
+        profesional. Separá la oración en un par de frases cortas con comas
+        o puntos, para que se note una pausa natural al leerlo en voz alta —
+        no una sola frase larga corrida.
+        STYLE;
 
     private function disk(): Filesystem
     {
@@ -341,9 +359,12 @@ class RadioService
         }
 
         $instruction = self::FILLER_PROMPTS[array_rand(self::FILLER_PROMPTS)];
+        $styleGuide = self::DJ_STYLE_GUIDE;
 
         $prompt = <<<PROMPT
             Sos el DJ de KawaiiRadio, una radio online de anime, manga y videojuegos.
+
+            {$styleGuide}
 
             {$instruction}
 
@@ -374,8 +395,12 @@ class RadioService
             return null;
         }
 
+        $styleGuide = self::DJ_STYLE_GUIDE;
+
         $prompt = <<<PROMPT
-            Sos el DJ de KawaiiRadio, una radio online de anime, manga y videojuegos. Presentá esta noticia en UNA sola oración corta, tono cercano y entusiasta, como lo haría un locutor de radio antes de pasar una nota (no la leas completa, es solo la presentación).
+            Sos el DJ de KawaiiRadio, una radio online de anime, manga y videojuegos. Presentá esta noticia en una o dos oraciones cortas, como lo haría un locutor de radio antes de pasar una nota (no la leas completa, es solo la presentación).
+
+            {$styleGuide}
 
             Título: {$article->title}
             Resumen: {$article->excerpt}
