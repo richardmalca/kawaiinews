@@ -179,9 +179,22 @@ class RadioService
             ];
         }
 
+        // Un solo timestamp para toda la cola (no el now() de cada item
+        // individual, que iría corriéndose segundos por las llamadas de
+        // IA en el medio) — es el punto de referencia que todos los
+        // oyentes usan para calcular "qué debería estar sonando ahora",
+        // así escuchan lo mismo en simultáneo sin importar cuándo se
+        // conectó cada uno (ver RadioController público).
+        $startedAt = now();
+
         $items = collect($items)
             ->values()
-            ->map(fn (array $item, int $i) => [...$item, 'position' => $i + 1])
+            ->map(fn (array $item, int $i) => [
+                ...$item,
+                'position' => $i + 1,
+                'created_at' => $startedAt,
+                'updated_at' => $startedAt,
+            ])
             ->all();
 
         DB::transaction(function () use ($items) {
@@ -472,5 +485,20 @@ class RadioService
     public function currentQueue(): Collection
     {
         return RadioQueueItem::with(['newsArticle', 'radioTrack'])->orderBy('position')->get();
+    }
+
+    /**
+     * El momento en que arrancó la cola actual — todos los items
+     * comparten el mismo timestamp (ver buildQueue()), así que alcanza
+     * con leer el de cualquiera. Es el punto de referencia que el
+     * reproductor público usa para que todos los oyentes escuchen
+     * exactamente lo mismo en simultáneo, sin importar cuándo se
+     * conectó cada uno.
+     */
+    public function queueStartedAt(): Carbon
+    {
+        $min = RadioQueueItem::min('created_at');
+
+        return $min ? Carbon::parse($min) : now();
     }
 }

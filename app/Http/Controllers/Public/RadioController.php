@@ -34,9 +34,18 @@ class RadioController extends Controller
         $currentTrackIndex = 0;
         $currentTrackOffset = 0;
 
+        // El punto de referencia es cuándo arrancó ESTA cola (no la hora
+        // Unix cruda) — así, apenas se reconstruye la cola (cada 4h o a
+        // mano desde el panel), todos los oyentes arrancan de nuevo desde
+        // el principio, en vez de "caer" en un punto en el medio al azar.
+        // Igual sigue siendo un cálculo puro a partir de la hora del
+        // servidor, sin guardar estado por oyente: dos personas que
+        // consultan este endpoint en el mismo segundo reciben exactamente
+        // el mismo índice y el mismo offset, se hayan conectado recién o
+        // hace rato.
         if ($totalDuration > 0 && count($queue) > 0) {
-            $nowTimestamp = time();
-            $cycleOffset = $nowTimestamp % $totalDuration;
+            $elapsedSinceStart = abs(now()->diffInSeconds($radioService->queueStartedAt()));
+            $cycleOffset = $elapsedSinceStart % $totalDuration;
             $accumulated = 0;
 
             foreach ($durations as $index => $dur) {
@@ -52,6 +61,7 @@ class RadioController extends Controller
         return response()->json([
             'queue' => $queue,
             'server_time' => time(),
+            'queue_started_at' => $radioService->queueStartedAt()->timestamp,
             'current_track_index' => $currentTrackIndex,
             'current_track_offset' => $currentTrackOffset,
             'total_duration' => $totalDuration,

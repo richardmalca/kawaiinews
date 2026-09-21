@@ -106,3 +106,32 @@ test('the public radio queue endpoint serves the current queue', function () {
     $response->assertJsonPath('queue.0.title', 'Chill Beats');
     $response->assertJsonPath('queue.0.audio_url', 'https://cdn.test/chill.mp3');
 });
+
+test('the public radio queue endpoint reports the same playback position for two listeners hitting it at the same time (regression: raw unix time made a fresh rebuild start mid-queue at random)', function () {
+    $startedAt = now()->subSeconds(125);
+
+    RadioQueueItem::factory()->create([
+        'position' => 1,
+        'type' => 'music',
+        'title' => 'Track A',
+        'duration_seconds' => 100,
+        'created_at' => $startedAt,
+    ]);
+    RadioQueueItem::factory()->create([
+        'position' => 2,
+        'type' => 'article',
+        'title' => 'Track B',
+        'duration_seconds' => 100,
+        'created_at' => $startedAt,
+    ]);
+
+    $first = $this->getJson(route('public.radio.queue'))->json();
+    $second = $this->getJson(route('public.radio.queue'))->json();
+
+    // 125s desde que arrancó: los primeros 100s son el item 0, así que a
+    // los 125s tiene que estar en el item 1, ~25s adentro.
+    expect($first['current_track_index'])->toBe(1)
+        ->and($first['current_track_offset'])->toBeGreaterThanOrEqual(24)
+        ->and($first['current_track_offset'])->toBeLessThanOrEqual(26)
+        ->and($first)->toEqual($second);
+});
