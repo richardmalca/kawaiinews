@@ -4,7 +4,6 @@ import {
     Radio,
     Play,
     Pause,
-    SkipForward,
     Volume2,
     VolumeX,
     X,
@@ -35,7 +34,6 @@ export function PersistentRadioPlayer() {
         dismissAutoplayPrompt,
         play,
         togglePlay,
-        nextTrack,
         toggleMute,
         setVolume,
         jumpToLive,
@@ -181,14 +179,6 @@ export function PersistentRadioPlayer() {
                         ) : (
                             <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current ml-0.5" />
                         )}
-                    </button>
-
-                    <button
-                        onClick={nextTrack}
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors"
-                        title="Siguiente pista"
-                    >
-                        <SkipForward className="h-4 w-4" />
                     </button>
                 </div>
 

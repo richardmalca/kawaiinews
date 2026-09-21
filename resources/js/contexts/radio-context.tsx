@@ -71,6 +71,8 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
     const isPlayingRef = useRef(false);
     const isPausedByArticleRef = useRef(false);
     const isLoadingRef = useRef(false);
+    const pausedAtRef = useRef<number | null>(null);
+    const lastLiveCheckRef = useRef<number>(0);
 
     queueRef.current = queue;
     currentIndexRef.current = currentIndex;
@@ -122,6 +124,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
             setCurrentIndex(liveIndex);
             setIsLive(true);
+            pausedAtRef.current = null;
 
             if (audioRef.current && items[liveIndex]) {
                 const targetTrack = items[liveIndex];
@@ -157,6 +160,29 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const checkLiveDrift = useCallback(async () => {
+        const now = Date.now();
+        if (now - lastLiveCheckRef.current < 15000) return;
+        lastLiveCheckRef.current = now;
+
+        try {
+            const res = await fetch('/radio/queue.json');
+            if (!res.ok) return;
+            const data = await res.json();
+            const liveIdx = data.current_track_index ?? 0;
+            const liveOffset = data.current_track_offset ?? 0;
+
+            if (currentIndexRef.current !== liveIdx) {
+                setIsLive(false);
+            } else if (audioRef.current) {
+                const diff = Math.abs(audioRef.current.currentTime - liveOffset);
+                if (diff > 12) {
+                    setIsLive(false);
+                }
+            }
+        } catch {}
+    }, []);
+
     useEffect(() => {
         const audio = new Audio();
         audioRef.current = audio;
@@ -165,6 +191,9 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
 
         const onTimeUpdate = () => {
             setCurrentTime(audio.currentTime);
+            if (audioRef.current && isPlayingRef.current) {
+                checkLiveDrift();
+            }
         };
 
         const onLoadedMetadata = () => {
@@ -193,18 +222,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         };
 
         const onEnded = () => {
-            const q = queueRef.current;
-            const idx = currentIndexRef.current;
-            if (q.length > 0) {
-                const nextIdx = (idx + 1) % q.length;
-                setCurrentIndex(nextIdx);
-                const nextTrackItem = q[nextIdx];
-                if (nextTrackItem && audioRef.current) {
-                    audioRef.current.src = nextTrackItem.audio_url;
-                    audioRef.current.currentTime = 0;
-                    audioRef.current.play().catch(() => {});
-                }
-            }
+            fetchQueueAndSync(true);
         };
 
         const onError = () => {
@@ -233,7 +251,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             audio.pause();
             audio.src = '';
         };
-    }, []);
+    }, [checkLiveDrift, fetchQueueAndSync]);
 
     useEffect(() => {
         if ('mediaSession' in navigator && currentTrack) {
@@ -256,12 +274,12 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             navigator.mediaSession.setActionHandler('pause', () => {
                 pause();
             });
-            navigator.mediaSession.setActionHandler('nexttrack', () => {
-                nextTrack();
-            });
-            navigator.mediaSession.setActionHandler('previoustrack', () => {
-                prevTrack();
-            });
+            try {
+                navigator.mediaSession.setActionHandler('nexttrack', null);
+                navigator.mediaSession.setActionHandler('previoustrack', null);
+                navigator.mediaSession.setActionHandler('seekto', null);
+                navigator.mediaSession.setActionHandler('seekforward', null);
+            } catch {}
         }
     }, [currentTrack, siteLogoUrl]);
 
@@ -289,7 +307,10 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
             setShowAutoplayPrompt(true);
         }
 
-        if (queue.length === 0) {
+        const wasPausedForLong = pausedAtRef.current && (Date.now() - pausedAtRef.current > 8000);
+        pausedAtRef.current = null;
+
+        if (queue.length === 0 || wasPausedForLong) {
             fetchQueueAndSync(true);
             return;
         }
@@ -306,16 +327,18 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 isLoadingRef.current = false;
                 setIsLoading(false);
                 setIsPlaying(true);
+                checkLiveDrift();
             }).catch(() => {
                 isLoadingRef.current = false;
                 setIsLoading(false);
                 setIsPlaying(false);
             });
         }
-    }, [queue, currentIndex, fetchQueueAndSync, autoplayPref]);
+    }, [queue, currentIndex, fetchQueueAndSync, autoplayPref, checkLiveDrift]);
 
     const pause = useCallback(() => {
         if (!audioRef.current) return;
+        pausedAtRef.current = Date.now();
         isLoadingRef.current = false;
         audioRef.current.pause();
         setIsPlaying(false);
