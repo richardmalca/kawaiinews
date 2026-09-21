@@ -1,6 +1,7 @@
 import { Bookmark, Check, FileText, Headphones, Heart, MessageCircle, Minus, Pause, Play, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { useRadioPlayer } from '@/contexts/radio-context';
 
 interface ArticleMobileDockProps {
     liked: boolean;
@@ -63,7 +64,16 @@ export function ArticleMobileDock({
         window.dispatchEvent(new CustomEvent('kawaii:toggle-audio'));
     };
 
+    const { isDockVisible, isMinimized, isPausedByArticle } = useRadioPlayer();
+    const hasRadioBottomBar = isDockVisible && !isMinimized && !isPausedByArticle;
+
     const isAudioActive = audioState.isInteracting;
+
+    const dockBottomClass = isAudioActive
+        ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]'
+        : hasRadioBottomBar
+            ? 'bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'
+            : 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]';
 
     return (
         <div
@@ -71,11 +81,7 @@ export function ArticleMobileDock({
                 visible
                     ? 'translate-y-0 opacity-100'
                     : 'translate-y-24 opacity-0 pointer-events-none'
-            } ${
-                isAudioActive
-                    ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]'
-                    : 'bottom-[calc(1rem+env(safe-area-inset-bottom,0px))]'
-            }`}
+            } ${dockBottomClass}`}
         >
             <div className="mx-auto flex max-w-md items-center justify-between gap-1 sm:gap-1.5 rounded-2xl border border-neutral-200/80 bg-white/90 px-2 py-1.5 sm:px-3 sm:py-2 shadow-2xl backdrop-blur-xl dark:border-neutral-800/80 dark:bg-neutral-900/90">
                 <button

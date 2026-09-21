@@ -1,9 +1,12 @@
 import { ArrowUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRadioPlayer } from '@/contexts/radio-context';
 
 export function BackToTop() {
     const [isVisible, setIsVisible] = useState(false);
     const [isAudioActive, setIsAudioActive] = useState(false);
+    const { isDockVisible, isMinimized, isPausedByArticle } = useRadioPlayer();
+    const hasRadioBottomBar = isDockVisible && !isMinimized && !isPausedByArticle;
 
     useEffect(() => {
         const toggleVisibility = () => {
@@ -43,16 +46,18 @@ export function BackToTop() {
         return null;
     }
 
+    const bottomClass = isAudioActive
+        ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
+        : hasRadioBottomBar
+            ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
+            : 'bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6';
+
     return (
         <button
             type="button"
             onClick={scrollToTop}
             aria-label="Volver arriba"
-            className={`fixed right-4 sm:right-6 z-40 flex h-10 w-10 items-center justify-center rounded-2xl border border-neutral-200/80 bg-white/90 text-neutral-700 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-rose-300 hover:bg-rose-500 hover:text-white dark:border-neutral-800 dark:bg-neutral-900/90 dark:text-neutral-300 dark:hover:border-rose-500 dark:hover:bg-rose-600 dark:hover:text-white ${
-                isAudioActive
-                    ? 'bottom-[calc(9rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
-                    : 'bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6'
-            }`}
+            className={`fixed right-4 sm:right-6 z-[60] flex h-10 w-10 items-center justify-center rounded-2xl border border-neutral-200/80 bg-white/90 text-neutral-700 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-rose-300 hover:bg-rose-500 hover:text-white dark:border-neutral-800 dark:bg-neutral-900/90 dark:text-neutral-300 dark:hover:border-rose-500 dark:hover:bg-rose-600 dark:hover:text-white ${bottomClass}`}
         >
             <ArrowUp className="h-4 w-4" />
         </button>

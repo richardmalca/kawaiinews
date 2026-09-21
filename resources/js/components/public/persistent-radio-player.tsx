@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRadioPlayer } from '@/contexts/radio-context';
 import {
     Radio,
@@ -18,6 +18,21 @@ import { Link } from '@inertiajs/react';
 export function PersistentRadioPlayer() {
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isAdmin = currentPath.startsWith('/admin');
+    const [isArticleAudioActive, setIsArticleAudioActive] = useState(false);
+
+    useEffect(() => {
+        const handleAudioStatus = (e: Event) => {
+            const customEvent = e as CustomEvent<{
+                isInteracting?: boolean;
+            }>;
+            if (customEvent.detail) {
+                setIsArticleAudioActive(Boolean(customEvent.detail.isInteracting));
+            }
+        };
+
+        window.addEventListener('kawaii:audio-status-change', handleAudioStatus);
+        return () => window.removeEventListener('kawaii:audio-status-change', handleAudioStatus);
+    }, []);
 
     const {
         isPlaying,
@@ -52,8 +67,12 @@ export function PersistentRadioPlayer() {
         : rawTitle;
 
     if (isMinimized || isPausedByArticle) {
+        const buttonBottomClass = isArticleAudioActive
+            ? 'bottom-[calc(9.25rem+env(safe-area-inset-bottom,0px))] lg:bottom-20'
+            : 'bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6';
+
         return (
-            <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-4 z-40 sm:left-6 lg:bottom-6">
+            <div className={`fixed left-4 z-[60] sm:left-6 transition-all duration-300 ${buttonBottomClass}`}>
                 <button
                     onClick={() => {
                         if (isPausedByArticle) {
