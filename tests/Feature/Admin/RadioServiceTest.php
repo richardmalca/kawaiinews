@@ -56,6 +56,7 @@ test('building the queue alternates music and narrated articles, generating a dj
     Prism::fake([TextResponseFake::make()->withText('¡Prepárense para esta noticia bomba!')]);
     Http::fake([
         'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+        '*' => Http::response('fake-audio-bytes', 200),
     ]);
 
     $article = NewsArticle::factory()->create([
@@ -95,6 +96,7 @@ test('the dj voice request to google tts includes a trailing pause, not just pla
     Prism::fake([TextResponseFake::make()->withText('¡Prepárense para esta noticia bomba!')]);
     Http::fake([
         'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+        '*' => Http::response('fake-audio-bytes', 200),
     ]);
 
     NewsArticle::factory()->create(['status' => 'published', 'audio_url' => 'https://cdn.test/narration.mp3']);
@@ -118,6 +120,7 @@ test('rebuilding the queue reuses an already generated dj intro instead of calli
     Prism::fake([TextResponseFake::make()->withText('Frase del DJ')]);
     Http::fake([
         'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+        '*' => Http::response('fake-audio-bytes', 200),
     ]);
 
     NewsArticle::factory()->create(['status' => 'published', 'audio_url' => 'https://cdn.test/narration.mp3']);
@@ -125,7 +128,11 @@ test('rebuilding the queue reuses an already generated dj intro instead of calli
     app(RadioService::class)->buildQueue();
     app(RadioService::class)->buildQueue();
 
-    Http::assertSentCount(1);
+    // 1 llamada a la voz del DJ (la segunda vuelta reutiliza dj_intro_url)
+    // + 1 descarga del mp3 de la noticia para calcularle la duración (la
+    // segunda vuelta reutiliza audio_duration_seconds, ver
+    // ensureAudioDuration) = 2 en total, no una por cada rearmado.
+    Http::assertSentCount(2);
 });
 
 test('a filler dj phrase is intercalated every couple of music+article pairs', function () {
@@ -143,6 +150,7 @@ test('a filler dj phrase is intercalated every couple of music+article pairs', f
     ]);
     Http::fake([
         'texttospeech.googleapis.com/*' => Http::response(['audioContent' => base64_encode('fake-mp3-bytes')]),
+        '*' => Http::response('fake-audio-bytes', 200),
     ]);
 
     NewsArticle::factory()->count(3)->create(['status' => 'published', 'audio_url' => 'https://cdn.test/narration.mp3']);

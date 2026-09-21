@@ -9,6 +9,7 @@ use App\Models\RadioTrack;
 use App\Models\StorageSetting;
 use App\Support\AiUsageLogger;
 use App\Support\MediaNaming;
+use App\Support\Mp3Duration;
 use App\Support\RemoteStorage;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
@@ -64,13 +65,15 @@ class RadioService
 
     public function addTrack(UploadedFile $file, string $title, ?string $artist): RadioTrack
     {
+        $contents = $file->get();
         $path = MediaNaming::path('audio', $file->getClientOriginalExtension() ?: $file->extension() ?: 'mp3');
-        $this->disk()->putFileAs(dirname($path), $file, basename($path), 'public');
+        $this->disk()->put($path, $contents, 'public');
 
         return RadioTrack::create([
             'title' => $title,
             'artist' => $artist,
             'url' => $this->disk()->url($path),
+            'duration_seconds' => Mp3Duration::seconds($contents),
         ]);
     }
 
@@ -148,7 +151,7 @@ class RadioService
                     'news_article_id' => $article->id,
                     'title' => $article->title,
                     'audio_url' => $article->dj_intro_url,
-                    'duration_seconds' => null,
+                    'duration_seconds' => $article->dj_intro_duration_seconds,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -160,7 +163,7 @@ class RadioService
                 'news_article_id' => $article->id,
                 'title' => $article->title,
                 'audio_url' => $article->audio_url,
-                'duration_seconds' => null,
+                'duration_seconds' => $this->ensureAudioDuration($article),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -180,6 +183,40 @@ class RadioService
         });
 
         return ['queued' => count($items), 'skipped_no_audio' => $skippedNoAudio, 'skipped_no_music' => false];
+    }
+
+    /**
+     * La narración del artículo la genera MediaLibraryService (fuera de
+     * este servicio) y nunca guardó cuánto dura — sin esa duración, el
+     * reproductor no tiene forma de saber cuándo pasar al siguiente item
+     * de la cola. Se calcula una sola vez (bajando el mp3 y leyendo su
+     * bitrate) y se cachea en el propio artículo, igual que dj_intro_url.
+     */
+    private function ensureAudioDuration(NewsArticle $article): ?int
+    {
+        // 0 se usa como "ya lo intenté y no se pudo calcular" para no
+        // volver a bajar el archivo en cada rearmado de cola — null sigue
+        // significando "todavía no se intentó". Al reproductor nunca se le
+        // manda 0 (lo trataría como "ya terminó"), solo null o el valor
+        // real.
+        if ($article->audio_duration_seconds !== null) {
+            return $article->audio_duration_seconds ?: null;
+        }
+
+        if (! $article->audio_url) {
+            return null;
+        }
+
+        try {
+            $contents = Http::timeout(15)->get($article->audio_url)->body();
+        } catch (Throwable) {
+            return null;
+        }
+
+        $duration = Mp3Duration::seconds($contents);
+        $article->update(['audio_duration_seconds' => $duration ?? 0]);
+
+        return $duration;
     }
 
     /**
@@ -206,10 +243,14 @@ class RadioService
             return;
         }
 
+        $decoded = base64_decode($audioBase64);
         $path = MediaNaming::path('audio', 'mp3');
-        $this->disk()->put($path, base64_decode($audioBase64), 'public');
+        $this->disk()->put($path, $decoded, 'public');
 
-        $article->update(['dj_intro_url' => $this->disk()->url($path)]);
+        $article->update([
+            'dj_intro_url' => $this->disk()->url($path),
+            'dj_intro_duration_seconds' => Mp3Duration::seconds($decoded),
+        ]);
     }
 
     /**
@@ -218,7 +259,7 @@ class RadioService
      * cola (cada 2h), así que el costo sigue siendo chico y acotado, nunca
      * por oyente.
      *
-     * @return array{type: string, radio_track_id: null, news_article_id: null, title: string, audio_url: string, duration_seconds: null, created_at: Carbon, updated_at: Carbon}|null
+     * @return array{type: string, radio_track_id: null, news_article_id: null, title: string, audio_url: string, duration_seconds: int|null, created_at: Carbon, updated_at: Carbon}|null
      */
     private function generateFillerItem(): ?array
     {
@@ -234,8 +275,9 @@ class RadioService
             return null;
         }
 
+        $decoded = base64_decode($audioBase64);
         $path = MediaNaming::path('audio', 'mp3');
-        $this->disk()->put($path, base64_decode($audioBase64), 'public');
+        $this->disk()->put($path, $decoded, 'public');
 
         return [
             'type' => 'filler',
@@ -243,7 +285,7 @@ class RadioService
             'news_article_id' => null,
             'title' => 'El DJ de KawaiiRadio',
             'audio_url' => $this->disk()->url($path),
-            'duration_seconds' => null,
+            'duration_seconds' => Mp3Duration::seconds($decoded),
             'created_at' => now(),
             'updated_at' => now(),
         ];
