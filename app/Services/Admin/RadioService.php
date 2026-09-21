@@ -139,31 +139,23 @@ class RadioService
             $this->ensureDjIntro($article);
             $article->refresh();
 
-            // La presentación del DJ y la narración real son dos items de
-            // cola separados (no uno solo con un audio "reemplazando" al
-            // otro) — así el reproductor las encadena como cualquier otro
-            // par de items, con su pausa entre medio, y la noticia narrada
-            // siempre suena, tenga o no ya una presentación generada.
-            if (filled($article->dj_intro_url)) {
-                $items[] = [
-                    'type' => 'dj_intro',
-                    'radio_track_id' => null,
-                    'news_article_id' => $article->id,
-                    'title' => $article->title,
-                    'audio_url' => $article->dj_intro_url,
-                    'duration_seconds' => $this->ensureDjIntroDuration($article),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
+            // En la radio solo va la presentación corta del DJ, nunca la
+            // noticia narrada completa (eso queda para el reproductor de
+            // audio del artículo en sí, no para la radio de fondo). Si
+            // todavía no tiene presentación generada, se cae a la
+            // narración completa como respaldo — mejor eso que dejar la
+            // noticia afuera de la rotación.
+            $usingDjIntro = filled($article->dj_intro_url);
 
             $items[] = [
                 'type' => 'article',
                 'radio_track_id' => null,
                 'news_article_id' => $article->id,
                 'title' => $article->title,
-                'audio_url' => $article->audio_url,
-                'duration_seconds' => $this->ensureAudioDuration($article),
+                'audio_url' => $usingDjIntro ? $article->dj_intro_url : $article->audio_url,
+                'duration_seconds' => $usingDjIntro
+                    ? $this->ensureDjIntroDuration($article)
+                    : $this->ensureAudioDuration($article),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

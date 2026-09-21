@@ -67,25 +67,45 @@ test('building the queue alternates music and narrated articles, generating a dj
 
     $result = app(RadioService::class)->buildQueue();
 
-    expect($result['queued'])->toBe(3)
+    expect($result['queued'])->toBe(2)
         ->and($result['skipped_no_audio'])->toBe(0);
 
-    // Música, presentación del DJ y la narración real van como 3 items de
-    // cola separados — la presentación NUNCA reemplaza a la narración
-    // (regression: antes dj_intro_url pisaba a audio_url y la noticia
-    // real no llegaba a sonar).
+    // En la radio solo suena la presentación corta del DJ, nunca la
+    // noticia narrada completa — esa queda para el reproductor de audio
+    // del artículo, no para la radio de fondo.
     $items = RadioQueueItem::orderBy('position')->get();
     expect($items[0]->type)->toBe('music')
-        ->and($items[1]->type)->toBe('dj_intro')
-        ->and($items[1]->news_article_id)->toBe($article->id)
-        ->and($items[2]->type)->toBe('article')
-        ->and($items[2]->news_article_id)->toBe($article->id);
+        ->and($items[1]->type)->toBe('article')
+        ->and($items[1]->news_article_id)->toBe($article->id);
 
     $article->refresh();
     expect($article->dj_intro_url)->not->toBeNull()
         ->and($items[1]->audio_url)->toBe($article->dj_intro_url)
-        ->and($items[2]->audio_url)->toBe($article->audio_url)
-        ->and($items[2]->audio_url)->not->toBe($items[1]->audio_url);
+        ->and($items[1]->audio_url)->not->toBe($article->audio_url);
+});
+
+test('an article without a dj intro yet falls back to the full narration instead of being left out', function () {
+    RadioTrack::factory()->create(['active' => true]);
+    // Sin proveedor de IA activo, no se puede generar la presentación del
+    // DJ — la noticia igual tiene que sonar en la radio con su narración
+    // completa, en vez de quedar afuera de la rotación.
+
+    $article = NewsArticle::factory()->create([
+        'status' => 'published',
+        'audio_url' => 'https://cdn.test/narration.mp3',
+    ]);
+
+    Http::fake(['*' => Http::response('fake-audio-bytes', 200)]);
+
+    $result = app(RadioService::class)->buildQueue();
+
+    expect($result['queued'])->toBe(2);
+
+    $items = RadioQueueItem::orderBy('position')->get();
+    expect($items[1]->type)->toBe('article')
+        ->and($items[1]->audio_url)->toBe($article->audio_url);
+
+    expect($article->fresh()->dj_intro_url)->toBeNull();
 });
 
 test('the dj voice request to google tts includes a trailing pause, not just plain text (regression: audio ran straight into the next track)', function () {
@@ -128,11 +148,9 @@ test('rebuilding the queue reuses an already generated dj intro instead of calli
     app(RadioService::class)->buildQueue();
     app(RadioService::class)->buildQueue();
 
-    // 1 llamada a la voz del DJ (la segunda vuelta reutiliza dj_intro_url)
-    // + 1 descarga del mp3 de la noticia para calcularle la duración (la
-    // segunda vuelta reutiliza audio_duration_seconds, ver
-    // ensureAudioDuration) = 2 en total, no una por cada rearmado.
-    Http::assertSentCount(2);
+    // 1 sola llamada a la voz del DJ en total — la segunda vuelta reutiliza
+    // dj_intro_url (y su duración ya cacheada), no vuelve a generar nada.
+    Http::assertSentCount(1);
 });
 
 test('a filler dj phrase is intercalated every couple of music+article pairs', function () {
@@ -157,10 +175,9 @@ test('a filler dj phrase is intercalated every couple of music+article pairs', f
 
     $result = app(RadioService::class)->buildQueue();
 
-    // 3 grupos de música + presentación del DJ + noticia (9 items) + 1
-    // frase suelta del DJ intercalada después del segundo grupo
-    // (FILLER_EVERY_N_PAIRS = 2).
-    expect($result['queued'])->toBe(10);
+    // 3 pares música+noticia (6 items) + 1 frase suelta del DJ intercalada
+    // después del segundo par (FILLER_EVERY_N_PAIRS = 2).
+    expect($result['queued'])->toBe(7);
 
     $items = RadioQueueItem::orderBy('position')->get();
     $fillers = $items->where('type', 'filler');
