@@ -15,6 +15,15 @@ test('an anonymous visitor loading an article page gets a cacheable Cache-Contro
         ->and($cacheControl)->toContain('stale-while-revalidate=3600');
 });
 
+test('a cacheable response only varies on Accept-Encoding, since Cloudflare refuses to cache any other Vary value', function () {
+    $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
+
+    $response = $this->get(route('news.show', $article->slug));
+
+    $response->assertOk();
+    expect($response->headers->get('Vary'))->toBe('Accept-Encoding');
+});
+
 test('an Inertia SPA navigation (X-Inertia header) is never marked cacheable, to avoid mixing it with the full HTML variant', function () {
     $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
 

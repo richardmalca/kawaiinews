@@ -34,6 +34,23 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        // EdgeCacheForGuests es middleware de ruta (solo aplica a un grupo
+        // puntual de rutas), pero por default Laravel siempre ejecuta el
+        // middleware de ruta más "adentro" que el del grupo `web` global —
+        // así que al desenrollar la respuesta, HandleInertiaRequests (que
+        // pone `Vary: X-Inertia` en toda respuesta Inertia) corre DESPUÉS y
+        // pisa el `Vary: Accept-Encoding` que EdgeCacheForGuests necesita
+        // dejar puesto para que Cloudflare pueda cachear. En priority(), el
+        // que aparece primero es el más "afuera" (su lógica de salida
+        // corre última) — por eso EdgeCacheForGuests va antes que
+        // HandleInertiaRequests acá, así su Vary gana al final.
+        $middleware->priority([
+            EdgeCacheForGuests::class,
+            HandleAppearance::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

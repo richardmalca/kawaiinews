@@ -38,6 +38,15 @@ class EdgeCacheForGuests
                 'Cache-Control',
                 'public, max-age=0, s-maxage=1800, stale-while-revalidate=3600'
             );
+
+            // Cloudflare (y la mayoría de los CDN) no cachean una respuesta
+            // cuyo Vary tenga algo más que Accept-Encoding — el framework
+            // manda "Vary: X-Inertia" en toda respuesta Inertia, pero acá ya
+            // no hace falta: la Cache Rule del lado de Cloudflare separa la
+            // variante cacheable de la SPA por el propio request (matchea
+            // "sin header X-Inertia"), así que el Vary queda redundante y
+            // termina bloqueando el cacheo por completo.
+            $response->headers->set('Vary', 'Accept-Encoding');
         }
 
         return $response;
