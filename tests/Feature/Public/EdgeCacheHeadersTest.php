@@ -24,6 +24,25 @@ test('a cacheable response only varies on Accept-Encoding, since Cloudflare refu
     expect($response->headers->get('Vary'))->toBe('Accept-Encoding');
 });
 
+test('a cacheable response carries no Set-Cookie, since Cloudflare refuses to cache one and it would leak one visitor\'s session to everyone else', function () {
+    $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
+
+    $response = $this->get(route('news.show', $article->slug));
+
+    $response->assertOk();
+    expect($response->headers->getCookies())->toBeEmpty();
+});
+
+test('a non-cacheable response (logged-in visitor) keeps its Set-Cookie', function () {
+    $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('news.show', $article->slug));
+
+    $response->assertOk();
+    expect($response->headers->getCookies())->not->toBeEmpty();
+});
+
 test('an Inertia SPA navigation (X-Inertia header) is never marked cacheable, to avoid mixing it with the full HTML variant', function () {
     $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
 
