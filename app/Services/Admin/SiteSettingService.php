@@ -54,7 +54,7 @@ class SiteSettingService
         $source = $this->loadImage($file);
         $width = imagesx($source);
         $height = imagesy($source);
-        $maxDimension = 256;
+        $maxDimension = 180;
 
         if ($width > $maxDimension || $height > $maxDimension) {
             $ratio = min($maxDimension / $width, $maxDimension / $height);
@@ -65,7 +65,7 @@ class SiteSettingService
             $targetHeight = $height;
         }
 
-        $path = 'site/logo-'.$file->hashName().'.png';
+        $path = 'site/logo-'.$file->hashName().'.webp';
         $path = $this->resizeAndStore($source, 0, 0, $width, $height, $targetWidth, $targetHeight, $path);
         imagedestroy($source);
 
@@ -188,7 +188,11 @@ class SiteSettingService
         imagecopyresampled($canvas, $source, 0, 0, $srcX, $srcY, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
 
         ob_start();
-        imagepng($canvas);
+        if (str_ends_with(strtolower($path), '.webp') && function_exists('imagewebp')) {
+            imagewebp($canvas, null, 85);
+        } else {
+            imagepng($canvas);
+        }
         $contents = ob_get_clean();
         imagedestroy($canvas);
 

@@ -213,18 +213,75 @@
             <script type="application/ld+json">{!! json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
 
-        {{-- Google Analytics (gtag.js) --}}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-GNT069MNL0"></script>
+        @php
+            $heroImage = null;
+            if ($rawImage) {
+                $heroImage = $serverImage;
+            } else {
+                $featuredList = $page['props']['featured']['data'] ?? $page['props']['featured'] ?? [];
+                $firstFeatured = $featuredList[0] ?? null;
+                $rawHero = $firstFeatured['featured_image'] ?? null;
+                if ($rawHero) {
+                    if (str_contains($rawHero, '/storage/')) {
+                        $heroImage = url(parse_url($rawHero, PHP_URL_PATH));
+                    } elseif (str_starts_with($rawHero, '/')) {
+                        $heroImage = url($rawHero);
+                    } else {
+                        $heroImage = $rawHero;
+                    }
+                    if (request()->isSecure() && str_starts_with($heroImage, 'http://')) {
+                        $heroImage = 'https://' . substr($heroImage, 7);
+                    }
+                }
+            }
+        @endphp
+
+        @if ($heroImage)
+            <link rel="preload" as="image" href="{{ $heroImage }}" fetchpriority="high">
+        @endif
+
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-GNT069MNL0');
+
+            (function() {
+                var loaded = false;
+                function loadThirdPartyScripts() {
+                    if (loaded) return;
+                    loaded = true;
+
+                    var gtagScript = document.createElement('script');
+                    gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-GNT069MNL0';
+                    gtagScript.async = true;
+                    document.head.appendChild(gtagScript);
+
+                    gtag('js', new Date());
+                    gtag('config', 'G-GNT069MNL0');
+
+                    var adsenseScript = document.createElement('script');
+                    adsenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2454606039462818';
+                    adsenseScript.async = true;
+                    adsenseScript.crossOrigin = 'anonymous';
+                    document.head.appendChild(adsenseScript);
+                }
+
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(function() {
+                        setTimeout(loadThirdPartyScripts, 2500);
+                    }, { timeout: 4000 });
+                } else {
+                    window.addEventListener('load', function() {
+                        setTimeout(loadThirdPartyScripts, 2500);
+                    });
+                }
+
+                ['scroll', 'keydown', 'pointerdown', 'touchstart'].forEach(function(evt) {
+                    window.addEventListener(evt, loadThirdPartyScripts, { once: true, passive: true });
+                });
+            })();
         </script>
 
-        {{-- Google AdSense --}}
         <meta name="google-adsense-account" content="ca-pub-2454606039462818">
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2454606039462818" crossorigin="anonymous"></script>
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])

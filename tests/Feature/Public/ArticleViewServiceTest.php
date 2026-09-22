@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\NewsArticle;
+use App\Models\User;
 use App\Services\Public\ArticleViewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -133,4 +134,27 @@ test('flushing pending views also records the daily breakdown used by the dashbo
         ->first();
 
     expect($row->views)->toBe(4);
+});
+
+test('views from the article author are ignored', function () {
+    $author = User::factory()->create();
+    $article = NewsArticle::factory()->create([
+        'author_id' => $author->id,
+        'views_count' => 0,
+    ]);
+    $service = app(ArticleViewService::class);
+
+    $request = Request::create('/noticias/'.$article->slug, 'GET', server: [
+        'REMOTE_ADDR' => '10.0.0.99',
+        'HTTP_USER_AGENT' => 'PestBrowser/1.0',
+    ]);
+    $request->setUserResolver(fn () => $author);
+
+    $service->record($article, $request);
+    $flushed = $service->flushPending();
+
+    expect($flushed)->toBe(0);
+
+    $article->refresh();
+    expect($article->views_count)->toBe(0);
 });

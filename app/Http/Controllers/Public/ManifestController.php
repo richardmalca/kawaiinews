@@ -52,6 +52,8 @@ class ManifestController extends Controller
             'theme_color' => $settings->theme_color ?? '#e11d48',
             'icons' => $icons,
             'categories' => ['news', 'entertainment'],
-        ])->header('Content-Type', 'application/manifest+json');
+        ])
+            ->header('Content-Type', 'application/manifest+json')
+            ->header('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
     }
 }

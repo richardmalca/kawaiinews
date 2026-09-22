@@ -27,7 +27,7 @@ class NewsArticleResource extends JsonResource
             // Cae a null en artículos viejos que no pasaron por la
             // reoptimización todavía; el frontend debe usar featured_image
             // como fallback en ese caso.
-            'featured_image_card' => $this->resolveMediaUrl($this->featured_image_card_url),
+            'featured_image_card' => $this->resolveCardUrl($this->featured_image_card_url, $this->featured_image),
             'status' => $this->status,
             'views_count' => $this->views_count,
             'published_at' => $this->published_at?->diffForHumans(),
@@ -72,6 +72,19 @@ class NewsArticleResource extends JsonResource
                     ->values()
                 : null),
         ];
+    }
+
+    private function resolveCardUrl(?string $cardUrl, ?string $featuredImage): ?string
+    {
+        if ($cardUrl) {
+            return $this->resolveMediaUrl($cardUrl);
+        }
+
+        if (! $featuredImage) {
+            return null;
+        }
+
+        return $this->resolveMediaUrl($featuredImage);
     }
 
     private function resolveMediaUrl(?string $url): ?string

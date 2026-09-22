@@ -22,7 +22,7 @@ export function SeoHead({
     profile,
     noIndex = false,
 }: SeoHeadProps) {
-    const { name: sharedName, siteSeoTitle, siteDescription, siteOgImageUrl, siteLogoUrl, siteUrl, currentUrl } = usePage().props;
+    const { name: sharedName, siteSeoTitle, siteDescription, siteOgImageUrl, siteLogoUrl, siteUrl, currentUrl, searchBoxEnabled } = usePage().props;
     const siteName = sharedName || 'KawaiiNews';
     const defaultDescription =
         siteDescription ||
@@ -117,11 +117,15 @@ export function SeoHead({
               name: siteName,
               url: siteUrl || (typeof window !== 'undefined' ? window.location.origin : ''),
               description: defaultDescription,
-              potentialAction: {
-                  '@type': 'SearchAction',
-                  target: `${siteUrl || (typeof window !== 'undefined' ? window.location.origin : '')}/?q={search_term_string}`,
-                  'query-input': 'required name=search_term_string',
-              },
+              ...(searchBoxEnabled
+                  ? {
+                        potentialAction: {
+                            '@type': 'SearchAction',
+                            target: `${siteUrl || (typeof window !== 'undefined' ? window.location.origin : '')}/?q={search_term_string}`,
+                            'query-input': 'required name=search_term_string',
+                        },
+                    }
+                  : {}),
           };
 
     const tagsList = Array.isArray(article?.tags) ? article.tags : [];

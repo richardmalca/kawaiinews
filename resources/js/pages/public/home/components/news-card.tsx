@@ -26,8 +26,10 @@ export function NewsCard({ article }: NewsCardProps) {
                     {article.featured_image ? (
                         <>
                             <img
-                                src={article.featured_image}
+                                src={article.featured_image_card || article.featured_image}
                                 alt={article.title}
+                                width={667}
+                                height={375}
                                 className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                                 loading="lazy"
                             />

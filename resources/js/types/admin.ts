@@ -145,6 +145,7 @@ export type NewsArticle = {
     excerpt: string | null;
     body: string | null;
     featured_image: string | null;
+    featured_image_card?: string | null;
     status: 'draft' | 'published';
     published_at: string | null;
     published_at_formatted?: string | null;

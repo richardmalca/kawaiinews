@@ -27,6 +27,11 @@ class ArticleViewService
      */
     public function record(NewsArticle $article, Request $request): void
     {
+        $user = $request->user();
+        if ($user && $article->author_id && (int) $user->id === (int) $article->author_id) {
+            return;
+        }
+
         $dedupeKey = 'article-view-seen:'.$article->id.':'.$this->viewerFingerprint($request);
 
         if (Cache::has($dedupeKey)) {

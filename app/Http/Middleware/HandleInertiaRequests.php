@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
             'siteSeoTitle' => $siteSettings->seoTitle(),
             'siteDescription' => $siteSettings->description,
             'siteOgImageUrl' => $siteSettings->ogImageUrl(),
+            'searchBoxEnabled' => $siteSettings->search_box_enabled,
             // Dominio real de la app (nunca un string hardcodeado): así
             // cualquier página, pública o admin, arma links/emails/textos
             // sin tipear el dominio a mano y sin desincronizarse si cambia.

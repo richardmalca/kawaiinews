@@ -14,6 +14,7 @@ declare module '@inertiajs/core' {
             siteSeoTitle?: string;
             siteDescription?: string | null;
             siteOgImageUrl?: string | null;
+            searchBoxEnabled?: boolean;
             siteUrl: string;
             currentUrl: string;
             contactEmail: string;
