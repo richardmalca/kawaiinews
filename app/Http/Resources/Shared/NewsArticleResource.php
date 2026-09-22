@@ -22,6 +22,12 @@ class NewsArticleResource extends JsonResource
             'excerpt' => $this->excerpt,
             'body' => $this->body,
             'featured_image' => $this->resolveMediaUrl($this->featured_image),
+            // Variante chica (~900px de ancho) para usar en listados/cards
+            // en vez de la portada completa — ver ImageOptimizerService.
+            // Cae a null en artículos viejos que no pasaron por la
+            // reoptimización todavía; el frontend debe usar featured_image
+            // como fallback en ese caso.
+            'featured_image_card' => $this->resolveMediaUrl($this->featured_image_card_url),
             'status' => $this->status,
             'views_count' => $this->views_count,
             'published_at' => $this->published_at?->diffForHumans(),

@@ -259,7 +259,8 @@ class MediaLibraryService
 
             try {
                 $contents = $disk->get($originalPath);
-                $optimized = $this->imageOptimizer->optimize($contents, $disk->mimeType($originalPath) ?: 'image/webp');
+                $mimeType = $disk->mimeType($originalPath) ?: 'image/webp';
+                $optimized = $this->imageOptimizer->optimize($contents, $mimeType);
 
                 if ($optimized === null) {
                     // GIF u otro formato que el optimizador deja pasar tal
@@ -272,7 +273,17 @@ class MediaLibraryService
                 $newPath = MediaNaming::path('image', 'webp');
                 $disk->put($newPath, $optimized, 'public');
                 $disk->delete($originalPath);
-                $media->update(['url' => $disk->url($newPath)]);
+
+                if ($media->card_url) {
+                    $oldCard = $this->diskForUrl($media->card_url);
+
+                    if ($oldCard) {
+                        $oldCard[0]->delete($oldCard[1]);
+                    }
+                }
+
+                $cardUrl = $this->storeCardVariant($disk, $newPath, $contents, $mimeType);
+                $media->update(['url' => $disk->url($newPath), 'card_url' => $cardUrl]);
 
                 $bytesBefore += strlen($contents);
                 $bytesAfter += strlen($optimized);
@@ -369,11 +380,14 @@ class MediaLibraryService
     public function storeUpload(UploadedFile $file, ?int $newsArticleId = null): Media
     {
         $disk = $this->mediaDisk();
-        $optimized = $this->imageOptimizer->optimize(file_get_contents($file->getRealPath()), $file->getMimeType());
+        $contents = file_get_contents($file->getRealPath());
+        $optimized = $this->imageOptimizer->optimize($contents, $file->getMimeType());
+        $cardUrl = null;
 
         if ($optimized !== null) {
             $path = MediaNaming::path('image', 'webp');
             $disk->put($path, $optimized, 'public');
+            $cardUrl = $this->storeCardVariant($disk, $path, $contents, $file->getMimeType());
         } else {
             // GIF (para no perder la animación) u otro caso que el
             // optimizador no supo procesar: se guarda tal cual llegó, pero
@@ -384,11 +398,37 @@ class MediaLibraryService
 
         return Media::create([
             'url' => $disk->url($path),
+            'card_url' => $cardUrl,
             'original_name' => $file->getClientOriginalName(),
             'source' => 'upload',
             'type' => 'image',
             'news_article_id' => $newsArticleId,
         ]);
+    }
+
+    /**
+     * Genera y guarda, al lado de la imagen completa, una variante chica
+     * para listados/cards (ver ImageOptimizerService::CARD_MAX_DIMENSION)
+     * — best-effort: si falla, la portada sigue funcionando igual con la
+     * imagen completa, así que acá se traga el error en vez de romper todo
+     * el guardado por una variante que es solo una optimización.
+     */
+    private function storeCardVariant(Filesystem $disk, string $mainPath, string $contents, string $mimeType): ?string
+    {
+        try {
+            $card = $this->imageOptimizer->optimizeCard($contents, $mimeType);
+
+            if ($card === null) {
+                return null;
+            }
+
+            $cardPath = MediaNaming::cardPath($mainPath);
+            $disk->put($cardPath, $card, 'public');
+
+            return $disk->url($cardPath);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public function storeAudioUpload(UploadedFile $file, ?int $newsArticleId = null): Media
@@ -450,9 +490,13 @@ class MediaLibraryService
             $optimized = $this->imageOptimizer->optimize($decoded, 'image/png');
             $path = MediaNaming::path('image', $optimized !== null ? 'webp' : 'png');
             $disk->put($path, $optimized ?? $decoded, 'public');
+            $cardUrl = $optimized !== null
+                ? $this->storeCardVariant($disk, $path, $decoded, 'image/png')
+                : null;
 
             return Media::create([
                 'url' => $disk->url($path),
+                'card_url' => $cardUrl,
                 'original_name' => Str::limit($prompt, 60, ''),
                 'source' => 'ai',
                 'provider' => $provider->provider,

@@ -14,6 +14,12 @@ class ImageOptimizerService
     // o un modelo de IA.
     private const MAX_DIMENSION = 1920;
 
+    // Las miniaturas de las cards del home/categorías se muestran a ~667px
+    // de ancho como mucho (confirmado con Lighthouse) — 900 da margen para
+    // pantallas de alta densidad sin arrastrar el mismo peso que la portada
+    // completa, que se usa en la página del artículo.
+    public const CARD_MAX_DIMENSION = 900;
+
     // 75 es lo que Google recomienda (Lighthouse/PageSpeed) como el mejor
     // punto entre peso y calidad visible para WebP.
     private const QUALITY = 75;
@@ -25,6 +31,20 @@ class ImageOptimizerService
      * caso.
      */
     public function optimize(string $contents, string $mimeType): ?string
+    {
+        return $this->optimizeToWidth($contents, $mimeType, self::MAX_DIMENSION);
+    }
+
+    /**
+     * Igual que optimize(), pero para la variante chica que se usa en
+     * listados/cards en vez de la portada completa.
+     */
+    public function optimizeCard(string $contents, string $mimeType): ?string
+    {
+        return $this->optimizeToWidth($contents, $mimeType, self::CARD_MAX_DIMENSION);
+    }
+
+    private function optimizeToWidth(string $contents, string $mimeType, int $maxDimension): ?string
     {
         if ($mimeType === 'image/gif' || ! function_exists('imagewebp')) {
             return null;
@@ -40,7 +60,7 @@ class ImageOptimizerService
         imagealphablending($image, true);
         imagesavealpha($image, true);
 
-        $image = $this->resizeIfOversized($image);
+        $image = $this->resizeIfOversized($image, $maxDimension);
 
         ob_start();
         $success = imagewebp($image, null, self::QUALITY);
@@ -53,16 +73,16 @@ class ImageOptimizerService
      * @param  \GdImage  $image
      * @return \GdImage
      */
-    private function resizeIfOversized($image)
+    private function resizeIfOversized($image, int $maxDimension)
     {
         $width = imagesx($image);
         $height = imagesy($image);
 
-        if ($width <= self::MAX_DIMENSION && $height <= self::MAX_DIMENSION) {
+        if ($width <= $maxDimension && $height <= $maxDimension) {
             return $image;
         }
 
-        $ratio = min(self::MAX_DIMENSION / $width, self::MAX_DIMENSION / $height);
+        $ratio = min($maxDimension / $width, $maxDimension / $height);
         $newWidth = max(1, (int) round($width * $ratio));
         $newHeight = max(1, (int) round($height * $ratio));
 

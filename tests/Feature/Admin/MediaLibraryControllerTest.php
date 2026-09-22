@@ -100,6 +100,27 @@ test('an uploaded image is optimized to webp and resized down if oversized', fun
         ->and(imagesy($stored))->toBeLessThanOrEqual(1920);
 });
 
+test('an uploaded image also gets a smaller card variant for listings/cards', function () {
+    Storage::fake('public');
+
+    $file = UploadedFile::fake()->image('cover.jpg', 3000, 1500);
+
+    $response = $this->postJson(route('admin.media.store'), ['file' => $file]);
+
+    $response->assertOk();
+
+    $media = Media::latest('id')->first();
+    expect($media->card_url)->not->toBeNull()
+        ->and($media->card_url)->not->toBe($media->url);
+
+    $cardPath = Str::after($media->card_url, Storage::disk('public')->url(''));
+    Storage::disk('public')->assertExists($cardPath);
+
+    $card = imagecreatefromstring(Storage::disk('public')->get($cardPath));
+    expect(imagesx($card))->toBeLessThanOrEqual(900)
+        ->and(imagesy($card))->toBeLessThanOrEqual(900);
+});
+
 test('countByLocation reports how many files are local and how many are remote', function () {
     Storage::fake('public');
     // Con una url propia: el fake local por defecto arma la misma pinta de

@@ -83,3 +83,41 @@ test('the media:reoptimize-images command reoptimizes images and syncs the artic
 
     expect($article->fresh()->featured_image)->not->toBe($url);
 });
+
+test('reoptimizing an image also generates a smaller card variant alongside it', function () {
+    Storage::fake('public');
+
+    $originalPath = 'media/img-old.webp';
+    Storage::disk('public')->put($originalPath, makeOversizedPngContents());
+
+    $media = Media::factory()->create([
+        'type' => 'image',
+        'url' => Storage::disk('public')->url($originalPath),
+    ]);
+
+    app(MediaLibraryService::class)->reoptimizeAllImages();
+
+    $media->refresh();
+    expect($media->card_url)->not->toBeNull()
+        ->and($media->card_url)->not->toBe($media->url);
+
+    $cardPath = str($media->card_url)->after(Storage::disk('public')->url(''))->toString();
+    Storage::disk('public')->assertExists($cardPath);
+});
+
+test('the sync command also propagates the card variant to the article', function () {
+    Storage::fake('public');
+
+    $originalPath = 'media/img-old.webp';
+    Storage::disk('public')->put($originalPath, makeOversizedPngContents());
+    $url = Storage::disk('public')->url($originalPath);
+
+    $article = NewsArticle::factory()->create(['featured_image' => $url, 'featured_image_card_url' => null]);
+    $media = Media::factory()->create(['type' => 'image', 'url' => $url, 'news_article_id' => $article->id]);
+
+    app(MediaLibraryService::class)->reoptimizeAllImages();
+    $this->artisan('app:sync-article-featured-media-urls')->assertExitCode(0);
+
+    expect($article->fresh()->featured_image_card_url)->toBe($media->fresh()->card_url)
+        ->and($article->fresh()->featured_image_card_url)->not->toBeNull();
+});

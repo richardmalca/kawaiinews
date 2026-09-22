@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $id
  * @property string $url
+ * @property string|null $card_url
  * @property string|null $original_name
  * @property string $source
  * @property string|null $provider
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $type
  * @property int|null $news_article_id
  */
-#[Fillable(['url', 'original_name', 'source', 'provider', 'model', 'type', 'news_article_id'])]
+#[Fillable(['url', 'card_url', 'original_name', 'source', 'provider', 'model', 'type', 'news_article_id'])]
 class Media extends Model
 {
     /** @use HasFactory<MediaFactory> */

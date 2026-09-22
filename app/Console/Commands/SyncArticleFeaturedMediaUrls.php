@@ -36,6 +36,10 @@ class SyncArticleFeaturedMediaUrls extends Command
                 $changes['featured_image'] = $latestImage->url;
             }
 
+            if ($latestImage && $article->featured_image_card_url !== $latestImage->card_url) {
+                $changes['featured_image_card_url'] = $latestImage->card_url;
+            }
+
             if ($latestAudio && $article->audio_url !== $latestAudio->url) {
                 $changes['audio_url'] = $latestAudio->url;
             }

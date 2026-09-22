@@ -28,4 +28,17 @@ class MediaNaming
             $extension,
         );
     }
+
+    /**
+     * Deriva, a partir del path de la imagen completa, dónde va su
+     * variante chica para listados/cards — mismo nombre con "-card" antes
+     * de la extensión, en la misma carpeta.
+     */
+    public static function cardPath(string $mainPath): string
+    {
+        $extension = pathinfo($mainPath, PATHINFO_EXTENSION);
+        $withoutExtension = $extension !== '' ? Str::beforeLast($mainPath, ".{$extension}") : $mainPath;
+
+        return $withoutExtension.'-card'.($extension !== '' ? ".{$extension}" : '');
+    }
 }
