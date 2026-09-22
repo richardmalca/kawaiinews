@@ -117,8 +117,8 @@ test('an uploaded image also gets a smaller card variant for listings/cards', fu
     Storage::disk('public')->assertExists($cardPath);
 
     $card = imagecreatefromstring(Storage::disk('public')->get($cardPath));
-    expect(imagesx($card))->toBeLessThanOrEqual(900)
-        ->and(imagesy($card))->toBeLessThanOrEqual(900);
+    expect(imagesx($card))->toBeLessThanOrEqual(800)
+        ->and(imagesy($card))->toBeLessThanOrEqual(800);
 });
 
 test('countByLocation reports how many files are local and how many are remote', function () {

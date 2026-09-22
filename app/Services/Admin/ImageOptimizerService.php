@@ -15,10 +15,12 @@ class ImageOptimizerService
     private const MAX_DIMENSION = 1920;
 
     // Las miniaturas de las cards del home/categorías se muestran a ~667px
-    // de ancho como mucho (confirmado con Lighthouse) — 900 da margen para
-    // pantallas de alta densidad sin arrastrar el mismo peso que la portada
-    // completa, que se usa en la página del artículo.
-    public const CARD_MAX_DIMENSION = 900;
+    // de ancho como mucho (confirmado con Lighthouse) — 800 da margen para
+    // pantallas de alta densidad (~1.2x) sin arrastrar el mismo peso que la
+    // portada completa, que se usa en la página del artículo. Lighthouse
+    // seguía marcando la variante de 900 como "más grande de lo necesario"
+    // porque asume 1x; 800 la acerca más sin perder nitidez en retina.
+    public const CARD_MAX_DIMENSION = 800;
 
     // 75 es lo que Google recomienda (Lighthouse/PageSpeed) como el mejor
     // punto entre peso y calidad visible para WebP.
