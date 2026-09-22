@@ -36,14 +36,25 @@ use App\Http\Controllers\Public\TagController;
 use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', HomeController::class)->name('home');
-Route::get('categoria/{category}', HomeController::class)->name('public.category');
-Route::get('tendencias', TrendingController::class)->name('public.trending');
-Route::get('tag/{tag:slug}', TagController::class)->name('public.tag');
+// Páginas públicas de solo lectura: cacheables en el borde de Cloudflare
+// para visitantes anónimos (ver EdgeCacheForGuests), porque no dependen de
+// quién las mira.
+Route::middleware('edge-cache')->group(function () {
+    Route::get('/', HomeController::class)->name('home');
+    Route::get('categoria/{category}', HomeController::class)->name('public.category');
+    Route::get('tendencias', TrendingController::class)->name('public.trending');
+    Route::get('tag/{tag:slug}', TagController::class)->name('public.tag');
+    Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
+    Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
+    Route::get('terminos', [LegalController::class, 'terms'])->name('legal.terms');
+    Route::get('dmca', [LegalController::class, 'dmca'])->name('legal.dmca');
+    Route::get('cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
+    Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
+});
+
 Route::get('buscar/sugerencias', SearchSuggestionController::class)
     ->middleware('throttle:60,1')
     ->name('public.search.suggestions');
-Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
 Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('manifest.json', ManifestController::class)->name('manifest');
@@ -52,13 +63,6 @@ Route::get('apple-splash/{width}x{height}.png', AppleSplashController::class)
     ->name('apple.splash');
 Route::get('radio/queue.json', PublicRadioController::class)->name('public.radio.queue');
 Route::get('feed', [FeedController::class, 'rss'])->name('feed');
-
-Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
-Route::get('terminos', [LegalController::class, 'terms'])->name('legal.terms');
-Route::get('dmca', [LegalController::class, 'dmca'])->name('legal.dmca');
-Route::get('cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
-
-Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
 
 Route::post('noticias/{slug}/compartir', [ArticleInteractionController::class, 'share'])
     ->middleware('throttle:30,1')

@@ -10,6 +10,7 @@ use App\Models\AiProvider;
 use App\Models\NewsArticle;
 use App\Models\NewsCluster;
 use App\Models\Tag;
+use App\Services\CloudflareCacheService;
 use App\Support\AiUsageLogger;
 use App\Support\PublicNewsCacheVersion;
 use App\Support\YoutubeVideo;
@@ -19,6 +20,22 @@ use Throwable;
 
 class NewsArticleService
 {
+    public function __construct(private readonly CloudflareCacheService $cloudflareCache) {}
+
+    /**
+     * La página del artículo y la home pueden haber quedado cacheadas en
+     * el borde de Cloudflare (ver EdgeCacheForGuests) — esto las purga de
+     * inmediato para que el cambio se vea sin esperar a que venza el TTL.
+     */
+    private function purgeEdgeCache(NewsArticle $newsArticle): void
+    {
+        $this->cloudflareCache->purgeUrls([
+            url("/noticias/{$newsArticle->slug}"),
+            url('/'),
+            url("/categoria/{$newsArticle->category}"),
+        ]);
+    }
+
     public function createFromCluster(NewsCluster $newsCluster, ?int $authorId = null): NewsArticle
     {
         $draft = $this->generateDraft($newsCluster);
@@ -148,6 +165,7 @@ class NewsArticleService
         }
 
         PublicNewsCacheVersion::bump();
+        $this->purgeEdgeCache($newsArticle);
 
         return $newsArticle;
     }
@@ -173,6 +191,7 @@ class NewsArticleService
         SendNewArticleNotificationsJob::dispatch($newsArticle->id);
 
         PublicNewsCacheVersion::bump();
+        $this->purgeEdgeCache($newsArticle);
     }
 
     public function toggleStatus(NewsArticle $newsArticle): NewsArticle
@@ -191,12 +210,15 @@ class NewsArticleService
         }
 
         PublicNewsCacheVersion::bump();
+        $this->purgeEdgeCache($newsArticle);
 
         return $newsArticle;
     }
 
     public function delete(NewsArticle $newsArticle): void
     {
+        $this->purgeEdgeCache($newsArticle);
+
         $newsArticle->delete();
 
         PublicNewsCacheVersion::bump();
@@ -250,6 +272,8 @@ class NewsArticleService
         $newsArticle->update(['slug' => $correctSlug]);
 
         PublicNewsCacheVersion::bump();
+        $this->cloudflareCache->purgeUrls([url("/noticias/{$old}")]);
+        $this->purgeEdgeCache($newsArticle);
 
         return ['old' => $old, 'new' => $correctSlug];
     }
