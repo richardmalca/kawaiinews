@@ -52,6 +52,7 @@ export function PersistentRadioPlayer() {
         toggleMute,
         setVolume,
         jumpToLive,
+        closeRadio,
         setDockVisible,
         setIsMinimized,
     } = useRadioPlayer();
@@ -234,10 +235,7 @@ export function PersistentRadioPlayer() {
                     </button>
 
                     <button
-                        onClick={() => {
-                            if (isPlaying) togglePlay();
-                            setDockVisible(false);
-                        }}
+                        onClick={closeRadio}
                         className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white transition-colors"
                         title="Cerrar radio"
                     >

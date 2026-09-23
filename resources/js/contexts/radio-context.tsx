@@ -34,6 +34,7 @@ interface RadioContextType {
     nextTrack: () => void;
     prevTrack: () => void;
     jumpToLive: () => void;
+    closeRadio: () => void;
     setDockVisible: (visible: boolean) => void;
     setIsMinimized: (minimized: boolean) => void;
     notifyArticleAudioPlaying: () => void;
@@ -403,6 +404,19 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
         fetchQueueAndSync(true);
     }, [fetchQueueAndSync]);
 
+    const closeRadio = useCallback(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+        }
+        setIsPlaying(false);
+        setDockVisible(false);
+        setShowAutoplayPrompt(false);
+        setAutoplayPrefState(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('kawaii_radio_autoplay', 'false');
+        }
+    }, []);
+
     const notifyArticleAudioPlaying = useCallback(() => {
         if (audioRef.current && isPlayingRef.current) {
             audioRef.current.pause();
@@ -447,6 +461,7 @@ export function RadioProvider({ children }: { children: React.ReactNode }) {
                 nextTrack,
                 prevTrack,
                 jumpToLive,
+                closeRadio,
                 setDockVisible,
                 setIsMinimized,
                 notifyArticleAudioPlaying,
