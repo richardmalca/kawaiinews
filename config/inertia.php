@@ -16,13 +16,12 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
+        // El sitio público ya no vive acá (es el Next.js en kawaiinews.net),
+        // así que no queda nada que necesite SSR: el panel admin y el login
+        // son solo para usuarios autenticados, no les importa a los
+        // crawlers. Desactivado para no depender del daemon de Forge.
+        'enabled' => false,
         'url' => 'http://127.0.0.1:13714',
-        // El entry de Inertia es resources/js/app.tsx, así que
-        // @inertiajs/vite nombra el bundle de salida "app.js" (no el
-        // "ssr.mjs" que trae comentado por defecto) — sin esto el daemon
-        // de Forge que corre `inertia:start-ssr` se cae al toque porque
-        // busca un archivo que no existe.
         'bundle' => base_path('bootstrap/ssr/app.js'),
     ],
 
