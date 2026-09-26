@@ -1,13 +1,11 @@
 ﻿import { Head, Link } from '@inertiajs/react';
 import {
-    ArrowLeft,
     Home,
     AlertTriangle,
     ShieldAlert,
     FileQuestion,
     ServerCrash,
     RefreshCw,
-    Sparkles,
 } from 'lucide-react';
 
 interface ErrorPageProps {
@@ -78,29 +76,7 @@ export default function ErrorPage({ status }: ErrorPageProps) {
 
     return (
         <div className="flex min-h-screen flex-col bg-neutral-50 font-sans text-neutral-900 selection:bg-rose-500 selection:text-white dark:bg-neutral-950 dark:text-neutral-100">
-            <Head title={`${error.title} - KawaiiNews`} />
-
-            {/* Header simple */}
-            <header className="border-b border-neutral-200/80 bg-white/80 px-4 py-4 backdrop-blur-md dark:border-neutral-900/80 dark:bg-neutral-950/80">
-                <div className="mx-auto flex max-w-7xl items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-600 text-white shadow-xs">
-                            <Sparkles className="h-4 w-4" />
-                        </div>
-                        <span className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white">
-                            Kawaii<span className="text-rose-500">News</span>
-                        </span>
-                    </Link>
-
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 transition-colors hover:text-rose-600 dark:text-neutral-400 dark:hover:text-rose-400"
-                    >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                        <span>Volver a la portada</span>
-                    </Link>
-                </div>
-            </header>
+            <Head title={error.title} />
 
             {/* Contenido del Error */}
             <main className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6">
@@ -125,11 +101,11 @@ export default function ErrorPage({ status }: ErrorPageProps) {
 
                     <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Link
-                            href="/"
+                            href="/admin"
                             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-500 active:scale-95 sm:w-auto"
                         >
                             <Home className="h-4 w-4" />
-                            <span>Ir al inicio</span>
+                            <span>Ir al panel</span>
                         </Link>
 
                         <button
