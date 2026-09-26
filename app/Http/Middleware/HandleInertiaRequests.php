@@ -47,10 +47,12 @@ class HandleInertiaRequests extends Middleware
             'siteDescription' => $siteSettings->description,
             'siteOgImageUrl' => $siteSettings->ogImageUrl(),
             'searchBoxEnabled' => $siteSettings->search_box_enabled,
-            // Dominio real de la app (nunca un string hardcodeado): así
-            // cualquier página, pública o admin, arma links/emails/textos
-            // sin tipear el dominio a mano y sin desincronizarse si cambia.
-            'siteUrl' => rtrim(url('/'), '/'),
+            // El sitio público ya no vive en este backend (era Inertia,
+            // ahora es el Next.js en kawaiinews_next.url) — este backend
+            // se está quedando solo como API + panel admin. "siteUrl" acá
+            // apunta al sitio real que ve la gente, no a url('/') de este
+            // dominio (que dejó de tener nada que mostrar en la raíz).
+            'siteUrl' => rtrim(config('services.kawaiinews_next.url'), '/'),
             // Para armar <link rel="canonical"> y las URLs de OG/JSON-LD sin
             // depender de window.location: con SSR activo, el HTML que
             // ven Google y cualquier auditor externo se genera en el

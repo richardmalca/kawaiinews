@@ -46,4 +46,11 @@ return [
         'zone_id' => env('CLOUDFLARE_ZONE_ID'),
     ],
 
+    // Frontend Next.js (kawaiinews-nextjs) — a dónde redirigir tras el login
+    // con Google cuando arrancó desde ahí (ver GoogleAuthController).
+    'kawaiinews_next' => [
+        'url' => env('KAWAIINEWS_NEXT_URL', 'http://localhost:3000'),
+        'revalidate_secret' => env('NEXT_REVALIDATE_SECRET'),
+    ],
+
 ];

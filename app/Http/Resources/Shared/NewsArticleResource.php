@@ -14,6 +14,8 @@ class NewsArticleResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $user = $this->resolvedUser($request);
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -53,11 +55,19 @@ class NewsArticleResource extends JsonResource
             'favorites_count' => (int) ($this->favorites_count ?? $this->favoriters()->count()),
             'shares_count' => (int) ($this->shares_count ?? $this->shares()->count()),
             'comments_count' => (int) ($this->comments_count ?? $this->comments()->count()),
-            'has_liked' => $request->user() ? $request->user()->hasLiked($this->resource) : false,
-            'has_favorited' => $request->user() ? $request->user()->hasFavorited($this->resource) : false,
+            'has_liked' => $user ? $user->hasLiked($this->resource) : false,
+            'has_favorited' => $user ? $user->hasFavorited($this->resource) : false,
+            // Alias para el frontend Next.js (kawaiinews-nextjs), que espera
+            // estos nombres puntuales en vez de likers_count/has_liked/etc.
+            // El frontend Inertia sigue usando los campos de arriba tal
+            // cual — esto solo agrega, no reemplaza nada.
+            'likes_count' => (int) ($this->likers_count ?? $this->likers()->count()),
+            'bookmarks_count' => (int) ($this->favorites_count ?? $this->favoriters()->count()),
+            'is_liked' => $user ? $user->hasLiked($this->resource) : false,
+            'is_bookmarked' => $user ? $user->hasFavorited($this->resource) : false,
             'reactions' => app(ArticleInteractionService::class)->getReactionsSummary($this->resource),
-            'user_reaction' => $request->user()
-                ? ArticleReaction::where('user_id', $request->user()->id)
+            'user_reaction' => $user
+                ? ArticleReaction::where('user_id', $user->id)
                     ->where('news_article_id', $this->id)
                     ->value('reaction')
                 : null,
@@ -72,6 +82,21 @@ class NewsArticleResource extends JsonResource
                     ->values()
                 : null),
         ];
+    }
+
+    /**
+     * Las rutas públicas de listado/detalle (api.php: GET news/*) no llevan
+     * middleware `auth:sanctum` a propósito — son públicas, no todo el
+     * mundo tiene token. Pero eso significa que `$request->user()` (guard
+     * por defecto, "web") nunca resuelve un token Bearer del frontend
+     * Next.js, aunque venga uno válido: sin ese middleware nadie le pide al
+     * guard "sanctum" que lo intente. Se resuelve el guard sanctum a mano
+     * como fallback para no perder has_liked/has_favorited/etc. cuando un
+     * usuario logueado en Next.js visita estas rutas sin sesión de cookie.
+     */
+    private function resolvedUser(Request $request)
+    {
+        return $request->user() ?? $request->user('sanctum');
     }
 
     private function resolveCardUrl(?string $cardUrl, ?string $featuredImage): ?string

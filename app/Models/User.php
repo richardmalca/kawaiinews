@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 use Overtrue\LaravelFavorite\Traits\Favoriter;
 use Overtrue\LaravelFollow\Traits\Followable;
 use Overtrue\LaravelFollow\Traits\Follower;
@@ -40,7 +41,7 @@ use Spatie\Permission\Traits\HasRoles;
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
-    use Favoriter, Followable, Follower, HasFactory, HasRoles, Liker, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use Favoriter, Followable, Follower, HasApiTokens, HasFactory, HasRoles, Liker, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     protected function casts(): array
     {
@@ -59,11 +60,35 @@ class User extends Authenticatable implements PasskeyUser
 
     public function getActiveAvatarUrlAttribute(): ?string
     {
+        $raw = null;
         if ($this->avatar_source === 'custom' && $this->custom_avatar) {
-            return $this->custom_avatar;
+            $raw = $this->custom_avatar;
+        } else {
+            $raw = $this->avatar ?: $this->custom_avatar;
         }
 
-        return $this->avatar ?: $this->custom_avatar;
+        if (! $raw) {
+            return null;
+        }
+
+        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+            return $raw;
+        }
+
+        return url($raw);
+    }
+
+    public function getActiveBannerUrlAttribute(): ?string
+    {
+        if (! $this->banner) {
+            return null;
+        }
+
+        if (str_starts_with($this->banner, 'http://') || str_starts_with($this->banner, 'https://')) {
+            return $this->banner;
+        }
+
+        return url($this->banner);
     }
 
     /**

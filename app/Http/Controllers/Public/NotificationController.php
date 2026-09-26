@@ -3,69 +3,29 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Public\NewsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class NotificationController extends Controller
 {
-    public function __construct(
-        private readonly NewsService $newsService
-    ) {}
-
-    public function index(Request $request): JsonResponse|Response
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $filter = $request->query('filtro', 'todas');
 
-        if ($request->wantsJson()) {
-            $notifications = $user->notifications()
-                ->latest()
-                ->limit(20)
-                ->get()
-                ->map(fn ($n) => [
-                    'id' => $n->id,
-                    'data' => $n->data,
-                    'read_at' => $n->read_at?->toISOString(),
-                    'created_at' => $n->created_at?->diffForHumans(),
-                ]);
-
-            return response()->json([
-                'unread_count' => $user->unreadNotifications()->count(),
-                'notifications' => $notifications,
+        $notifications = $user->notifications()
+            ->latest()
+            ->limit(20)
+            ->get()
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'data' => $n->data,
+                'read_at' => $n->read_at?->toISOString(),
+                'created_at' => $n->created_at?->diffForHumans(),
             ]);
-        }
 
-        $query = $user->notifications()->latest();
-
-        if ($filter === 'no_leidas') {
-            $query->whereNull('read_at');
-        } elseif ($filter === 'reacciones') {
-            $query->whereIn('data->type', ['article_liked', 'comment_liked']);
-        } elseif ($filter === 'guardados') {
-            $query->whereIn('data->type', ['article_saved', 'article_shared']);
-        } elseif ($filter === 'comentarios') {
-            $query->whereIn('data->type', ['comment_reply', 'comment_mention', 'article_commented']);
-        } elseif ($filter === 'seguidores') {
-            $query->where('data->type', 'user_follow');
-        } elseif ($filter === 'noticias') {
-            $query->where('data->type', 'new_article');
-        }
-
-        $paginated = $query->paginate(15)->through(fn ($n) => [
-            'id' => $n->id,
-            'data' => $n->data,
-            'read_at' => $n->read_at?->toISOString(),
-            'created_at' => $n->created_at?->diffForHumans(),
-        ])->withQueryString();
-
-        return Inertia::render('public/notifications/index', [
-            'notifications' => $paginated,
-            'unreadCount' => $user->unreadNotifications()->count(),
-            'currentFilter' => $filter,
-            'categories' => $this->newsService->getCategoriesSummary(),
+        return response()->json([
+            'unread_count' => $user->unreadNotifications()->count(),
+            'notifications' => $notifications,
         ]);
     }
 

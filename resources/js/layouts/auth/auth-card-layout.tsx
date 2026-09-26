@@ -8,7 +8,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { home } from '@/routes';
 
 export default function AuthCardLayout({
     children,
@@ -19,13 +18,13 @@ export default function AuthCardLayout({
     title?: string;
     description?: string;
 }>) {
-    const { name: siteName, siteLogoUrl } = usePage().props;
+    const { name: siteName, siteLogoUrl, siteUrl } = usePage().props;
 
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-md flex-col gap-6">
                 <Link
-                    href={home()}
+                    href={String(siteUrl ?? '/')}
                     className="flex items-center gap-2 self-center font-medium"
                 >
                     <div className="flex h-10 w-auto items-center justify-center">

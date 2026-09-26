@@ -12,6 +12,13 @@ class CommentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // GET news/{slug}/comentarios es público (sin middleware
+        // auth:sanctum), así que $request->user() con el guard por defecto
+        // nunca ve un token Bearer del frontend Next.js. Se intenta también
+        // el guard "sanctum" a mano para que has_liked/can_update/can_delete
+        // reflejen al usuario real cuando está logueado ahí.
+        $user = $request->user() ?? $request->user('sanctum');
+
         return [
             'id' => $this->id,
             'body' => $this->body,
@@ -45,9 +52,9 @@ class CommentResource extends JsonResource
                 'username' => $this->replyToComment->user->username,
             ] : null),
             'likes_count' => (int) ($this->likers_count ?? $this->likers()->count()),
-            'has_liked' => $request->user() ? $request->user()->hasLiked($this->resource) : false,
-            'can_update' => $request->user()?->can('update', $this->resource) ?? false,
-            'can_delete' => $request->user()?->can('delete', $this->resource) ?? false,
+            'has_liked' => $user ? $user->hasLiked($this->resource) : false,
+            'can_update' => $user?->can('update', $this->resource) ?? false,
+            'can_delete' => $user?->can('delete', $this->resource) ?? false,
             'replies' => $this->whenLoaded('replies', fn () => CommentResource::collection($this->replies)),
         ];
     }

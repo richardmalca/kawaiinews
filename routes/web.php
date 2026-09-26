@@ -18,44 +18,22 @@ use App\Http\Controllers\Admin\StorageSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\AppleSplashController;
-use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ArticleInteractionController;
 use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\FollowController;
-use App\Http\Controllers\Public\HomeController;
-use App\Http\Controllers\Public\LegalController;
 use App\Http\Controllers\Public\ManifestController;
 use App\Http\Controllers\Public\NotificationController;
-use App\Http\Controllers\Public\ProfileController;
-use App\Http\Controllers\Public\ProfileSettingsController;
 use App\Http\Controllers\Public\RadioController as PublicRadioController;
-use App\Http\Controllers\Public\SearchSuggestionController;
 use App\Http\Controllers\Public\SitemapController;
-use App\Http\Controllers\Public\TagController;
-use App\Http\Controllers\Public\TrendingController;
 use Illuminate\Support\Facades\Route;
 
-// Páginas públicas de solo lectura: cacheables en el borde de Cloudflare
-// para visitantes anónimos (ver EdgeCacheForGuests), porque no dependen de
-// quién las mira.
-Route::middleware('edge-cache')->group(function () {
-    Route::get('/', HomeController::class)->name('home');
-    Route::get('categoria/{category}', HomeController::class)->name('public.category');
-    Route::get('tendencias', TrendingController::class)->name('public.trending');
-    Route::get('tag/{tag:slug}', TagController::class)->name('public.tag');
-    Route::get('noticias/{slug}', [ArticleController::class, 'show'])->name('news.show');
-    Route::get('privacidad', [LegalController::class, 'privacy'])->name('legal.privacy');
-    Route::get('terminos', [LegalController::class, 'terms'])->name('legal.terms');
-    Route::get('dmca', [LegalController::class, 'dmca'])->name('legal.dmca');
-    Route::get('cookies', [LegalController::class, 'cookies'])->name('legal.cookies');
-    Route::get('perfil/{username}', [ProfileController::class, 'show'])->name('public.profile.show');
-});
-
-Route::get('buscar/sugerencias', SearchSuggestionController::class)
-    ->middleware('throttle:60,1')
-    ->name('public.search.suggestions');
-Route::redirect('noticia/{slug}', '/noticias/{slug}', 301);
+// sitemap.xml/manifest.json/apple-splash quedaron acá a propósito: son
+// datos consumidos directo por crawlers y el navegador (no por el
+// frontend Next.js vía fetch), y Next.js tiene sus propios
+// sitemap.ts/robots.ts/manifest.ts para kawaiinews.net — pero mientras el
+// dominio del backend siga respondiendo tráfico público real durante la
+// migración a api.kawaiianimes.net, conviene no romperlos de golpe.
 Route::get('sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('manifest.json', ManifestController::class)->name('manifest');
 Route::get('apple-splash/{width}x{height}.png', AppleSplashController::class)
@@ -116,14 +94,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('comentarios/{comment}/me-gusta', [CommentController::class, 'toggleLike'])
         ->middleware('throttle:60,1')
         ->name('public.comments.like');
-
-    Route::get('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'redirectToSelf'])
-        ->name('public.profile.settings.self');
-    Route::patch('perfil/mi-cuenta/ajustes', [ProfileSettingsController::class, 'updateSelf'])
-        ->name('public.profile.settings.self.update');
-    Route::get('perfil/{username}/ajustes', [ProfileSettingsController::class, 'edit'])->name('public.profile.settings.edit');
-    Route::match(['patch', 'post'], 'perfil/{username}/ajustes', [ProfileSettingsController::class, 'update'])->name('public.profile.settings.update');
-    Route::delete('perfil/{username}/ajustes', [ProfileSettingsController::class, 'destroy'])->name('public.profile.settings.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
@@ -280,7 +250,15 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
         });
     });
 
-Route::middleware('guest')->prefix('auth/google')->name('auth.google.')->group(function () {
+// Sin "guest" en ninguna de las dos: el frontend Next.js (?frontend=next)
+// usa este mismo flujo para emitir un token de Sanctum, algo totalmente
+// independiente de si el admin ya tiene sesión web abierta en el backend.
+// Con "guest" puesto, alguien logueado en /admin quedaba rebotado a home
+// antes de siquiera llegar a Google — sin error, sin log, un redirect
+// fantasma imposible de diagnosticar. Re-ejecutar el login estando ya
+// logueado es idempotente (Auth::login() de nuevo, o un token nuevo de
+// Sanctum), así que no hay riesgo en sacarlo.
+Route::prefix('auth/google')->name('auth.google.')->group(function () {
     Route::get('/', [GoogleAuthController::class, 'redirect'])->name('redirect');
     Route::get('callback', [GoogleAuthController::class, 'callback'])->name('callback');
 });

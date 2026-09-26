@@ -6,6 +6,8 @@ use App\Support\RemoteStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -77,8 +79,41 @@ class SiteSetting extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::forget(self::CACHE_KEY));
-        static::deleted(fn () => Cache::forget(self::CACHE_KEY));
+        static::saved(function () {
+            Cache::forget(self::CACHE_KEY);
+            self::notifyNextRevalidate();
+        });
+        static::deleted(function () {
+            Cache::forget(self::CACHE_KEY);
+            self::notifyNextRevalidate();
+        });
+    }
+
+    /**
+     * El frontend Next.js (kawaiinews-nextjs) cachea /api/site-settings con
+     * ISR de larga duración para no pegarle al backend en cada visita — pero
+     * eso significa que un cambio de favicon/título desde este admin tardaría
+     * hasta esa duración en reflejarse. Este ping le avisa al instante que
+     * invalide su caché. Es best-effort: si Next está caído o el secreto no
+     * está configurado, no debe romper el guardado de la config del sitio.
+     */
+    private static function notifyNextRevalidate(): void
+    {
+        $secret = config('services.kawaiinews_next.revalidate_secret');
+
+        if (! $secret) {
+            return;
+        }
+
+        $nextUrl = rtrim(config('services.kawaiinews_next.url'), '/');
+
+        try {
+            Http::timeout(2)
+                ->withHeaders(['X-Revalidate-Secret' => $secret])
+                ->post("{$nextUrl}/api/revalidate", ['tag' => 'site-settings']);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo notificar a Next.js para revalidar site-settings.', ['error' => $e->getMessage()]);
+        }
     }
 
     /**

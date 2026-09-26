@@ -74,6 +74,7 @@ class CommentService
             }
         }
 
+        $body = strip_tags($body);
         $status = $this->moderationService->shouldHoldForReview($user, $body) ? 'pending' : 'visible';
 
         $comment = Comment::create([
@@ -164,7 +165,7 @@ class CommentService
     public function update(Comment $comment, string $body, ?bool $isSpoiler = null): Comment
     {
         $comment->update([
-            'body' => $body,
+            'body' => strip_tags($body),
             ...($isSpoiler !== null ? ['is_spoiler' => $isSpoiler] : []),
         ]);
 

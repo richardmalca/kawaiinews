@@ -33,7 +33,7 @@ class ProfileService
             'avatar' => $profileUser->active_avatar_url,
             'google_avatar' => $profileUser->avatar,
             'custom_avatar' => $profileUser->custom_avatar,
-            'banner' => $profileUser->banner,
+            'banner' => $profileUser->active_banner_url,
             'avatar_source' => $profileUser->avatar_source ?? 'google',
             'is_author' => $isAuthor,
             'badge' => $profileUser->community_badge,
