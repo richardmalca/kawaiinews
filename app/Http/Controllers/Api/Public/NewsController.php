@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Shared\NewsArticleResource;
+use App\Models\Tag;
 use App\Services\Public\NewsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,39 @@ class NewsController extends Controller
             'articles' => [
                 'data' => NewsArticleResource::collection($articles->items()),
             ],
+        ]);
+    }
+
+    /**
+     * Búsqueda de etiquetas para el buscador del frontend — antes el
+     * buscador solo miraba las tags de los ~12 artículos ya cargados en
+     * memoria de la home, así que cualquier tag fuera de esa muestra
+     * chica no aparecía nunca por más que existiera. Esto sí recorre
+     * todas las tags reales.
+     */
+    public function searchTags(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        if (mb_strlen($q) < 2) {
+            return response()->json(['tags' => []]);
+        }
+
+        $tags = Tag::query()
+            ->where('name', 'like', "%{$q}%")
+            ->withCount(['articles' => fn ($query) => $query->where('status', 'published')->whereNotNull('published_at')])
+            ->having('articles_count', '>', 0)
+            ->orderByDesc('articles_count')
+            ->limit(8)
+            ->get();
+
+        return response()->json([
+            'tags' => $tags->map(fn ($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+                'articles_count' => $tag->articles_count,
+            ])->values(),
         ]);
     }
 

@@ -14,6 +14,9 @@ Route::prefix('news')->group(function () {
     Route::get('/{slug}', [NewsController::class, 'show']);
 });
 
+Route::get('tags/buscar', [NewsController::class, 'searchTags']);
+
+Route::get('profile/buscar', [ApiProfileController::class, 'search']);
 Route::get('profile/{username}', [ApiProfileController::class, 'show']);
 Route::post('profile/{username}/seguir', [ApiProfileController::class, 'toggleFollow'])
     ->middleware('auth:sanctum');
