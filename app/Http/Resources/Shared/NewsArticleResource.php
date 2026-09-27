@@ -38,7 +38,10 @@ class NewsArticleResource extends JsonResource
             'published_at_iso' => $this->published_at?->toIso8601String(),
             'updated_at_iso' => $this->updated_at?->toIso8601String(),
             'created_at' => $this->created_at?->diffForHumans(),
-            'canonical_url' => url("/noticias/{$this->slug}"),
+            // "url()" resuelve sobre APP_URL, que es el dominio del backend
+            // (api.kawaiinews.net) — el canonical tiene que apuntar al
+            // sitio público real que ve Google, no a la API.
+            'canonical_url' => rtrim(config('services.kawaiinews_next.url'), '/')."/noticias/{$this->slug}",
             'audio_url' => $this->resolveMediaUrl($this->audio_url),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')->values()),
             'tag_items' => $this->whenLoaded('tags', fn () => $this->tags->map(fn ($t) => [
