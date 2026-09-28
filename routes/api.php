@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Auth\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\Public\NewsController;
 use App\Http\Controllers\Api\Public\ProfileController as ApiProfileController;
+use App\Http\Controllers\Api\Public\PushSubscriptionController;
 use App\Http\Controllers\Api\Public\SiteSettingController as ApiSiteSettingController;
 use App\Http\Controllers\Public\ArticleInteractionController;
 use App\Http\Controllers\Public\CommentController;
@@ -22,6 +23,11 @@ Route::post('profile/{username}/seguir', [ApiProfileController::class, 'toggleFo
     ->middleware('auth:sanctum');
 
 Route::get('site-settings', ApiSiteSettingController::class);
+
+// Suscripción push por dispositivo/navegador, no por cuenta -- pública a
+// propósito, cualquier visitante puede activarla sin loguearse.
+Route::post('push/subscribe', [PushSubscriptionController::class, 'store']);
+Route::post('push/unsubscribe', [PushSubscriptionController::class, 'destroy']);
 
 // Sesión del frontend Next.js: token de Sanctum (no cookie de sesión web,
 // son dos apps en dos puertos distintos). El login en sí pasa por las
