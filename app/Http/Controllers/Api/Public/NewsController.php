@@ -73,6 +73,17 @@ class NewsController extends Controller
         ]);
     }
 
+    /**
+     * Todos los slugs publicados, sin paginar -- consumido por
+     * app/sitemap.ts en el frontend Next.js (ver NewsService::allSlugsForSitemap()).
+     */
+    public function sitemapArticles(): JsonResponse
+    {
+        return response()->json([
+            'articles' => $this->newsService->allSlugsForSitemap(),
+        ]);
+    }
+
     public function show(string $slug): JsonResponse
     {
         try {

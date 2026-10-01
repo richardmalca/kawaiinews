@@ -10,6 +10,8 @@ use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\NotificationController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('news-sitemap', [NewsController::class, 'sitemapArticles']);
+
 Route::prefix('news')->group(function () {
     Route::get('/', [NewsController::class, 'index']);
     Route::get('/{slug}', [NewsController::class, 'show']);

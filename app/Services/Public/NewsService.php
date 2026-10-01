@@ -165,6 +165,28 @@ class NewsService
         });
     }
 
+    /**
+     * Slug + fecha de cada artículo publicado, sin paginar -- lo usa el
+     * sitemap.xml del frontend, que necesita listar todas las notas (no
+     * solo la página 12 que ve la home) para que Google pueda
+     * descubrirlas e indexarlas.
+     *
+     * @return array<int, array{slug: string, published_at: string}>
+     */
+    public function allSlugsForSitemap(): array
+    {
+        return $this->remember('all-slugs-for-sitemap', fn () => NewsArticle::query()
+            ->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->orderByDesc('published_at')
+            ->get(['slug', 'published_at'])
+            ->map(fn (NewsArticle $article) => [
+                'slug' => $article->slug,
+                'published_at' => $article->published_at->toIso8601String(),
+            ])
+            ->all());
+    }
+
     public function findPublishedBySlug(string $slug): NewsArticle
     {
         return NewsArticle::query()
