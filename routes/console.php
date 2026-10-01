@@ -24,10 +24,15 @@ Schedule::command('news:auto-merge')
 
 // 10 minutos después del scrape (":10", ":03:10", etc.) para darle tiempo a
 // que termine de agrupar los clusters nuevos antes de analizarlos.
-Schedule::command('news:auto-review')
-    ->everyThreeHours(10)
-    ->withoutOverlapping()
-    ->onOneServer();
+//
+// PAUSADO (2026-10-01): sin crédito en el proveedor de IA activo
+// (Anthropic), analyzeWithAi() falla en cada corrida sin avisar a nadie
+// -- corre igual cada 3h sin lograr nada. Reactivar cuando haya crédito
+// de nuevo o se cambie el proveedor activo.
+// Schedule::command('news:auto-review')
+//     ->everyThreeHours(10)
+//     ->withoutOverlapping()
+//     ->onOneServer();
 
 // Cada hora (no controla que se ejecute, decide adentro solo si el admin
 // lo activó en Configuración del sitio): suelta como mucho 1 noticia
@@ -39,10 +44,16 @@ Schedule::command('news:auto-review')
 // más alto (ej. 10-15/día mientras se genera contenido) sin tocar el
 // código de nuevo — igual nunca se pasa del tope, solo permite llegar a
 // él en un solo día si el admin lo pide.
-Schedule::command('news:auto-accept')
-    ->hourlyAt(20)
-    ->withoutOverlapping()
-    ->onOneServer();
+//
+// PAUSADO (2026-10-01): sin crédito en el proveedor de IA activo, el
+// generateDraft() de createFromCluster() falla y cae al fallback sin
+// traducción -- estaba publicando solo notas con el título/resumen
+// crudo de la fuente (a veces en portugués o inglés) y sin cuerpo.
+// Reactivar junto con news:auto-review cuando vuelva a haber crédito.
+// Schedule::command('news:auto-accept')
+//     ->hourlyAt(20)
+//     ->withoutOverlapping()
+//     ->onOneServer();
 
 Schedule::command('views:flush')
     ->everyMinute()
