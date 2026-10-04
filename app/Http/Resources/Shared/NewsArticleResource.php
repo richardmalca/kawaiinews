@@ -30,6 +30,7 @@ class NewsArticleResource extends JsonResource
             // reoptimización todavía; el frontend debe usar featured_image
             // como fallback en ese caso.
             'featured_image_card' => $this->resolveCardUrl($this->featured_image_card_url, $this->featured_image),
+            'source_url' => $this->source_url,
             'status' => $this->status,
             'views_count' => $this->views_count,
             'published_at' => $this->published_at?->diffForHumans(),

@@ -25,6 +25,7 @@ use Overtrue\LaravelLike\Traits\Likeable;
  * @property string|null $body
  * @property string|null $featured_image
  * @property string|null $featured_image_card_url
+ * @property string|null $source_url
  * @property string|null $audio_url
  * @property int|null $audio_duration_seconds
  * @property string|null $dj_intro_url
@@ -33,7 +34,7 @@ use Overtrue\LaravelLike\Traits\Likeable;
  * @property Carbon|null $published_at
  * @property int $views_count
  */
-#[Fillable(['news_cluster_id', 'author_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'featured_image_card_url', 'audio_url', 'audio_duration_seconds', 'dj_intro_url', 'dj_intro_duration_seconds', 'status', 'published_at'])]
+#[Fillable(['news_cluster_id', 'author_id', 'title', 'slug', 'category', 'excerpt', 'body', 'featured_image', 'featured_image_card_url', 'source_url', 'audio_url', 'audio_duration_seconds', 'dj_intro_url', 'dj_intro_duration_seconds', 'status', 'published_at'])]
 class NewsArticle extends Model
 {
     /** @use HasFactory<NewsArticleFactory> */

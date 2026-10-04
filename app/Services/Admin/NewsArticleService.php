@@ -111,7 +111,7 @@ class NewsArticleService
      * algo que el equipo quiere publicar directo. No tiene news_cluster_id
      * porque no viene de ningún cluster.
      *
-     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
+     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, source_url?: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
      * @param  array<int, string>  $tags
      */
     public function createManual(array $data, array $tags, int $authorId): NewsArticle
@@ -127,7 +127,7 @@ class NewsArticleService
     }
 
     /**
-     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
+     * @param  array{title: string, category: string, excerpt: ?string, body: ?string, featured_image: ?string, source_url?: ?string, audio_url: ?string, status: string, slug?: ?string}  $data
      * @param  array<int, string>  $tags
      */
     public function save(NewsArticle $newsArticle, array $data, array $tags = []): NewsArticle
@@ -149,6 +149,7 @@ class NewsArticleService
             'excerpt' => $data['excerpt'] ?? null,
             'body' => $data['body'] ?? null,
             'featured_image' => $data['featured_image'] ?? null,
+            'source_url' => $data['source_url'] ?? $newsArticle->source_url,
             'audio_url' => $data['audio_url'] ?? null,
             'status' => $data['status'],
             'published_at' => $data['status'] === 'published'
