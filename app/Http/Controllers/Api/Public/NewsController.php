@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Shared\NewsArticleResource;
 use App\Models\Tag;
+use App\Services\Public\ArticleViewService;
 use App\Services\Public\NewsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class NewsController extends Controller
 {
     public function __construct(
-        private readonly NewsService $newsService
+        private readonly NewsService $newsService,
+        private readonly ArticleViewService $articleViewService,
     ) {}
 
     /**
@@ -84,13 +86,15 @@ class NewsController extends Controller
         ]);
     }
 
-    public function show(string $slug): JsonResponse
+    public function show(string $slug, Request $request): JsonResponse
     {
         try {
             $article = $this->newsService->findPublishedBySlug($slug);
         } catch (ModelNotFoundException) {
             throw new NotFoundHttpException('Artículo no encontrado.');
         }
+
+        $this->articleViewService->record($article, $request);
 
         return response()->json([
             'article' => new NewsArticleResource($article),
