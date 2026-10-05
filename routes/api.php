@@ -15,6 +15,13 @@ Route::get('news-sitemap', [NewsController::class, 'sitemapArticles']);
 Route::prefix('news')->group(function () {
     Route::get('/', [NewsController::class, 'index']);
     Route::get('/{slug}', [NewsController::class, 'show']);
+
+    // Registro de vistas separado del detalle del artículo a propósito:
+    // show() se sirve cacheado 60s desde el frontend Next.js, así que
+    // contar ahí pegaba el conteo a ese mismo caché. El visitante llama
+    // esto aparte, sin caché, apenas carga la página.
+    Route::post('/{slug}/vista', [NewsController::class, 'registerView'])
+        ->middleware('throttle:20,1');
 });
 
 Route::get('tags/buscar', [NewsController::class, 'searchTags']);

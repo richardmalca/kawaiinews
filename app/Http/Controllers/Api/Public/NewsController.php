@@ -86,7 +86,26 @@ class NewsController extends Controller
         ]);
     }
 
-    public function show(string $slug, Request $request): JsonResponse
+    public function show(string $slug): JsonResponse
+    {
+        try {
+            $article = $this->newsService->findPublishedBySlug($slug);
+        } catch (ModelNotFoundException) {
+            throw new NotFoundHttpException('Artículo no encontrado.');
+        }
+
+        return response()->json([
+            'article' => new NewsArticleResource($article),
+        ]);
+    }
+
+    /**
+     * El visitante llama esto aparte del detalle del artículo (que se
+     * sirve cacheado 60s desde el frontend) para que cada vista real se
+     * registre sin quedar atada a ese caché. Sin body ni respuesta de
+     * peso -- solo confirma que se encoló.
+     */
+    public function registerView(string $slug, Request $request): JsonResponse
     {
         try {
             $article = $this->newsService->findPublishedBySlug($slug);
@@ -96,8 +115,6 @@ class NewsController extends Controller
 
         $this->articleViewService->record($article, $request);
 
-        return response()->json([
-            'article' => new NewsArticleResource($article),
-        ]);
+        return response()->json(['ok' => true]);
     }
 }
