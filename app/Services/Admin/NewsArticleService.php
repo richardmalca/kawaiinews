@@ -20,7 +20,10 @@ use Throwable;
 
 class NewsArticleService
 {
-    public function __construct(private readonly CloudflareCacheService $cloudflareCache) {}
+    public function __construct(
+        private readonly CloudflareCacheService $cloudflareCache,
+        private readonly MediaLibraryService $mediaLibraryService,
+    ) {}
 
     /**
      * La página del artículo y la home pueden haber quedado cacheadas en
@@ -49,12 +52,14 @@ class NewsArticleService
             'category' => $draft['category'] ?? $newsCluster->category,
             'excerpt' => $draft['excerpt'],
             'body' => $body,
-            'featured_image' => $newsCluster->image_url,
+            'featured_image' => null,
             'status' => 'draft',
             'published_at' => $newsCluster->earliestPublishedAt(),
         ]);
 
         $newsArticle->tags()->sync($this->resolveTagIds($draft['tags']));
+
+        $hasOfficialImage = $this->attachSourceImage($newsArticle, $newsCluster);
 
         // Portada y audio se disparan sueltos, no encadenados: un
         // Bus::chain() se cancela entero si un eslabón "falla" a nivel del
@@ -66,7 +71,10 @@ class NewsArticleService
         $hasImageJob = AiProvider::where('is_active_for_images', true)->where('auto_generate_featured_image', true)->exists();
         $hasAudioJob = AiProvider::where('is_active_for_audio', true)->where('auto_generate_narration', true)->exists();
 
-        if ($hasImageJob) {
+        // Si ya conseguimos la foto oficial de la fuente, no generamos una
+        // ilustración de IA encima -- esa queda solo como respaldo para
+        // cuando la fuente no trae ninguna imagen.
+        if ($hasImageJob && ! $hasOfficialImage) {
             GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
         }
 
@@ -103,6 +111,73 @@ class NewsArticleService
         $embed = '<div class="aspect-video"><iframe src="https://www.youtube.com/embed/'.$videoId.'" title="Video de YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
 
         return trim(($body ?? '')."\n\n".$embed);
+    }
+
+    /**
+     * Si la fuente trajo una foto oficial (no una ilustración generada por
+     * nosotros), la descargamos a nuestro propio disco -- nunca queda
+     * hotlinkeada al dominio de origen -- y la dejamos como portada, más
+     * una copia chica y centrada dentro del cuerpo con el nombre de la
+     * fuente como leyenda. Si la descarga falla por lo que sea, no bloquea
+     * la creación del artículo: sigue sin portada hasta que la genere la
+     * IA (ver createFromCluster) o se cargue a mano.
+     *
+     * @return bool si se consiguió usar la imagen oficial de la fuente
+     */
+    private function attachSourceImage(NewsArticle $newsArticle, NewsCluster $newsCluster): bool
+    {
+        $sourceImageUrl = $newsCluster->image_url;
+
+        if (! $sourceImageUrl) {
+            return false;
+        }
+
+        $media = $this->mediaLibraryService->downloadAndStore($sourceImageUrl, $newsArticle->id);
+
+        if (! $media) {
+            return false;
+        }
+
+        $sourceLabel = $newsCluster->scrapedItems->firstWhere('image_url', $sourceImageUrl)?->newsSource?->label
+            ?? $newsCluster->scrapedItems->first()?->newsSource?->label;
+
+        $newsArticle->update([
+            'featured_image' => $media->url,
+            'featured_image_source' => 'url',
+            'body' => $this->insertSourceFigure($newsArticle->body, $media->url, $sourceLabel, $newsArticle->title),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Inserta la imagen oficial chica y centrada (clase "source-figure",
+     * estilada en app/globals.css del frontend) justo después del primer
+     * párrafo -- no arriba de todo, para no competir con el título/resumen
+     * por la atención antes de que arranque la nota en sí.
+     */
+    private function insertSourceFigure(?string $body, string $imageUrl, ?string $sourceLabel, string $alt): ?string
+    {
+        $caption = $sourceLabel ? "Imagen: {$sourceLabel}" : 'Imagen de la fuente original';
+
+        $figure = '<figure class="source-figure">'
+            .'<img src="'.e($imageUrl).'" alt="'.e($alt).'" />'
+            .'<figcaption>'.e($caption).'</figcaption>'
+            .'</figure>';
+
+        if (! $body) {
+            return $figure;
+        }
+
+        $firstParagraphEnd = strpos($body, '</p>');
+
+        if ($firstParagraphEnd === false) {
+            return trim($body."\n\n".$figure);
+        }
+
+        $insertAt = $firstParagraphEnd + strlen('</p>');
+
+        return substr($body, 0, $insertAt)."\n\n".$figure."\n\n".substr($body, $insertAt);
     }
 
     /**

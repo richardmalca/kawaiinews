@@ -24,6 +24,13 @@ class NewsArticleResource extends JsonResource
             'excerpt' => $this->excerpt,
             'body' => $this->body,
             'featured_image' => $this->resolveMediaUrl($this->featured_image),
+            // 'ai' | 'url' | 'upload' | null (artículos de antes de este
+            // campo). El frontend lo usa para el badge "Ilustración
+            // generada con IA" -- antes lo inferían de si la URL vivía en
+            // nuestro CDN, pero la foto oficial de la fuente también
+            // termina ahí al descargarla, así que esa heurística la
+            // etiquetaba mal como IA.
+            'featured_image_is_ai' => $this->featured_image_source === 'ai',
             // Variante chica (~900px de ancho) para usar en listados/cards
             // en vez de la portada completa — ver ImageOptimizerService.
             // Cae a null en artículos viejos que no pasaron por la

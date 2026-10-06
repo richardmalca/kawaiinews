@@ -457,6 +457,60 @@ class MediaLibraryService
         ]);
     }
 
+    /**
+     * A diferencia de storeFromUrl() (que solo guarda la URL externa tal
+     * cual, hotlinkeada al dominio de origen), esto descarga los bytes de
+     * verdad y los sube a nuestro propio disco -- para la foto oficial que
+     * trae una fuente scrapeada, que no queremos depender de que su CDN
+     * siga sirviendo el archivo para siempre. Devuelve null en vez de
+     * lanzar: es un paso best-effort dentro de la generación automática de
+     * artículos, no debe tumbar todo el flujo si la fuente está caída o
+     * tarda demasiado.
+     */
+    public function downloadAndStore(string $url, ?int $newsArticleId = null): ?Media
+    {
+        try {
+            $response = Http::timeout(15)->get($url);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $contents = $response->body();
+            $mimeType = $response->header('Content-Type') ?: 'image/jpeg';
+
+            $disk = $this->mediaDisk();
+            $optimized = $this->imageOptimizer->optimize($contents, $mimeType);
+            $cardUrl = null;
+
+            if ($optimized !== null) {
+                $path = MediaNaming::path('image', 'webp');
+                $disk->put($path, $optimized, 'public');
+                $cardUrl = $this->storeCardVariant($disk, $path, $contents, $mimeType);
+            } else {
+                $extension = match (true) {
+                    str_contains($mimeType, 'png') => 'png',
+                    str_contains($mimeType, 'gif') => 'gif',
+                    str_contains($mimeType, 'webp') => 'webp',
+                    default => 'jpg',
+                };
+                $path = MediaNaming::path('image', $extension);
+                $disk->put($path, $contents, 'public');
+            }
+
+            return Media::create([
+                'url' => $disk->url($path),
+                'card_url' => $cardUrl,
+                'original_name' => Str::afterLast(parse_url($url, PHP_URL_PATH) ?? '', '/') ?: null,
+                'source' => 'url',
+                'type' => 'image',
+                'news_article_id' => $newsArticleId,
+            ]);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     private const IMAGE_ASPECT_OPTIONS = [
         'openai' => ['size' => '1536x1024', 'quality' => 'medium'],
         'gemini' => ['aspect_ratio' => '16:9'],
@@ -559,7 +613,7 @@ class MediaLibraryService
         $article->refresh();
 
         if (blank($article->featured_image) || $article->featured_image === $fallbackImage) {
-            $article->update(['featured_image' => $media->url]);
+            $article->update(['featured_image' => $media->url, 'featured_image_source' => 'ai']);
         }
 
         return $media;

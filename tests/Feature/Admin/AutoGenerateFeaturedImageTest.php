@@ -10,6 +10,7 @@ use App\Services\Admin\MediaLibraryService;
 use App\Services\Admin\NewsArticleService;
 use App\Support\ArticleImagePromptBuilder;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Prism\Prism\Facades\Prism;
@@ -75,8 +76,9 @@ test('ArticleImagePromptBuilder asks for a franchise-recognizable scene instead 
         ->not->toContain('Closely follow the composition');
 });
 
-test('createFromCluster dispatches the auto-generate job only when enabled and the cluster has a source image', function () {
+test('createFromCluster does NOT dispatch the auto-generate job when the source image download succeeds (uses the real photo instead)', function () {
     Queue::fake();
+    Http::fake(['source.test/*' => Http::response('fake-bytes', 200, ['Content-Type' => 'image/jpeg'])]);
 
     AiProvider::factory()->create([
         'provider' => 'anthropic',
@@ -104,11 +106,42 @@ test('createFromCluster dispatches the auto-generate job only when enabled and t
 
     $article = app(NewsArticleService::class)->createFromCluster($cluster);
 
+    Queue::assertNotPushed(GenerateArticleFeaturedImageJob::class);
+    expect($article->fresh()->featured_image)->not->toBe('https://source.test/foto.jpg');
+});
+
+test('createFromCluster DOES dispatch the auto-generate job when the source image fails to download', function () {
+    Queue::fake();
+    Http::fake(['source.test/*' => Http::response('', 500)]);
+
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+    AiProvider::factory()->create([
+        'provider' => 'gemini',
+        'is_active_for_images' => true,
+        'auto_generate_featured_image' => true,
+        'api_key' => 'test-key',
+    ]);
+
+    Prism::fake([
+        TextResponseFake::make()->withText(<<<'TXT'
+            TITULO: Un titular
+            RESUMEN: Un resumen.
+            CUERPO: <p>Cuerpo.</p>
+            CATEGORIA: gaming
+            TAGS:
+            TXT),
+    ]);
+
+    $cluster = NewsCluster::factory()->create(['category' => 'gaming', 'image_url' => 'https://source.test/foto.jpg']);
+
+    $article = app(NewsArticleService::class)->createFromCluster($cluster);
+
     Queue::assertPushed(GenerateArticleFeaturedImageJob::class, fn ($job) => $job->newsArticleId === $article->id);
 });
 
 test('createFromCluster does not dispatch the job when auto-generate is off', function () {
     Queue::fake();
+    Http::fake(['source.test/*' => Http::response('fake-bytes', 200, ['Content-Type' => 'image/jpeg'])]);
 
     AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
     AiProvider::factory()->create([
