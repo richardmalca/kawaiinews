@@ -345,7 +345,7 @@ class NewsArticleService
                 Devuelve la respuesta EXACTAMENTE en este formato, sin texto adicional:
                 TITULO: (un titular llamativo tipo prensa, distinto y más atractivo que el resumen, no lo repitas)
                 RESUMEN: (1 o 2 oraciones que resuman la noticia, sin repetir literalmente el título)
-                CUERPO: (HTML válido, 3 a 4 párrafos en tono periodístico pero natural, no acartonado. Envuelve cada párrafo en <p>. Usa <strong> para nombres propios, datos clave y el dato más importante de la noticia, <em> para citas textuales o énfasis, y si hace falta un subtítulo dentro de la nota usa <h3>. NO uses <u> (subrayado): en la web se interpreta como un link, no como énfasis)
+                CUERPO: (HTML válido, mínimo 500 palabras en total -- esto es un piso, no un techo: si las fuentes dan para más, extendete. Normalmente son 6 a 8 párrafos en tono periodístico pero natural, no acartonado; si con 3 o 4 párrafos ya llegaste a 500 palabras igual seguí sumando contexto, antecedentes o detalles de las fuentes en vez de cortar corto. Envuelve cada párrafo en <p>. Usa <strong> para nombres propios, datos clave y el dato más importante de la noticia, <em> para citas textuales o énfasis, y si hace falta un subtítulo dentro de la nota usa <h3>. NO uses <u> (subrayado): en la web se interpreta como un link, no como énfasis)
                 CATEGORIA: (elegí exactamente una de estas opciones, la que mejor describa el tema principal de la noticia, sin inventar otras: {$categories})
                 TAGS: (3 a 6 palabras clave relacionadas, separadas por coma, sin el símbolo # - ej. nombres de personajes, del anime/juego/estudio, del evento. No repitas el título completo como tag)
                 PROMPT;
