@@ -74,7 +74,9 @@ class NewsArticleService
         // Si ya conseguimos la foto oficial de la fuente, no generamos una
         // ilustración de IA encima -- esa queda solo como respaldo para
         // cuando la fuente no trae ninguna imagen.
-        if ($hasImageJob && ! $hasOfficialImage) {
+        $imageJobDispatched = $hasImageJob && ! $hasOfficialImage;
+
+        if ($imageJobDispatched) {
             GenerateArticleFeaturedImageJob::dispatch($newsArticle->id);
         }
 
@@ -86,10 +88,12 @@ class NewsArticleService
         // generándose, le damos un margen (más que de sobra: en la
         // práctica portada + audio tardan ~15s en total) antes de publicar
         // solo, sin que el admin tenga que apretar "Publicar" a mano; si
-        // no hay nada que generar, se publica ya mismo.
+        // no hay nada que generar (ya sea porque está apagado o porque la
+        // foto oficial de la fuente nos ahorró la generación), se publica
+        // ya mismo.
         $publishJob = PublishArticleWhenReadyJob::dispatch($newsArticle->id);
 
-        if ($hasImageJob || $hasAudioJob) {
+        if ($imageJobDispatched || $hasAudioJob) {
             $publishJob->delay(now()->addMinutes(3));
         }
 
