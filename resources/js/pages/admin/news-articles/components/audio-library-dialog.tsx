@@ -106,7 +106,7 @@ export default function AudioLibraryDialog({
                 <DialogHeader>
                     <DialogTitle>Biblioteca de audios</DialogTitle>
                     <DialogDescription>
-                        Elegí un audio ya subido, subí un archivo o generá uno
+                        Elige un audio ya subido, sube un archivo o genera uno
                         nuevo con IA a partir de esta noticia
                     </DialogDescription>
                 </DialogHeader>
@@ -139,7 +139,7 @@ export default function AudioLibraryDialog({
                             title={
                                 canGenerate
                                     ? undefined
-                                    : 'Guardá título, resumen y contenido antes de generar el audio'
+                                    : 'Guarda título, resumen y contenido antes de generar el audio'
                             }
                             onClick={handleGenerate}
                         >
@@ -150,8 +150,8 @@ export default function AudioLibraryDialog({
 
                     {!canGenerate && (
                         <p className="text-muted-foreground text-xs">
-                            Guardá la noticia con título, resumen y contenido
-                            completos para poder narrarla con IA. También podés
+                            Guarda la noticia con título, resumen y contenido
+                            completos para poder narrarla con IA. También puedes
                             subir un archivo de audio directamente.
                         </p>
                     )}

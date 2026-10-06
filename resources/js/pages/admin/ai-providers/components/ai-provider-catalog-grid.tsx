@@ -50,7 +50,7 @@ export default function AiProviderCatalogGrid({ catalog, providers }: Props) {
                     <CatalogGrid entries={configured} providers={providers} />
                 ) : (
                     <p className="text-muted-foreground text-sm">
-                        Todavía no cargaste ningún proveedor. Elegí uno de la
+                        Todavía no cargaste ningún proveedor. Elige uno de la
                         pestaña "Por agregar" para empezar.
                     </p>
                 )}

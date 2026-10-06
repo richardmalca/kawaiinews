@@ -140,10 +140,10 @@ export default function AuthorStatsIndex({ articles, totals, aiCost }: Props) {
 
                 {articles.length === 0 ? (
                     <Alert>
-                        <AlertTitle>Todavía no tenés noticias</AlertTitle>
+                        <AlertTitle>Todavía no tienes noticias</AlertTitle>
                         <AlertDescription>
                             Cuando crees o te asignen una noticia, vas a ver
-                            acá sus estadísticas.
+                            aquí sus estadísticas.
                         </AlertDescription>
                     </Alert>
                 ) : (

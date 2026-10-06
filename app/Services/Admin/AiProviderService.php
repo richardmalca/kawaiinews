@@ -222,7 +222,7 @@ class AiProviderService
         if (! $aiProvider->supportsText()) {
             return [
                 'success' => false,
-                'message' => 'Este proveedor no genera texto (solo imagen/audio), no hay una conexión de texto que probar acá.',
+                'message' => 'Este proveedor no genera texto (solo imagen/audio), no hay una conexión de texto que probar aquí.',
             ];
         }
 

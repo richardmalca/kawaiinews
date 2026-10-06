@@ -84,7 +84,7 @@ class UserService
         $this->assertCanManage($actingUser, $user);
 
         if ($data['role'] === 'superadmin' && ! $actingUser->hasRole('superadmin')) {
-            throw new AuthorizationException('No podés asignar el rol superadmin.');
+            throw new AuthorizationException('No puedes asignar el rol superadmin.');
         }
 
         $user->update([
@@ -107,7 +107,7 @@ class UserService
     private function assertCanManage(User $actingUser, User $user): void
     {
         if ($actingUser->is($user)) {
-            throw new AuthorizationException('No podés editar ni eliminar tu propia cuenta desde este panel.');
+            throw new AuthorizationException('No puedes editar ni eliminar tu propia cuenta desde este panel.');
         }
 
         if ($user->hasRole('superadmin') && ! $actingUser->hasRole('superadmin')) {

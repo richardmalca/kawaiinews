@@ -112,7 +112,7 @@ export function useRadio(initialTracks: RadioTrack[], queue: RadioQueueItem[]) {
             .then((result) => {
                 if (result.skipped_no_music) {
                     throw new Error(
-                        'No hay ninguna pista de música activa — subí al menos una primero',
+                        'No hay ninguna pista de música activa — sube al menos una primero',
                     );
                 }
 

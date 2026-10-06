@@ -368,8 +368,8 @@ export default function NewsArticleEdit({
                                         disabled={!aiImagePrompt}
                                         title={
                                             aiImagePrompt
-                                                ? 'Copia el prompt armado con esta noticia, para pegarlo en otra IA (junto con una imagen de referencia si querés) y generar la imagen ahí'
-                                                : 'Completá título, resumen y contenido para armar el prompt'
+                                                ? 'Copia el prompt armado con esta noticia, para pegarlo en otra IA (junto con una imagen de referencia si quieres) y generar la imagen ahí'
+                                                : 'Completa título, resumen y contenido para armar el prompt'
                                         }
                                         onClick={handleCopyImagePrompt}
                                     >

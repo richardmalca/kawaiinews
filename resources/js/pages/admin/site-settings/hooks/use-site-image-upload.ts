@@ -29,7 +29,7 @@ export function useSiteImageUpload(url: string, fieldName: string, loadingLabel:
         toast.promise(promise, {
             loading: loadingLabel,
             success: successLabel,
-            error: 'No se pudo procesar la imagen. Probá con un PNG o JPG.',
+            error: 'No se pudo procesar la imagen. Prueba con un PNG o JPG.',
         });
     };
 

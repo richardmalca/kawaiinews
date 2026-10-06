@@ -118,7 +118,7 @@ export default function AddAiProviderDialog({ entry }: Props) {
                         <p className="text-muted-foreground text-xs">
                             {entry.label} no genera texto (solo
                             {entry.supports_audio ? ' audio' : ' imágenes'}), no
-                            hace falta elegir un modelo acá.
+                            hace falta elegir un modelo aquí.
                         </p>
                     )}
 

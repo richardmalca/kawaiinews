@@ -220,8 +220,8 @@ export default function StorageSettingsIndex({
                                     }
                                 />
                                 <p className="text-muted-foreground text-xs">
-                                    Solo si tenés un dominio propio o CDN
-                                    delante del bucket. Si no, dejalo vacío.
+                                    Solo si tienes un dominio propio o CDN
+                                    delante del bucket. Si no, déjalo vacío.
                                 </p>
                                 <InputError message={errors.public_url} />
                             </div>
@@ -271,8 +271,8 @@ export default function StorageSettingsIndex({
                             <Alert>
                                 <AlertTitle>Faltan datos</AlertTitle>
                                 <AlertDescription>
-                                    Completá access key, secret key, bucket y
-                                    endpoint, y guardá antes de poder probar
+                                    Completa access key, secret key, bucket y
+                                    endpoint, y guarda antes de poder probar
                                     la conexión o activar algo.
                                 </AlertDescription>
                             </Alert>
@@ -289,7 +289,7 @@ export default function StorageSettingsIndex({
                             </CardTitle>
                             <CardDescription>
                                 Las imágenes/audios nuevos (subidos o
-                                generados con IA) se guardan acá en vez del
+                                generados con IA) se guardan aquí en vez del
                                 disco local del servidor. Los que ya estaban
                                 guardados siguen funcionando igual, no hace
                                 falta migrarlos a mano.
@@ -321,7 +321,7 @@ export default function StorageSettingsIndex({
                                 mediaLocation.remote > 0) && (
                                 <div className="mt-4 space-y-3 border-t pt-4">
                                     <p className="text-muted-foreground text-sm">
-                                        Ahora mismo tenés{' '}
+                                        Ahora mismo tienes{' '}
                                         {mediaLocation.local} imagen
                                         {mediaLocation.local === 1
                                             ? ''
@@ -367,8 +367,8 @@ export default function StorageSettingsIndex({
                                         )}
                                     </div>
                                     <p className="text-muted-foreground text-xs">
-                                        Esto puede tardar un rato si tenés
-                                        muchos archivos. Podés seguir usando
+                                        Esto puede tardar un rato si tienes
+                                        muchos archivos. Puedes seguir usando
                                         el panel mientras se hace, y nada
                                         deja de funcionar mientras tanto. Si
                                         alguna imagen es de antes de tener
@@ -390,13 +390,13 @@ export default function StorageSettingsIndex({
                                             los archivos
                                         </Button>
                                         <p className="text-muted-foreground text-xs">
-                                            Cada imagen y audio que subís
+                                            Cada imagen y audio que subes
                                             queda con un nombre parejo, no
                                             con el nombre que traía el
-                                            archivo original. Si tenés
+                                            archivo original. Si tienes
                                             archivos de antes con nombres
                                             sueltos, este botón se los
-                                            ordena a todos (estén acá o en
+                                            ordena a todos (estén aquí o en
                                             el almacenamiento externo), sin
                                             moverlos de lugar.
                                         </p>
@@ -420,7 +420,7 @@ export default function StorageSettingsIndex({
                                 >
                                     Backups
                                 </a>{' '}
-                                también se sube una copia acá. También podés
+                                también se sube una copia aquí. También puedes
                                 generar uno directo a Wasabi sin bajarlo al
                                 navegador.
                             </CardDescription>

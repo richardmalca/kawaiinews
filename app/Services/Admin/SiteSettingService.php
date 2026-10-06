@@ -139,7 +139,7 @@ class SiteSettingService
         $image = @imagecreatefromstring($file->get());
 
         if (! $image) {
-            throw new RuntimeException('No se pudo procesar la imagen. Probá con un PNG o JPG.');
+            throw new RuntimeException('No se pudo procesar la imagen. Prueba con un PNG o JPG.');
         }
 
         return $image;

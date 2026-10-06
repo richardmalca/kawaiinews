@@ -90,14 +90,14 @@ export default function BackupIndex({
                             {remoteConfigured ? (
                                 <>
                                     Cada backup que descargues arriba también
-                                    sube una copia acá si está activado en{' '}
+                                    sube una copia aquí si está activado en{' '}
                                     <Link
                                         href={storageSettingsEdit().url}
                                         className="underline"
                                     >
                                         Almacenamiento
                                     </Link>
-                                    . También podés generar uno directo, sin
+                                    . También puedes generar uno directo, sin
                                     pasar por el navegador.
                                 </>
                             ) : (

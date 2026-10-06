@@ -606,8 +606,8 @@ export default function SiteSettingsIndex({ settings }: Props) {
                                                     revisar lo que el sitio
                                                     sirve, no lo que Google
                                                     ya guardó de él.
-                                                    Mientras tanto, revisalo
-                                                    vos mismo:
+                                                    Mientras tanto, revísalo
+                                                    tú mismo:
                                                 </AlertDescription>
                                             </Alert>
                                             <a

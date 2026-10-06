@@ -155,8 +155,8 @@ export default function MediaLibraryDialog({
                 <DialogHeader>
                     <DialogTitle>Biblioteca de medios</DialogTitle>
                     <DialogDescription>
-                        Elegí una imagen ya subida, subí una nueva, agregala
-                        desde una URL o generala con IA a partir de la noticia
+                        Elige una imagen ya subida, sube una nueva, agrégala
+                        desde una URL o genérala con IA a partir de la noticia
                     </DialogDescription>
                 </DialogHeader>
 

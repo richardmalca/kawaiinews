@@ -21,7 +21,7 @@ export default function GoogleSerpPreview({
     const title = titleProp || 'Título del sitio';
     const desc =
         description ||
-        'Agregá una descripción para que Google la muestre acá debajo del título.';
+        'Agrega una descripción para que Google la muestre aquí debajo del título.';
 
     return (
         <div className="max-w-xl rounded-lg border bg-white p-4 font-sans dark:bg-neutral-900">

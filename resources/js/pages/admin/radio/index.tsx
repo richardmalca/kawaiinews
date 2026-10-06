@@ -93,9 +93,9 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
                                 Agregar música
                             </CardTitle>
                             <CardDescription>
-                                Solo música libre de derechos. Buscá en
+                                Solo música libre de derechos. Busca en
                                 Pixabay Music, YouTube Audio Library, Free
-                                Music Archive o Chosic, y subila acá.
+                                Music Archive o Chosic, y súbela aquí.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -189,13 +189,13 @@ export default function RadioIndex({ tracks: initialTracks, queue }: Props) {
 
                             {tracks.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
-                                    Agregá al menos una canción para poder
+                                    Agrega al menos una canción para poder
                                     armar la programación.
                                 </p>
                             ) : queue.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
                                     Todavía no se armó ninguna programación
-                                    — probá "Actualizar ahora".
+                                    — prueba "Actualizar ahora".
                                 </p>
                             ) : (
                                 <ol className="max-h-96 space-y-1 overflow-y-auto text-sm">

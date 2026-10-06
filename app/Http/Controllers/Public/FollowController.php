@@ -22,7 +22,7 @@ class FollowController extends Controller
 
         if ($user->is($profileUser)) {
             throw ValidationException::withMessages([
-                'username' => 'No podés seguirte a vos mismo.',
+                'username' => 'No puedes seguirte a ti mismo.',
             ]);
         }
 
