@@ -13,6 +13,8 @@ use App\Support\CategoryAutoFollow;
 
 class ArticleInteractionService
 {
+    public function __construct(private readonly PointsService $pointsService) {}
+
     /**
      * @return array{liked: bool, total_likers: int}
      */
@@ -161,6 +163,10 @@ class ArticleInteractionService
             ]);
             $currentReaction = $reaction;
             $isNewReaction = true;
+        }
+
+        if ($isNewReaction) {
+            $this->pointsService->award($user, PointsService::NEW_REACTION, $article);
         }
 
         // Notificar al autor de la noticia (con agrupación para no saturar si hay 50 o 500 reacciones)

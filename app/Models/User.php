@@ -120,6 +120,23 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Historial de puntos de comunidad (vistas, reacciones, trivia
+     * acertada, etc.) que alimenta el ranking semanal.
+     */
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    /**
+     * Respuestas de trivia que este usuario ya envió.
+     */
+    public function triviaAnswers(): HasMany
+    {
+        return $this->hasMany(TriviaAnswer::class);
+    }
+
+    /**
      * Categorías seguidas por el usuario.
      */
     public function followedCategories(): BelongsToMany

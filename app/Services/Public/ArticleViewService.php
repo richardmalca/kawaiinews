@@ -21,6 +21,8 @@ class ArticleViewService
 
     private const PENDING_IDS_KEY = 'article-views:pending-ids';
 
+    public function __construct(private readonly PointsService $pointsService) {}
+
     /**
      * Registra una vista si este visitante no vio el artículo en los
      * últimos 30 minutos. No escribe en la base todavía.
@@ -46,6 +48,12 @@ class ArticleViewService
         Cache::increment($pendingKey);
 
         $this->markPending($article->id);
+
+        // Puntos de ranking solo para usuarios logueados -- un visitante
+        // anónimo no tiene perfil contra el cual acumularlos.
+        if ($user) {
+            $this->pointsService->award($user, PointsService::VIEW_ARTICLE, $article);
+        }
     }
 
     /**

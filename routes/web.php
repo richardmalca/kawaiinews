@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\NewsSourceController;
 use App\Http\Controllers\Admin\RadioController as AdminRadioController;
 use App\Http\Controllers\Admin\SiteSettingController;
 use App\Http\Controllers\Admin\StorageSettingController;
+use App\Http\Controllers\Admin\TriviaQuestionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\AppleSplashController;
@@ -137,6 +138,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin|admin|editor'])
                 ->name('news-articles.audio.generate');
 
             Route::get('jobs/runs/{runId}', [JobRunController::class, 'show'])->name('jobs.run-status');
+
+            Route::resource('trivia', TriviaQuestionController::class)
+                ->only(['index', 'store', 'update', 'destroy']);
         });
 
         Route::middleware('role:superadmin')->group(function () {

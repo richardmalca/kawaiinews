@@ -5,6 +5,7 @@ import {
     CloudCog,
     DatabaseBackup,
     DollarSign,
+    HelpCircle,
     History,
     LayoutGrid,
     Library,
@@ -41,6 +42,7 @@ import { index as mediaLibraryIndex } from '@/routes/admin/media-library';
 import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
 import { index as newsSourcesIndex } from '@/routes/admin/news-sources';
+import { index as triviaIndex } from '@/routes/admin/trivia';
 import { index as radioIndex } from '@/routes/admin/radio';
 import { index as usersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
@@ -124,6 +126,11 @@ export function AppSidebar() {
             title: 'Biblioteca de medios',
             href: mediaLibraryIndex(),
             icon: Library,
+        },
+        {
+            title: 'Trivia',
+            href: triviaIndex(),
+            icon: HelpCircle,
         },
         ...(isSuperadmin
             ? [

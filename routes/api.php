@@ -4,7 +4,9 @@ use App\Http\Controllers\Api\Auth\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\Public\NewsController;
 use App\Http\Controllers\Api\Public\ProfileController as ApiProfileController;
 use App\Http\Controllers\Api\Public\PushSubscriptionController;
+use App\Http\Controllers\Api\Public\RankingController;
 use App\Http\Controllers\Api\Public\SiteSettingController as ApiSiteSettingController;
+use App\Http\Controllers\Api\Public\TriviaController;
 use App\Http\Controllers\Public\ArticleInteractionController;
 use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\NotificationController;
@@ -32,6 +34,21 @@ Route::post('profile/{username}/seguir', [ApiProfileController::class, 'toggleFo
     ->middleware('auth:sanctum');
 
 Route::get('site-settings', ApiSiteSettingController::class);
+
+// Ranking semanal de puntos de comunidad: index() es público (cacheado,
+// cualquiera puede ver el top), mi-posicion funciona con o sin token --
+// anónimo devuelve cero sin fallar, igual que "compartir" más abajo.
+Route::get('ranking', [RankingController::class, 'index'])
+    ->middleware('throttle:60,1');
+Route::get('ranking/mi-posicion', [RankingController::class, 'miPosicion'])
+    ->middleware('throttle:60,1');
+
+// Trivia diaria de opción múltiple. Ver la pregunta es público; responder
+// requiere login porque los puntos se acreditan a un usuario.
+Route::get('trivia/hoy', [TriviaController::class, 'today'])
+    ->middleware('throttle:60,1');
+Route::post('trivia/{triviaQuestion}/responder', [TriviaController::class, 'answer'])
+    ->middleware(['auth:sanctum', 'throttle:20,1']);
 
 // Suscripción push por dispositivo/navegador, no por cuenta -- pública a
 // propósito, cualquier visitante puede activarla sin loguearse.
