@@ -23,6 +23,7 @@ class NewsService
         $ids = $this->remember("featured-ids:{$limit}", fn () => NewsArticle::query()
             ->where('status', 'published')
             ->whereNotNull('published_at')
+            ->whereNotNull('featured_image')
             ->orderByDesc('published_at')
             ->take($limit)
             ->pluck('id')
