@@ -263,6 +263,10 @@ class NewsArticleService
             return;
         }
 
+        if (! $newsArticle->body) {
+            return;
+        }
+
         $newsArticle->update([
             'status' => 'published',
             'published_at' => $newsArticle->published_at ?? now(),

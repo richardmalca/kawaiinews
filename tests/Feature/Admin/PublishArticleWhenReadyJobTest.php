@@ -63,6 +63,16 @@ test('an accepted article ends up published once the chain runs, with no image o
         ->published_at->not->toBeNull();
 });
 
+test('publishIfDraft does not publish a draft with an empty body (generación de IA falló en silencio)', function () {
+    $article = NewsArticle::factory()->create(['status' => 'draft', 'body' => null]);
+
+    app(NewsArticleService::class)->publishIfDraft($article);
+
+    expect($article->fresh())
+        ->status->toBe('draft')
+        ->published_at->toBeNull();
+});
+
 test('publishIfDraft does nothing if the article is already published', function () {
     $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()->subDay()]);
     $originalPublishedAt = $article->published_at;
