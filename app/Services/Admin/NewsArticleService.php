@@ -132,7 +132,7 @@ class NewsArticleService
     {
         $sourceImageUrl = $newsCluster->image_url;
 
-        if (! $sourceImageUrl) {
+        if (! $sourceImageUrl || $this->isYoutubeThumbnail($sourceImageUrl)) {
             return false;
         }
 
@@ -152,6 +152,20 @@ class NewsArticleService
         ]);
 
         return true;
+    }
+
+    /**
+     * Un thumbnail de YouTube (ytimg.com, o el "og:image" que youtube.com
+     * sirve para sus propias páginas de video) no es una foto oficial de
+     * la fuente -- es el cartel genérico del video. Tratarlo como si no
+     * hubiera imagen deja que caiga a la generación por IA en vez de
+     * mostrar ese thumbnail como portada.
+     */
+    private function isYoutubeThumbnail(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST) ?: '';
+
+        return (bool) preg_match('/(^|\.)(ytimg\.com|youtube\.com|youtu\.be)$/i', $host);
     }
 
     /**

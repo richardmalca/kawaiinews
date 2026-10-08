@@ -82,3 +82,21 @@ test('createFromCluster no toca el cuerpo ni la portada cuando el cluster no tie
         ->and($article->featured_image_source)->toBeNull()
         ->and($article->body)->not->toContain('source-figure');
 });
+
+test('createFromCluster ignora un thumbnail de YouTube como si no hubiera imagen de fuente (no es una foto oficial)', function () {
+    AiProvider::factory()->create(['provider' => 'anthropic', 'is_active' => true, 'api_key' => 'test-key']);
+    fakeSourceImageDraftResponse();
+
+    $cluster = NewsCluster::factory()->create([
+        'category' => 'anime',
+        'image_url' => 'https://i.ytimg.com/vi/abc123/hqdefault.jpg',
+    ]);
+
+    $article = app(NewsArticleService::class)->createFromCluster($cluster);
+
+    expect($article->featured_image)->toBeNull()
+        ->and($article->featured_image_source)->toBeNull()
+        ->and($article->body)->not->toContain('source-figure');
+
+    expect(Media::where('news_article_id', $article->id)->where('source', 'url')->exists())->toBeFalse();
+});
