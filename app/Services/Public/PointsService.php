@@ -17,6 +17,8 @@ class PointsService
 {
     public const VIEW_ARTICLE = 'view_article';
 
+    public const NEW_LIKE = 'new_like';
+
     public const NEW_REACTION = 'new_reaction';
 
     public const TRIVIA_CORRECT = 'trivia_correct';
@@ -28,6 +30,7 @@ class PointsService
      */
     private const POINTS_BY_TYPE = [
         self::VIEW_ARTICLE => 1,
+        self::NEW_LIKE => 1,
         self::NEW_REACTION => 1,
         self::TRIVIA_CORRECT => 5,
         self::TRIVIA_PARTICIPATION => 1,

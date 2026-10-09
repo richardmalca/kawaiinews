@@ -4,6 +4,7 @@ namespace App\Services\Public;
 
 use App\Models\NewsArticle;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +30,12 @@ class ArticleViewService
      */
     public function record(NewsArticle $article, Request $request): void
     {
-        $user = $request->user();
+        // Esta ruta (POST /{slug}/vista) a propósito no lleva middleware
+        // auth:sanctum -- tiene que funcionar también para visitantes
+        // anónimos. Pero eso significa que $request->user() (guard "web",
+        // por sesión) nunca resuelve el Bearer token que manda el
+        // frontend: hay que pedírselo directo al guard de Sanctum.
+        $user = $request->user() ?? Auth::guard('sanctum')->user();
         if ($user && $article->author_id && (int) $user->id === (int) $article->author_id) {
             return;
         }

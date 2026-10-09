@@ -20,11 +20,16 @@ class ArticleInteractionService
      */
     public function toggleLike(User $user, NewsArticle $article): array
     {
+        $wasLiked = $user->hasLiked($article);
         $user->toggleLike($article);
         $liked = $user->hasLiked($article);
 
         if ($liked) {
             CategoryAutoFollow::afterLike($user, $article);
+
+            if (! $wasLiked) {
+                $this->pointsService->award($user, PointsService::NEW_LIKE, $article);
+            }
         }
 
         return [

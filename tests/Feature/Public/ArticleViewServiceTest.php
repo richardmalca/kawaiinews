@@ -1,10 +1,13 @@
 <?php
 
 use App\Models\NewsArticle;
+use App\Models\PointTransaction;
 use App\Models\User;
 use App\Services\Public\ArticleViewService;
+use App\Services\Public\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     // El driver `array` (default de testing) auto-inicializa Cache::increment()
@@ -134,6 +137,23 @@ test('flushing pending views also records the daily breakdown used by the dashbo
         ->first();
 
     expect($row->views)->toBe(4);
+});
+
+test('POST /{slug}/vista awards view points to a Sanctum-authenticated user, aunque la ruta no tenga middleware auth:sanctum', function () {
+    // Esta ruta a propósito no lleva auth:sanctum (tiene que funcionar para
+    // invitados), así que Sanctum::actingAs() -- que autentica solo contra
+    // el guard "sanctum", no el guard "web" por defecto -- es la única forma
+    // de reproducir en test lo que pasa en producción con un Bearer token
+    // real. Con un simple actingAs($user) esto pasaría igual sin probar
+    // nada, porque ahí el usuario queda seteado en el guard por defecto.
+    $user = User::factory()->create();
+    $article = NewsArticle::factory()->create(['status' => 'published', 'published_at' => now()]);
+
+    Sanctum::actingAs($user);
+
+    $this->postJson("/api/news/{$article->slug}/vista")->assertOk();
+
+    expect(PointTransaction::where('user_id', $user->id)->where('type', PointsService::VIEW_ARTICLE)->exists())->toBeTrue();
 });
 
 test('views from the article author are ignored', function () {
