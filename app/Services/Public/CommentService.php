@@ -17,7 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class CommentService
 {
-    public function __construct(private readonly CommentModerationService $moderationService) {}
+    public function __construct(
+        private readonly CommentModerationService $moderationService,
+        private readonly PointsService $pointsService,
+    ) {}
 
     /**
      * Comentarios raíz de una noticia, paginados, con sus respuestas
@@ -93,6 +96,11 @@ class CommentService
             // activó ninguno, el job no hace nada y el comentario espera
             // revisión manual, como si esto no existiera.
             ModerateCommentWithAiJob::dispatch($comment);
+        } else {
+            // Solo comentarios que ya salen visibles suman puntos -- uno
+            // que cae "pending" todavía puede terminar bloqueado por el
+            // moderador, no hay que darle el punto antes de saber eso.
+            $this->pointsService->award($user, PointsService::NEW_COMMENT, $comment);
         }
 
         if (isset($target) && $target->user_id !== $user->id) {

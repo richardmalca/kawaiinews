@@ -43,11 +43,16 @@ class ArticleInteractionService
      */
     public function toggleFavorite(User $user, NewsArticle $article): array
     {
+        $wasFavorited = $user->hasFavorited($article);
         $user->toggleFavorite($article);
         $favorited = $user->hasFavorited($article);
 
         if ($favorited) {
             CategoryAutoFollow::afterFavorite($user, $article);
+
+            if (! $wasFavorited) {
+                $this->pointsService->award($user, PointsService::NEW_FAVORITE, $article);
+            }
         }
 
         // Notificar al autor si guardó la noticia y no es el autor mismo
@@ -101,6 +106,10 @@ class ArticleInteractionService
             );
 
             CategoryAutoFollow::afterShare($user, $article);
+
+            if ($isFirstShareForUser) {
+                $this->pointsService->award($user, PointsService::NEW_SHARE, $article);
+            }
         } else {
             Share::create([
                 'user_id' => null,

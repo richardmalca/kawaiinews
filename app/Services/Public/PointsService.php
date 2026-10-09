@@ -21,6 +21,12 @@ class PointsService
 
     public const NEW_REACTION = 'new_reaction';
 
+    public const NEW_FAVORITE = 'new_favorite';
+
+    public const NEW_COMMENT = 'new_comment';
+
+    public const NEW_SHARE = 'new_share';
+
     public const TRIVIA_CORRECT = 'trivia_correct';
 
     public const TRIVIA_PARTICIPATION = 'trivia_participation';
@@ -32,6 +38,9 @@ class PointsService
         self::VIEW_ARTICLE => 1,
         self::NEW_LIKE => 1,
         self::NEW_REACTION => 1,
+        self::NEW_FAVORITE => 1,
+        self::NEW_COMMENT => 2,
+        self::NEW_SHARE => 2,
         self::TRIVIA_CORRECT => 5,
         self::TRIVIA_PARTICIPATION => 1,
     ];
