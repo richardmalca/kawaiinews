@@ -90,6 +90,48 @@ test('PublishArticleWhenReadyJob publishes the article it is given', function ()
     expect($article->fresh()->status)->toBe('published');
 });
 
+test('PublishArticleWhenReadyJob waits for the featured image instead of publishing a draft without one, while an image provider is on', function () {
+    Bus::fake();
+    AiProvider::factory()->create([
+        'provider' => 'gemini',
+        'is_active_for_images' => true,
+        'auto_generate_featured_image' => true,
+        'api_key' => 'test-key',
+    ]);
+    $article = NewsArticle::factory()->create(['status' => 'draft', 'featured_image' => null]);
+
+    (new PublishArticleWhenReadyJob($article->id))->handle(app(NewsArticleService::class));
+
+    expect($article->fresh()->status)->toBe('draft');
+    Bus::assertDispatched(
+        PublishArticleWhenReadyJob::class,
+        fn (PublishArticleWhenReadyJob $job) => $job->waitedRounds === 1 && $job->delay !== null,
+    );
+});
+
+test('PublishArticleWhenReadyJob publishes anyway once the wait limit is reached, even without an image', function () {
+    AiProvider::factory()->create([
+        'provider' => 'gemini',
+        'is_active_for_images' => true,
+        'auto_generate_featured_image' => true,
+        'api_key' => 'test-key',
+    ]);
+    $article = NewsArticle::factory()->create(['status' => 'draft', 'featured_image' => null]);
+
+    (new PublishArticleWhenReadyJob($article->id, PublishArticleWhenReadyJob::MAX_WAIT_ROUNDS))
+        ->handle(app(NewsArticleService::class));
+
+    expect($article->fresh()->status)->toBe('published');
+});
+
+test('PublishArticleWhenReadyJob does not wait when no image provider is auto-generating', function () {
+    $article = NewsArticle::factory()->create(['status' => 'draft', 'featured_image' => null]);
+
+    (new PublishArticleWhenReadyJob($article->id))->handle(app(NewsArticleService::class));
+
+    expect($article->fresh()->status)->toBe('published');
+});
+
 test('PublishArticleWhenReadyJob does nothing if the article no longer exists', function () {
     (new PublishArticleWhenReadyJob(999999))->handle(app(NewsArticleService::class));
 })->throwsNoExceptions();
