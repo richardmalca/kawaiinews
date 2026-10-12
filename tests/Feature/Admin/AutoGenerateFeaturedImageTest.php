@@ -363,3 +363,34 @@ test('a superadmin can toggle auto-generate featured image for a provider', func
 
     expect($provider->fresh()->auto_generate_featured_image)->toBeTrue();
 });
+
+test('generateFeaturedImage retries with a neutral prompt when the provider returns no image at all', function () {
+    Storage::fake('public');
+
+    AiProvider::factory()->create(['provider' => 'gemini', 'api_key' => 'test-key', 'is_active_for_images' => true]);
+    $fake = Prism::fake([
+        ImageResponseFake::make()->withImages([]),
+        ImageResponseFake::make(),
+    ]);
+
+    $article = NewsArticle::factory()->create([
+        'news_cluster_id' => NewsCluster::factory()->create(['image_url' => null])->id,
+        'title' => 'Marvel y Kadokawa lanzan cinco mangas nuevos',
+        'excerpt' => 'Un resumen',
+        'body' => '<p>Cuerpo de la noticia.</p>',
+        'featured_image' => null,
+    ]);
+
+    $media = app(MediaLibraryService::class)->generateFeaturedImage($article);
+
+    expect($media)->not->toBeNull()
+        ->and($article->fresh()->featured_image)->toBe($media->url)
+        ->and($article->fresh()->featured_image_source)->toBe('ai');
+
+    $fake->assertCallCount(2);
+    $fake->assertRequest(function (array $requests) {
+        expect($requests[1]->prompt())
+            ->not->toContain('Marvel')
+            ->toContain('no existing characters or brands');
+    });
+});

@@ -55,6 +55,27 @@ class ArticleImagePromptBuilder
             ? 'Closely follow the composition, characters, poses and framing of the provided reference image — this should read as a faithful stylized redraw of that same scene, not a different or reinterpreted scene.'
             : 'Depict characters, objects or an environment clearly recognizable as belonging to the specific anime or game franchise named in the topic below — not generic unbranded characters, not an unrelated abstract scene.';
 
+        return self::fullPrompt($subjectInstruction, $title, $safeExcerpt, $categoryStyle);
+    }
+
+    /**
+     * Último recurso cuando el proveedor no devuelve imagen con el prompt
+     * normal (suele ser un bloqueo por personajes o marcas con copyright,
+     * en notas que mezclan varias franquicias): una escena genérica según
+     * la categoría, sin título ni resumen, para que la nota no salga sin
+     * portada.
+     */
+    public static function buildNeutral(NewsArticle $article): string
+    {
+        $scene = $article->category === 'gaming'
+            ? 'A glowing game controller on a desk with neon lights, a dark room with colorful reflections.'
+            : 'A cozy desk with a stack of colorful manga volumes, a cup of tea and warm evening light through a window over a city skyline.';
+
+        return "{$scene} Official 2D Japanese anime-style illustration, crisp lineart, cel-shaded coloring, cinematic lighting, rich colorful atmosphere, 16:9 widescreen, single cohesive scene, completely textless, no letters, no words, no logos, no watermarks, no screens, no real people, no existing characters or brands.";
+    }
+
+    private static function fullPrompt(string $subjectInstruction, string $title, string $safeExcerpt, string $categoryStyle): string
+    {
         return "Single cohesive key visual illustration in 16:9 widescreen format, poster-style composition with one clear focal point. {$subjectInstruction} Capturing the mood of: {$title}. Feeling: {$safeExcerpt}. Art style: {$categoryStyle}, cinematic lighting, rich colorful atmosphere. Strict constraints: exactly one self-contained scene, no screens, no monitors, no TV frames, no cameras, no recording devices, no picture-in-picture, no frame-within-frame compositions, no duplicated or repeated characters, no crowds of near-identical figures, completely textless, no letters, no words, no logos, no watermarks, no subtitles, peaceful artwork only, no violence, no gore, no realistic human photos.";
     }
 }

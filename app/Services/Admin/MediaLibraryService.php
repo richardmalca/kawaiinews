@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Exceptions\ImageNotReturnedException;
 use App\Models\AiProvider;
 use App\Models\Media;
 use App\Models\NewsArticle;
@@ -538,6 +539,10 @@ class MediaLibraryService
 
         AiUsageLogger::record('image', $provider->provider, $model, $response->usage);
 
+        if ($image === null) {
+            throw new ImageNotReturnedException('El proveedor de imágenes no devolvió ninguna imagen (suele pasar cuando el prompt pide personajes o marcas con copyright).');
+        }
+
         if ($image->hasBase64()) {
             $disk = $this->mediaDisk();
             $decoded = base64_decode($image->base64);
@@ -605,7 +610,11 @@ class MediaLibraryService
             return null;
         }
 
-        $media = $this->generateWithAi($prompt, $article->id, $referenceImage);
+        try {
+            $media = $this->generateWithAi($prompt, $article->id, $referenceImage);
+        } catch (ImageNotReturnedException) {
+            $media = $this->generateWithAi(ArticleImagePromptBuilder::buildNeutral($article), $article->id);
+        }
 
         // Se vuelve a chequear acá (no solo al principio) por si alguien
         // cargó una portada a mano mientras la IA generaba la imagen,
