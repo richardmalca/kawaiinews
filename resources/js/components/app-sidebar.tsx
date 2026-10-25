@@ -11,7 +11,6 @@ import {
     Library,
     MessagesSquare,
     Newspaper,
-    Radio,
     Rss,
     Search,
     Settings,
@@ -43,7 +42,6 @@ import { index as newsArticlesIndex } from '@/routes/admin/news-articles';
 import { index as newsReviewIndex } from '@/routes/admin/news-review';
 import { index as newsSourcesIndex } from '@/routes/admin/news-sources';
 import { index as triviaIndex } from '@/routes/admin/trivia';
-import { index as radioIndex } from '@/routes/admin/radio';
 import { index as usersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 
@@ -85,11 +83,6 @@ export function AppSidebar() {
                   title: 'Costo de IA',
                   href: aiUsageIndex(),
                   icon: DollarSign,
-              },
-              {
-                  title: 'KawaiiRadio',
-                  href: radioIndex(),
-                  icon: Radio,
               },
           ]
         : [];
